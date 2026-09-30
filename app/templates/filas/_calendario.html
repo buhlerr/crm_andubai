@@ -1,0 +1,134 @@
+{% import "_macros.html" as m %}
+{% set sem_mes = args.copy() %}{% set _ = sem_mes.pop('mes', None) %}
+<div class="calendario-topo">
+  <div class="acoes">
+    <a class="botao secundario pequeno" href="{{ url_for(endpoint, mes=mes_anterior, **sem_mes) }}" aria-label="Mês anterior">←</a>
+    <h2 style="margin:0">{{ nome_mes | capitalize }}</h2>
+    <a class="botao secundario pequeno" href="{{ url_for(endpoint, mes=mes_seguinte, **sem_mes) }}" aria-label="Próximo mês">→</a>
+    <a class="botao secundario pequeno" href="{{ url_for(endpoint, **sem_mes) }}">Hoje</a>
+  </div>
+  <div class="suave pequeno">
+    {% if mes.atrasadas_antes %}
+      {% set antes = sem_mes.copy() %}{% set _ = antes.update({'prazo_ate': ate_antes.isoformat(), 'visao': 'lista', 'fixar': '0'}) %}
+      <a class="prazo atrasado" href="{{ url_for(endpoint, **antes) }}">{{ mes.atrasadas_antes }} tarefa(s) abertas com data antes deste período →</a>
+    {% endif %}
+    {% if mes.sem_prazo %}<span> · {{ mes.sem_prazo }} sem data (veja na lista)</span>{% endif %}
+  </div>
+</div>
+<p class="suave pequeno">Cada tarefa aparece no dia planejado (✎) ou, se ninguém planejou, no dia do procedimento na Egali.
+  Arraste para outro dia para mudar a data planejada. Vermelho = atrasada pela data do procedimento.</p>
+
+<div class="calendario" id="calendario" role="grid" aria-label="{{ nome_mes }}" data-csrf="{{ token_csrf() }}">
+  {% for dia_semana in ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'] %}<div class="calendario-cabeca" role="columnheader">{{ dia_semana }}</div>{% endfor %}
+  {% for semana in mes.semanas %}
+    {% for dia in semana %}
+      {% set tarefas_dia = mes.por_dia.get(dia, []) %}
+      <div class="calendario-dia {{ 'fora' if dia.month != ano_mes[1] }} {{ 'hoje' if dia == hoje() }} {{ 'passado' if dia < hoje() }}"
+           role="gridcell" data-dia="{{ dia.isoformat() }}">
+        <div class="calendario-numero">
+          <span>{{ dia.day }}</span>
+          <span class="suave pequeno" data-contagem>{{ tarefas_dia | length or '' }}</span>
+        </div>
+        {% for t in tarefas_dia[:4] %}
+          <a class="chip {{ t.status.value }} {{ 'atrasado' if t.atrasada(hoje()) }} {{ 'planejada' if t.data_planejada }}"
+             href="{{ url_for('tarefas.detalhe', tarefa_id=t.id) }}" draggable="true"
+             data-url-data="{{ url_for('tarefas.mudar_data_planejada', tarefa_id=t.id) }}"
+             data-procedimento="{{ t.prazo_egali.isoformat() if t.prazo_egali else '' }}"
+             title="{{ t.programa.aluno.nome }} · {{ t.etapa.trilha.nome }} · {{ t.etapa.nome }} ({{ ROTULOS_STATUS[t.status] }}) · procedimento na Egali: {{ t.prazo_egali | data }}{{ ' · tem NEG' if t.tem_justificativa }}">
+            {% if t.data_planejada %}✎ {% endif %}{{ t.programa.aluno.nome.split(' ')[0] }} · {{ t.etapa.nome }}
+          </a>
+        {% endfor %}
+        {% if tarefas_dia | length > 4 %}
+          {% set do_dia = sem_mes.copy() %}{% set _ = do_dia.update({'prazo_de': dia.isoformat(), 'prazo_ate': dia.isoformat(), 'visao': 'lista', 'fixar': '0'}) %}
+          <a class="chip-mais" href="{{ url_for(endpoint, **do_dia) }}">+{{ tarefas_dia | length - 4 }} neste dia</a>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% endfor %}
+</div>
+
+<div class="aviso-flutuante" id="aviso-calendario" role="status" hidden></div>
+
+<script>
+(() => {
+  const calendario = document.getElementById("calendario");
+  const aviso = document.getElementById("aviso-calendario");
+  let arrastado = null;
+
+  function avisar(texto, tipo) {
+    aviso.textContent = texto;
+    aviso.className = "aviso-flutuante" + (tipo ? " " + tipo : "");
+    aviso.hidden = false;
+    clearTimeout(avisar.t);
+    avisar.t = setTimeout(() => { aviso.hidden = true; }, 4000);
+  }
+  function somar(dia, n) {
+    const contador = dia.querySelector("[data-contagem]");
+    const total = Math.max(0, (parseInt(contador.textContent, 10) || 0) + n);
+    contador.textContent = total || "";
+  }
+  function dataBr(iso) { const [a, m, d] = iso.split("-"); return `${d}/${m}/${a}`; }
+
+  calendario.addEventListener("dragstart", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    arrastado = chip;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", chip.href);
+    requestAnimationFrame(() => chip.classList.add("arrastando"));
+  });
+  calendario.addEventListener("dragend", () => {
+    if (arrastado) arrastado.classList.remove("arrastando");
+    calendario.querySelectorAll(".alvo").forEach((d) => d.classList.remove("alvo"));
+    arrastado = null;
+  });
+
+  calendario.querySelectorAll(".calendario-dia").forEach((dia) => {
+    dia.addEventListener("dragover", (e) => {
+      if (!arrastado) return;
+      e.preventDefault();
+      dia.classList.add("alvo");
+    });
+    dia.addEventListener("dragleave", (e) => {
+      if (!dia.contains(e.relatedTarget)) dia.classList.remove("alvo");
+    });
+    dia.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dia.classList.remove("alvo");
+      const chip = arrastado;
+      if (!chip) return;
+      const origem = chip.closest(".calendario-dia");
+      if (origem === dia) return;
+      const lugar = chip.nextSibling;
+      const numero = dia.querySelector(".calendario-numero");
+      numero.after(chip);
+      somar(origem, -1);
+      somar(dia, 1);
+
+      const dados = new FormData();
+      dados.append("csrf", calendario.dataset.csrf);
+      dados.append("data", dia.dataset.dia);
+      fetch(chip.dataset.urlData, { method: "POST", body: dados, headers: { "X-Requested-With": "fetch" } })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+        .then((resposta) => {
+          chip.classList.toggle("planejada", resposta.planejada);
+          const texto = chip.textContent.trim().replace(/^✎\s*/, "");
+          chip.textContent = (resposta.planejada ? "✎ " : "") + texto;
+          if (!resposta.planejada) {
+            avisar("Voltou para a data do procedimento na Egali.");
+          } else if (resposta.apos_prazo) {
+            avisar(`Planejada para ${dataBr(resposta.data_prevista)}: depois da data do procedimento (${dataBr(chip.dataset.procedimento)}). Provavelmente vai precisar de NEG.`, "alerta");
+          } else {
+            avisar(`Planejada para ${dataBr(resposta.data_prevista)}.`);
+          }
+        })
+        .catch(() => {
+          origem.insertBefore(chip, lugar);
+          somar(origem, 1);
+          somar(dia, -1);
+          avisar("Não foi possível mudar a data. Recarregue a página e tente de novo.", "erro");
+        });
+    });
+  });
+})();
+</script>

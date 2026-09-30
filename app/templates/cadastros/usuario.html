@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}{{ usuario.nome }}{% endblock %}
+{% block conteudo %}
+<h1>Cadastros</h1>
+{% include "cadastros/_menu.html" %}
+<form class="cartao" method="post" style="max-width:520px">
+  {{ m.csrf() }}
+  <h2 style="margin-top:0">Editar usuário</h2>
+  <div class="campo"><label for="nome">Nome completo</label><input id="nome" type="text" name="nome" value="{{ usuario.nome }}" required></div>
+  <div class="campo"><label for="email">E-mail Egali</label><input id="email" type="email" name="email" value="{{ usuario.email }}" required></div>
+  <div class="campo">
+    <label for="papel">Papel</label>
+    <select id="papel" name="papel">{% for p, rotulo in ROTULOS_PAPEL.items() %}<option value="{{ p.value }}" {{ 'selected' if usuario.papel == p }}>{{ rotulo }}</option>{% endfor %}</select>
+  </div>
+  <div class="campo">
+    <label for="nova_senha">Redefinir senha (opcional)</label>
+    <input id="nova_senha" type="password" name="nova_senha" placeholder="Deixe em branco para manter a senha atual">
+    <div class="pequeno suave" style="margin-top:4px">
+      Status da senha atual: {% if usuario.senha_hash %}<span class="selo concluida">Cadastrada</span>{% else %}<span class="selo aviso">Não cadastrada</span>{% endif %}
+    </div>
+  </div>
+  <label class="caixa campo"><input type="checkbox" name="ativo" value="1" {{ 'checked' if usuario.ativo }}> Ativo (pode entrar no sistema e receber tarefas)</label>
+  <div class="acoes" style="margin-top: 14px;">
+    <button class="botao">Salvar alterações</button>
+    <a class="botao secundario" href="{{ url_for('cadastros.usuarios') }}">Voltar</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}{{ etapa.nome }}{% endblock %}
+{% block conteudo %}
+<h1>Cadastros</h1>
+{% include "cadastros/_menu.html" %}
+<form class="cartao" method="post" style="max-width:860px">
+  {{ m.csrf() }}
+  <div class="suave"><span class="selo trilha">{{ etapa.trilha.nome }}</span> Texto na Egali: {{ etapa.texto_egali }}</div>
+  <h2>Editar etapa</h2>
+  <div class="linha-campos">
+    <div class="campo" style="flex:4"><label for="nome">Nome</label><input id="nome" type="text" name="nome" value="{{ etapa.nome }}" required></div>
+    <div class="campo" style="flex:1"><label for="ordem">Ordem na trilha</label><input id="ordem" type="number" name="ordem" value="{{ etapa.ordem }}"></div>
+  </div>
+  <label class="caixa campo"><input type="checkbox" name="ativa" value="1" {{ 'checked' if etapa.ativa }}> Ativa</label>
+  <div class="campo"><label for="o_que_e">O que é</label><textarea id="o_que_e" name="o_que_e">{{ etapa.o_que_e or '' }}</textarea></div>
+  <div class="campo"><label for="importancia">Por que importa</label><textarea id="importancia" name="importancia">{{ etapa.importancia or '' }}</textarea></div>
+  <div class="campo"><label for="quando_cabe_neg">Quando cabe NEG</label><textarea id="quando_cabe_neg" name="quando_cabe_neg">{{ etapa.quando_cabe_neg or '' }}</textarea></div>
+  <div class="campo"><label for="regra_prazo">Prazo de referência</label><textarea id="regra_prazo" name="regra_prazo">{{ etapa.regra_prazo or '' }}</textarea>
+    <div class="pequeno suave">Só para leitura da equipe. O prazo de cada tarefa vem calculado da Egali.</div></div>
+  <div class="campo"><label for="link_gravacao">Link da gravação</label><input id="link_gravacao" type="text" name="link_gravacao" value="{{ etapa.link_gravacao or '' }}"></div>
+  {% if etapa.apelidos | length > 1 %}
+    <p class="pequeno suave">Outros textos que apontam para esta etapa:
+      {% for a in etapa.apelidos if a.texto != etapa.texto_egali %}"{{ a.texto }}"{% if not loop.last %}; {% endif %}{% endfor %}</p>
+  {% endif %}
+  <div class="acoes">
+    <button class="botao">Salvar</button>
+    <a class="botao secundario" href="{{ url_for('cadastros.catalogo') }}">Voltar</a>
+  </div>
+</form>
+{% endblock %}

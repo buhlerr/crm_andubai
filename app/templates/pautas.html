@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+
+{# -------------------------------- MACRO PARA RENDERIZAR CARD DA PAUTA NO PIPELINE -------------------------------- #}
+{% macro render_card_pauta(p) %}
+<div class="card-pauta" style="background: white; border: 1px solid var(--borda); border-left: 4px solid {{ 'var(--perigo)' if p.get('Quebra UN') else ('#f59e0b' if p.get('TAG') else '#10b981') }}; border-radius: 6px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+  
+  {# Linha Topo: ID, Tag SLA e Tempo #}
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+    <span style="font-size: 12px; font-weight: 700; color: var(--navy-800);">#{{ p.get('ID') }}</span>
+    <div>
+      {% if p.get('Quebra UN') %}
+        <span class="selo erro" style="font-size: 10px; font-weight: 700;">💥 72h+ NA UN</span>
+      {% elif p.get('Quebra Outro') %}
+        <span class="selo aviso" style="font-size: 10px;">⚠️ 72h+ Outro</span>
+      {% elif p.get('TAG') %}
+        <span class="selo aviso" style="font-size: 10px;">{{ p.get('TAG') }}</span>
+      {% endif %}
+      <span class="suave" style="font-size: 11px; margin-left: 4px;">{{ p.get('Tempo Inativo') or (p.get('Dias') ~ 'd') }}</span>
+    </div>
+  </div>
+
+  {# Aluno #}
+  <div style="font-weight: 600; font-size: 13px; color: var(--navy-900); margin-bottom: 4px;">
+    👤 {{ p.get('Aluno') or 'Aluno não identificado' }}
+  </div>
+
+  {# Descrição / Pauta #}
+  <div class="suave" style="font-size: 12px; line-height: 1.3; margin-bottom: 6px;" title="{{ p.get('Pauta') }}">
+    {{ p.get('Pauta') | truncate(85) }}
+  </div>
+
+  {# Categoria e Setor #}
+  <div style="font-size: 11px; color: #4b5563; margin-bottom: 8px; display: flex; justify-content: space-between;">
+    <span style="max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ p.get('Categoria') }}">
+      🏷️ {{ p.get('Categoria') }}
+    </span>
+    <span style="font-weight: 500;">
+      Resp: {{ p.get('Responsável') | truncate(15) }}
+    </span>
+  </div>
+
+  {# Campo de Observações do Consultor #}
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; margin-top: 6px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+      <span style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Anotação da Equipe</span>
+      <button type="button" class="botao-link" style="font-size: 10px;" onclick="abrirEdicaoObs('{{ p.get('ID') }}', false)">
+        ✏️ Editar
+      </button>
+    </div>
+
+    <div id="texto-obs-card-{{ p.get('ID') }}" style="font-size: 11px; color: #334155; min-height: 16px; cursor: pointer;" onclick="abrirEdicaoObs('{{ p.get('ID') }}', false)">
+      {{ p.get('Observacao') or '<span style="color: #94a3b8; font-style: italic;">Clique para adicionar uma nota interna...</span>' | safe }}
+    </div>
+
+    <div id="form-obs-card-{{ p.get('ID') }}" style="display: none; margin-top: 4px;">
+      <textarea id="input-obs-card-{{ p.get('ID') }}" style="width: 100%; font-size: 11px; min-height: 45px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; resize: vertical;">{{ p.get('Observacao') }}</textarea>
+      <div style="display: flex; gap: 4px; justify-content: flex-end; margin-top: 4px;">
+        <button type="button" class="botao secundario pequeno" style="padding: 1px 6px; font-size: 10px;" onclick="cancelarEdicaoObs('{{ p.get('ID') }}', false)">Cancelar</button>
+        <button type="button" class="botao pequeno" style="padding: 1px 6px; font-size: 10px;" onclick="salvarObsAjax('{{ p.get('ID') }}', false)">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endmacro %}
+
+{% block titulo %}Pautas de Comunicação Interna{% endblock %}
+
+{% block conteudo %}
+<div class="cabecalho">
+  <div>
+    <span class="sobretitulo">Comunicação Interna · TM Egali</span>
+    <h1>Pautas por Consultor</h1>
+    <div class="suave">
+      Acompanhamento de chamados e protocolos de comunicação com os outros setores da empresa.
+      {% if data_arquivo %}
+        <span style="margin-left: 8px;">Arquivo atualizado em: <b>{{ data_arquivo.strftime('%d/%m/%Y') }}</b></span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="acoes">
+    <a class="botao secundario" href="{{ url_for('pautas.exportar_json', consultor=consultor_selecionado) }}" title="Baixar pautas no formato JSON">
+      📥 Exportar JSON
+    </a>
+    <button class="botao" type="button" onclick="document.getElementById('modal-upload').toggleAttribute('hidden')">
+      📤 Importar Novo CSV / MHTML
+    </button>
+  </div>
+</div>
+
+{# Formulário de Upload (aberto por botão ou se não houver arquivo) #}
+<div id="modal-upload" class="cartao" style="border: 2px dashed var(--marca); background: #fdfefe; margin-bottom: 20px;" {{ 'hidden' if tem_arquivo else '' }}>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <h3 style="margin: 0; color: var(--navy-800);">Atualizar Pautas do Sistema TM</h3>
+    <button type="button" class="botao-link" onclick="document.getElementById('modal-upload').setAttribute('hidden', '')">✕ Fechar</button>
+  </div>
+  <p class="suave" style="font-size: 13px; margin: 0 0 12px;">
+    Selecione o arquivo <b>.csv</b> exportado do TM (ex: <code>pautaList-DD_MM_AAAA.csv</code>) ou a página <b>.mhtml / .html</b> salva via <kbd>Ctrl+S</kbd> no navegador.
+    A importação atualiza os dados do TM e <b>preserva todas as observações internas</b> já registradas.
+  </p>
+  <form method="post" action="{{ url_for('pautas.enviar_arquivo') }}" enctype="multipart/form-data">
+    {{ m.csrf() }}
+    <div class="linha-campos">
+      <div style="flex: 2;">
+        <input type="file" name="arquivo" accept=".csv,.mhtml,.html,.htm" required>
+      </div>
+      <div style="flex: 0 0 auto;">
+        <button class="botao" type="submit">Processar e Sincronizar Base</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{# Cartões de Métricas #}
+<div class="numeros">
+  <div class="numero-cartao">
+    <div class="valor">{{ total_pautas }}</div>
+    <div class="rotulo">Total de Pautas</div>
+  </div>
+  <div class="numero-cartao destaque">
+    <div class="valor" style="color: var(--perigo);">{{ total_aguardando_un }}</div>
+    <div class="rotulo">🚨 Ação Pendente da UN</div>
+  </div>
+  <div class="numero-cartao">
+    <div class="valor" style="color: var(--ok);">{{ total_respondidas_un }}</div>
+    <div class="rotulo">✅ Respondidas pela UN</div>
+  </div>
+  <div class="numero-cartao {{ 'destaque' if quebras_unidade > 0 else 'zero' }}">
+    <div class="valor" style="color: var(--perigo); font-weight: bold;">{{ quebras_unidade }}</div>
+    <div class="rotulo">💥 Quebrou na Nossa UN (72h+)</div>
+  </div>
+  <div class="numero-cartao {{ 'destaque' if quebras_outro > 0 else 'zero' }}">
+    <div class="valor" style="color: var(--alerta);">{{ quebras_outro }}</div>
+    <div class="rotulo">⚠️ Quebrou no Outro Setor (72h+)</div>
+  </div>
+</div>
+
+{# Abas por Consultor da Unidade #}
+<div class="abas" style="margin-top: 15px;">
+  <a href="{{ url_for('pautas.lista', visao=visao, consultor='', pendencia=pendencia, status=status_filtro, busca=busca) }}"
+     class="{{ 'ativo' if not consultor_selecionado or consultor_selecionado == 'todos' else '' }}">
+    Todos da Unidade
+  </a>
+  {% for m in membros %}
+    <a href="{{ url_for('pautas.lista', visao=visao, consultor=m, pendencia=pendencia, status=status_filtro, busca=busca) }}"
+       class="{{ 'ativo' if consultor_selecionado == m else '' }}">
+      {{ m }}
+      <span class="numero">{{ contagem_membros.get(m, 0) }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+{# Barra de Filtros e Alternador de Visualização #}
+<form method="get" action="{{ url_for('pautas.lista') }}" class="filtros" style="margin-top: 10px;">
+  <input type="hidden" name="consultor" value="{{ consultor_selecionado }}">
+  <input type="hidden" name="visao" value="{{ visao }}">
+  <div class="linha-campos" style="align-items: flex-end;">
+    <div style="flex: 1 1 200px;">
+      <label for="f-pendencia">Situação / Pendência</label>
+      <select id="f-pendencia" name="pendencia" onchange="this.form.submit()">
+        <option value="todas" {{ 'selected' if pendencia == 'todas' }}>Todas as pautas</option>
+        <option value="aguardando_un" {{ 'selected' if pendencia == 'aguardando_un' }}>🚨 Ação pendente nossa (Atualizada: NÃO)</option>
+        <option value="respondidas_un" {{ 'selected' if pendencia == 'respondidas_un' }}>✅ Respondidas por nós (Atualizada: SIM)</option>
+      </select>
+    </div>
+
+    <div style="flex: 1 1 180px;">
+      <label for="f-status">Status</label>
+      <select id="f-status" name="status" onchange="this.form.submit()">
+        <option value="">Todos os status</option>
+        {% for st in statuses_disponiveis %}
+          <option value="{{ st }}" {{ 'selected' if status_filtro == st }}>{{ st }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="flex: 2 1 240px;">
+      <label for="f-busca">Buscar</label>
+      <input type="text" id="f-busca" name="busca" value="{{ busca }}" placeholder="ID, aluno, assunto da pauta ou observação...">
+    </div>
+
+    <div style="flex: 0 0 auto;">
+      <button class="botao" type="submit">Filtrar</button>
+      {% if pendencia != 'todas' or status_filtro or busca %}
+        <a class="botao secundario" href="{{ url_for('pautas.lista', visao=visao, consultor=consultor_selecionado) }}">Limpar</a>
+      {% endif %}
+    </div>
+  </div>
+</form>
+
+{# Botões de Alternância de Visualização #}
+<div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0 10px;">
+  <div class="suave" style="font-size: 13px;">
+    Exibindo <b>{{ pautas | length }}</b> pauta{{ 's' if pautas | length != 1 else '' }}
+  </div>
+  <div style="display: flex; gap: 6px; align-items: center;">
+    <span class="suave" style="font-size: 12px; margin-right: 4px;">Modo de Exibição:</span>
+    <a href="{{ url_for('pautas.lista', visao='etapas', consultor=consultor_selecionado, pendencia=pendencia, status=status_filtro, busca=busca) }}"
+       class="botao {{ 'destaque' if visao == 'etapas' else 'secundario' }} pequeno">
+      📊 Etapas (Pipeline)
+    </a>
+    <a href="{{ url_for('pautas.lista', visao='tabela', consultor=consultor_selecionado, pendencia=pendencia, status=status_filtro, busca=busca) }}"
+       class="botao {{ 'destaque' if visao == 'tabela' else 'secundario' }} pequeno">
+      📋 Tabela Detalhada
+    </a>
+  </div>
+</div>
+
+{% if not pautas %}
+  <div class="cartao" style="text-align: center; padding: 40px; margin-top: 10px;">
+    <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
+    <h3>Nenhuma pauta encontrada</h3>
+    <p class="suave" style="margin: 0 0 15px;">
+      {% if not tem_arquivo %}
+        Nenhum arquivo de pautas foi carregado ainda. Clique no botão abaixo para carregar seu primeiro arquivo.
+      {% else %}
+        Nenhuma pauta corresponde aos filtros selecionados.
+      {% endif %}
+    </p>
+    {% if not tem_arquivo %}
+      <button class="botao" type="button" onclick="document.getElementById('modal-upload').removeAttribute('hidden')">
+        Carregar Arquivo de Pautas
+      </button>
+    {% endif %}
+  </div>
+{% elif visao == 'etapas' %}
+  {# -------------------------------- VISUALIZAÇÃO EM ETAPAS (PIPELINE / KANBAN) -------------------------------- #}
+  <div class="pipeline-colunas" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start; margin-top: 10px;">
+    
+    {# Coluna 1: Ação Pendente Nossa #}
+    <div class="coluna-etapa" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid var(--perigo); padding-bottom: 6px;">
+        <strong style="color: var(--perigo); font-size: 14px;">🚨 Ação Pendente Nossa</strong>
+        <span class="selo erro" style="font-size: 11px;">{{ etapas['nossa_acao'] | length }}</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for p in etapas['nossa_acao'] %}
+          {{ render_card_pauta(p) }}
+        {% else %}
+          <div class="suave" style="font-size: 12px; text-align: center; padding: 20px;">Nenhuma pendência imediata! 🎉</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Coluna 2: Aguardando Nosso Aluno #}
+    <div class="coluna-etapa" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid var(--alerta); padding-bottom: 6px;">
+        <strong style="color: #b45309; font-size: 14px;">⏳ Aguardando Nosso Aluno</strong>
+        <span class="selo aviso" style="font-size: 11px;">{{ etapas['nosso_aluno'] | length }}</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for p in etapas['nosso_aluno'] %}
+          {{ render_card_pauta(p) }}
+        {% else %}
+          <div class="suave" style="font-size: 12px; text-align: center; padding: 20px;">Nenhuma pauta aguardando aluno.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Coluna 3: Aguardando Outro Setor / Matriz #}
+    <div class="coluna-etapa" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #2563eb; padding-bottom: 6px;">
+        <strong style="color: #1d4ed8; font-size: 14px;">🏢 Com Outro Setor / Matriz</strong>
+        <span class="selo neutro" style="font-size: 11px;">{{ etapas['outro_setor'] | length }}</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for p in etapas['outro_setor'] %}
+          {{ render_card_pauta(p) }}
+        {% else %}
+          <div class="suave" style="font-size: 12px; text-align: center; padding: 20px;">Nenhuma pauta com outro setor.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Coluna 4: Aguardando Finalização #}
+    <div class="coluna-etapa" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #059669; padding-bottom: 6px;">
+        <strong style="color: #047857; font-size: 14px;">🏁 Aguardando Finalização</strong>
+        <span class="selo ok" style="font-size: 11px;">{{ etapas['aguardando_finalizacao'] | length }}</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for p in etapas['aguardando_finalizacao'] %}
+          {{ render_card_pauta(p) }}
+        {% else %}
+          <div class="suave" style="font-size: 12px; text-align: center; padding: 20px;">Nenhuma pauta para conferir.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Coluna 5: Finalizadas / Histórico (oculto por padrão se vazio) #}
+    {% if etapas['finalizadas'] %}
+    <div class="coluna-etapa" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #6b7280; padding-bottom: 6px;">
+        <strong style="color: #4b5563; font-size: 14px;">✅ Finalizadas / Histórico</strong>
+        <span class="selo neutro" style="font-size: 11px;">{{ etapas['finalizadas'] | length }}</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for p in etapas['finalizadas'] %}
+          {{ render_card_pauta(p) }}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+{% else %}
+  {# -------------------------------- VISUALIZAÇÃO EM TABELA OPERACIONAL -------------------------------- #}
+  <div class="tabela-rolagem" style="margin-top: 10px;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 30px;">#</th>
+          <th>ID</th>
+          <th>Aluno</th>
+          <th>SLA / Inatividade</th>
+          <th>Status TM</th>
+          <th>Responsável / Setor</th>
+          <th>Observação Interna</th>
+          <th>Pauta & Categoria</th>
+          <th>Atualizado por</th>
+          <th>Criada por</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pautas %}
+          <tr class="{{ 'linha-alerta' if p.get('Quebra UN') else ('linha-aviso' if p.get('Atualizada?') == 'FALSE' else '') }}">
+            <td>{{ loop.index }}</td>
+            <td style="font-weight: 700;">
+              {{ p.get('ID') }}
+            </td>
+            <td style="font-weight: 600; white-space: nowrap;">
+              {{ p.get('Aluno') or '—' }}
+            </td>
+            <td style="white-space: nowrap;">
+              {% if p.get('Quebra UN') %}
+                <span class="selo erro" style="font-weight: 700;">💥 72h+ NA UN</span>
+              {% elif p.get('Quebra Outro') %}
+                <span class="selo aviso" style="font-weight: 700;">⚠️ 72h+ Outro</span>
+              {% elif p.get('TAG') %}
+                <span class="selo aviso">{{ p.get('TAG') }}</span>
+              {% else %}
+                <span class="selo ok">No Prazo</span>
+              {% endif %}
+              <div class="suave" style="font-size: 11px; margin-top: 2px;">
+                {{ p.get('Tempo Inativo') or (p.get('Dias') ~ 'd') }} sem movimentação
+              </div>
+            </td>
+            <td>
+              <span class="selo {{ 'ok' if 'finaliza' in p.get('Status').lower() else ('aviso' if 'aguardando' in p.get('Status').lower() else 'a_fazer') }}">
+                {{ p.get('Status') }}
+              </span>
+            </td>
+            <td>
+              <b>{{ p.get('Responsável') }}</b>
+              <div class="suave" style="font-size: 11px;">
+                UN: {{ p.get('UN Responsável') or 'Outro Setor' }}
+              </div>
+            </td>
+            <td style="min-width: 200px;">
+              <div class="box-observacao" id="box-obs-tab-{{ p.get('ID') }}">
+                <div class="texto-obs" id="texto-obs-tab-{{ p.get('ID') }}" style="font-size: 12px; color: #1f2937; margin-bottom: 4px; cursor: pointer;"
+                     onclick="abrirEdicaoObs('{{ p.get('ID') }}', true)">
+                  {{ p.get('Observacao') or '<span class="suave" style="font-style: italic;">+ Adicionar anotação...</span>' | safe }}
+                </div>
+                <div class="form-obs" id="form-obs-tab-{{ p.get('ID') }}" style="display: none;">
+                  <textarea id="input-obs-tab-{{ p.get('ID') }}" style="width: 100%; font-size: 12px; min-height: 50px; margin-bottom: 4px;">{{ p.get('Observacao') }}</textarea>
+                  <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                    <button type="button" class="botao secundario pequeno" style="padding: 2px 6px; font-size: 10px;" onclick="cancelarEdicaoObs('{{ p.get('ID') }}', true)">Cancelar</button>
+                    <button type="button" class="botao pequeno" style="padding: 2px 6px; font-size: 10px;" onclick="salvarObsAjax('{{ p.get('ID') }}', true)">Salvar</button>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td style="max-width: 250px;">
+              <div style="font-weight: 500; font-size: 12px;" title="{{ p.get('Pauta') }}">{{ p.get('Pauta') }}</div>
+              <div class="suave" style="font-size: 11px;">{{ p.get('Categoria') }}</div>
+            </td>
+            <td style="font-size: 12px; white-space: nowrap;">
+              {{ p.get('Atualizado por') or '—' }}
+              <div class="suave" style="font-size: 10px;">{{ p.get('Atualizado em') }}</div>
+            </td>
+            <td style="font-size: 12px; white-space: nowrap;">
+              {{ p.get('Criada por') or '—' }}
+              <div class="suave" style="font-size: 10px;">{{ p.get('Criada em') }}</div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+
+
+<script>
+function abrirEdicaoObs(pautaId, isTab) {
+  const sufixo = isTab ? 'tab' : 'card';
+  const textoDiv = document.getElementById(`texto-obs-${sufixo}-${pautaId}`);
+  const formDiv = document.getElementById(`form-obs-${sufixo}-${pautaId}`);
+  const inputEl = document.getElementById(`input-obs-${sufixo}-${pautaId}`);
+  
+  if (textoDiv && formDiv) {
+    textoDiv.style.display = 'none';
+    formDiv.style.display = 'block';
+    if (inputEl) inputEl.focus();
+  }
+}
+
+function cancelarEdicaoObs(pautaId, isTab) {
+  const sufixo = isTab ? 'tab' : 'card';
+  const textoDiv = document.getElementById(`texto-obs-${sufixo}-${pautaId}`);
+  const formDiv = document.getElementById(`form-obs-${sufixo}-${pautaId}`);
+  
+  if (textoDiv && formDiv) {
+    textoDiv.style.display = 'block';
+    formDiv.style.display = 'none';
+  }
+}
+
+async function salvarObsAjax(pautaId, isTab) {
+  const sufixo = isTab ? 'tab' : 'card';
+  const inputEl = document.getElementById(`input-obs-${sufixo}-${pautaId}`);
+  const textoDiv = document.getElementById(`texto-obs-${sufixo}-${pautaId}`);
+  const formDiv = document.getElementById(`form-obs-${sufixo}-${pautaId}`);
+  
+  if (!inputEl) return;
+  const novoTexto = inputEl.value.trim();
+
+  try {
+    const res = await fetch(`/pautas/${pautaId}/observacao`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ observacao: novoTexto })
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      const formatado = data.observacao ? data.observacao : '<span style="color: #94a3b8; font-style: italic;">Clique para adicionar uma nota interna...</span>';
+      
+      // Atualiza tanto na tabela quanto no card se ambos existirem
+      const elCard = document.getElementById(`texto-obs-card-${pautaId}`);
+      const elTab = document.getElementById(`texto-obs-tab-${pautaId}`);
+      if (elCard) elCard.innerHTML = formatado;
+      if (elTab) elTab.innerHTML = formatado;
+
+      cancelarEdicaoObs(pautaId, isTab);
+    } else {
+      alert('Não foi possível salvar a observação. Verifique se o servidor está ativo.');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Erro de conexão ao salvar observação.');
+  }
+}
+</script>
+{% endblock %}

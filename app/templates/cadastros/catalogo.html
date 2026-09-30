@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}Trilhas e etapas{% endblock %}
+{% block conteudo %}
+<h1>Cadastros</h1>
+{% include "cadastros/_menu.html" %}
+<p class="suave">As tarefas vêm do checklist da Egali. Aqui ficam o nome, a ordem e as orientações de cada etapa, que aparecem na página da tarefa.
+  Procedimentos novos que aparecem no checklist entram sozinhos e ficam marcados como "revisar".</p>
+
+<form method="post" class="cartao">
+  {{ m.csrf() }}
+  <h2 style="margin-top:0">Nomes das trilhas</h2>
+  <div class="linha-campos">
+    {% for t in trilhas %}
+      <div class="campo"><label for="nome_{{ t.id }}">{{ t.codigo }}</label><input id="nome_{{ t.id }}" type="text" name="nome_{{ t.id }}" value="{{ t.nome }}"></div>
+    {% endfor %}
+  </div>
+  <p><button class="botao">Salvar nomes</button></p>
+</form>
+
+{% for t in trilhas %}
+<h2>{{ t.nome }} <span class="suave pequeno">({{ t.codigo }})</span></h2>
+<div class="tabela-rolagem">
+  <table>
+    <thead><tr><th class="numero">Ordem</th><th>Etapa</th><th>Orientações</th><th></th></tr></thead>
+    <tbody>
+    {% for e in t.etapas %}
+      <tr>
+        <td class="numero">{{ e.ordem }}</td>
+        <td>
+          {{ e.nome }}
+          {% if e.criada_automaticamente %} <span class="selo aviso">revisar: entrou pelo checklist</span>{% endif %}
+          {% if not e.ativa %} <span class="selo">inativa</span>{% endif %}
+        </td>
+        <td class="suave pequeno">{{ 'Sim' if e.o_que_e or e.quando_cabe_neg else 'Não' }}{% if e.link_gravacao %} · gravação{% endif %}</td>
+        <td><a href="{{ url_for('cadastros.editar_etapa', etapa_id=e.id) }}">Editar</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endfor %}
+{% endblock %}

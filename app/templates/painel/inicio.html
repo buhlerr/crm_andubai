@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}Painel VEG{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div>
+    <div class="sobretitulo">Dados</div>
+    <h1>Painel VEG</h1>
+    <div class="suave">O painel <b>Checklist do Suporte ao Aluno</b> (modelo base VEG) mostra, no Grupo 1, o que já foi
+      <b>finalizado</b> no TM. Aqui você baixa o mesmo painel com um grupo a mais, o <b>{{ TITULO_GRUPO }}</b>, com o que
+      ainda está <b>aberto</b> neste sistema: atrasos, justificativas (NEG), vencimentos e a carteira de cada consultor.</div>
+  </div>
+</div>
+
+{% if info %}
+<section class="cartao">
+  <h2 style="margin-top:0">Baixar o painel atualizado</h2>
+  <p>O arquivo é montado na hora, com as tarefas abertas de agora. Abra no navegador, como sempre, e o grupo novo aparece
+    no menu acima do grupo Sistema. Pode repassar o arquivo: ele não leva nome nem ID de aluno.</p>
+  <p><a class="botao" href="{{ url_for('painel.baixar') }}">Baixar HTML com o {{ TITULO_GRUPO }}</a></p>
+  <p class="pequeno suave">Painel base: {{ info.nome_original or '—' }} · enviado em {{ info.enviado_em or '—' }}
+    por {{ info.enviado_por or '—' }} · {{ info.tamanho_kb or '?' }} KB.
+    Retrato das filas com a planilha de {{ topo_planilha | data_hora }} e o checklist de {{ topo_checklist | data_hora }}.</p>
+</section>
+{% else %}
+<div class="mensagem alerta">Ainda não há painel guardado.
+  {% if g.usuario.papel == Papel.ADMIN %}Envie abaixo o HTML do painel.{% else %}Peça para um administrador enviar o HTML do painel.{% endif %}</div>
+{% endif %}
+
+{% if g.usuario.papel == Papel.ADMIN %}
+<form class="cartao" method="post" action="{{ url_for('painel.enviar') }}" enctype="multipart/form-data" style="max-width:720px">
+  {{ m.csrf() }}
+  <h2 style="margin-top:0">{{ 'Trocar o painel base' if info else 'Enviar o painel base' }}</h2>
+  <p class="pequeno suave">Use o arquivo <code>checklist_VEG_dd-mm-aaaa.html</code> baixado do próprio painel (botão
+    "Baixar HTML"). Quando o Grupo 1 for atualizado por quem cuida dele, envie a versão nova aqui. O que já existe no painel
+    não muda: o sistema só acrescenta o grupo do backlog, a seção dele no Manual, os testes e o registro no Changelog.</p>
+  <div class="campo">
+    <label for="arquivo">Arquivo HTML</label>
+    <input id="arquivo" type="file" name="arquivo" required accept=".html,.htm">
+  </div>
+  <div class="acoes"><button class="botao">Conferir e guardar</button></div>
+</form>
+{% endif %}
+{% endblock %}

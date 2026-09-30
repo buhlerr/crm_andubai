@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}Nomes de consultor{% endblock %}
+{% block conteudo %}
+<h1>Cadastros</h1>
+{% include "cadastros/_menu.html" %}
+<p class="suave">O nome do consultor na planilha é texto livre. O sistema tenta achar o usuário pelo nome. Quando não acha, cadastre aqui uma exceção: "este nome da planilha é esta pessoa".</p>
+
+{% if pendentes %}
+<div class="mensagem alerta">
+  <strong>Nomes da planilha que ainda não batem com nenhum usuário:</strong>
+  <ul style="margin:6px 0 0">{% for texto, n in pendentes %}<li>"{{ texto }}" — {{ n }} programa(s) ativo(s) sem consultor</li>{% endfor %}</ul>
+  <div class="pequeno" style="margin-top:6px">Cadastre a pessoa em Usuários (com o mesmo nome) ou crie uma exceção abaixo. Vale a partir da próxima importação da planilha.</div>
+</div>
+{% endif %}
+
+<div class="grade" style="grid-template-columns: 2fr 1fr">
+  <div class="tabela-rolagem">
+    <table>
+      <thead><tr><th>Nome na planilha</th><th>Usuário</th><th></th></tr></thead>
+      <tbody>
+      {% for a in apelidos %}
+        <tr>
+          <td>{{ a.texto_planilha }}</td>
+          <td>{{ a.usuario.nome if a.usuario else 'Ninguém (sem consultor)' }}</td>
+          <td>
+            <form method="post" action="{{ url_for('cadastros.remover_apelido', apelido_id=a.id) }}" onsubmit="return confirm('Remover esta exceção?')">
+              {{ m.csrf() }}<button class="botao perigo pequeno">Remover</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3" class="vazio">Nenhuma exceção cadastrada.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form class="cartao" method="post">
+    {{ m.csrf() }}
+    <h2 style="margin-top:0">Nova exceção</h2>
+    <div class="campo">
+      <label for="texto">Nome como aparece na planilha</label>
+      <input id="texto" type="text" name="texto" required list="sugestoes">
+      <datalist id="sugestoes">{% for texto, _ in pendentes %}<option value="{{ texto }}">{% endfor %}</datalist>
+    </div>
+    <div class="campo">
+      <label for="usuario_id">É esta pessoa</label>
+      <select id="usuario_id" name="usuario_id">
+        {% for u in usuarios %}<option value="{{ u.id }}">{{ u.nome }}</option>{% endfor %}
+        <option value="">Ninguém (deixar sem consultor)</option>
+      </select>
+    </div>
+    <button class="botao">Salvar</button>
+  </form>
+</div>
+{% endblock %}

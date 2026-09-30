@@ -1,0 +1,27 @@
+[Unit]
+Description=Checklist Pos-Venda (Egali CRM)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/crm_andubai
+Environment="CHECKLIST_DADOS=/opt/crm_andubai/dados"
+Environment="SERVIDOR_HOST=0.0.0.0"
+Environment="SERVIDOR_PORTA=8080"
+Environment="ATRAS_DE_PROXY=1"
+# Configure SECRET_KEY e SENHA_PROVISORIA aqui ou no config.py da pasta de dados:
+Environment="SECRET_KEY=troque_esta_chave_por_uma_aleatoria_longa"
+Environment="LOGIN_PROVISORIO=1"
+Environment="SENHA_PROVISORIA=senha_da_equipe_aqui"
+ExecStart=/opt/crm_andubai/venv/bin/gunicorn -w 4 -b 0.0.0.0:8080 --timeout 300 wsgi:app
+Restart=always
+RestartSec=5
+
+# Limites e segurança
+LimitNOFILE=65535
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

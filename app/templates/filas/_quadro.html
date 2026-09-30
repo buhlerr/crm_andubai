@@ -1,0 +1,48 @@
+{% import "_macros.html" as m %}
+<p class="suave pequeno">{{ total }} aluno(s){% if paginas > 1 %} · página {{ pagina }} de {{ paginas }}{% endif %}.
+  O aluno com a tarefa mais urgente vem primeiro.</p>
+
+<div class="quadro">
+  {% for cartao in cartoes %}
+    {% set p = cartao.programa %}
+    <article class="cartao-aluno">
+      <header>
+        <div>
+          <a class="cartao-aluno-nome" href="{{ url_for('programas.detalhe', programa_id=p.id) }}">{{ p.aluno.nome }}</a>
+          {% if p.vip %}<span class="selo vip">VIP</span>{% endif %}{% if p.aluno.teen %} <span class="selo teen" title="Público teen: {{ p.aluno.teen_motivo }}">Teen</span>{% endif %}
+        </div>
+        <div class="suave pequeno">
+          {{ [p.pais, ('embarque ' ~ (p.data_embarque | data)) if p.data_embarque else none] | select | join(' · ') }}
+          {% if mostrar_pessoas %} · {{ p.consultor.nome if p.consultor else 'sem consultor' }}{% endif %}
+        </div>
+      </header>
+      <ul class="cartao-aluno-tarefas">
+        {% for t in cartao.tarefas %}
+          {% set atrasada = t.atrasada(hoje()) %}
+          <li class="{{ 'atrasada' if atrasada }}">
+            <div class="cartao-aluno-linha">
+              <span class="prazo {{ 'atrasado' if atrasada }}" title="Procedimento na Egali: {{ t.prazo_egali | data }}{{ ' · planejada: ' ~ (t.data_planejada | data) if t.data_planejada }}">
+                {{ t.data_prevista.strftime('%d/%m') if t.data_prevista else '—' }}{% if t.data_planejada %} ✎{% endif %}
+              </span>
+              <span class="selo trilha">{{ t.etapa.trilha.nome }}</span>
+              <a href="{{ url_for('tarefas.detalhe', tarefa_id=t.id) }}">{{ t.etapa.nome }}</a>
+            </div>
+            <div class="cartao-aluno-linha pequeno">
+              {{ m.status_rapido(t, request.full_path) }}
+              {% if t.tem_justificativa %}
+                <span class="neg-icone {{ 'destaque' if atrasada }}" title="{{ (t.obs_egali | separar_neg)[0].texto }}">NEG</span>
+              {% elif atrasada %}
+                <span class="sem-neg" style="margin:0">sem NEG</span>
+              {% endif %}
+              {% if mostrar_pessoas and t.responsavel_manual %}<span class="suave">→ {{ t.responsavel_manual.nome }}</span>{% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </article>
+  {% else %}
+    <p class="vazio cartao">{{ "Nenhuma tarefa com esses filtros." if request.args else "Nenhuma tarefa aberta. 🎉" }}</p>
+  {% endfor %}
+</div>
+
+{{ m.paginacao(endpoint, args, pagina, paginas) }}

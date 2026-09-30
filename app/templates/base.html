@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}{% endblock %} · Checklist do Suporte ao Aluno</title>
+  <link rel="icon" href="{{ url_for('static', filename='logo-victoria.png') }}">
+  {# Fontes do padrão visual da Victoria (Archivo nos títulos, Inter no texto). Sem internet, usa as do sistema. #}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body class="{{ 'com-app' if g.usuario else 'sem-app' }}">
+{% macro mensagens() %}
+  {% with lista = get_flashed_messages(with_categories=true) %}
+    {% for categoria, texto in lista %}
+      <div class="mensagem {{ categoria if categoria in ('ok', 'erro', 'alerta') else 'ok' }}" role="status">{{ texto }}</div>
+    {% endfor %}
+  {% endwith %}
+{% endmacro %}
+
+{% if g.usuario %}
+<div id="app">
+  <header class="topbar">
+    <button class="menu-lateral-botao" type="button" aria-label="Abrir o menu" aria-controls="menu-lateral"
+            onclick="document.getElementById('menu-lateral').classList.toggle('aberto')">☰</button>
+    <a class="marca" href="{{ url_for('filas.minha_fila') }}">
+      <img class="veg-logo" src="{{ url_for('static', filename='logo-victoria.png') }}" alt="Victoria Education Group">
+      <span class="brand-txt">
+        <span class="a">Checklist do Suporte ao Aluno</span>
+        <span class="b">Pós-venda · Procedimentos do Suporte ao Aluno</span>
+      </span>
+    </a>
+    <span class="spacer"></span>
+    <div class="top-meta">
+      Planilha <b>{{ topo_planilha | data_hora if topo_planilha else 'ainda não importada' }}</b><br>
+      Checklist <b>{{ topo_checklist | data_hora if topo_checklist else 'ainda não importado' }}</b>
+    </div>
+    {% set partes_nome = g.usuario.nome.split() %}
+    <a class="user-chip" href="{{ url_for('auth.trocar_senha') }}" title="Clique para trocar sua senha" style="text-decoration:none;color:inherit">
+      <span class="avatar" aria-hidden="true">{{ (partes_nome[0][0] ~ (partes_nome[-1][0] if partes_nome | length > 1 else '')) | upper }}</span>
+      <span>
+        <span class="un">{{ partes_nome[0] }} {{ partes_nome[-1] if partes_nome | length > 1 }}</span>
+        <span class="up">{{ ROTULOS_PAPEL[g.usuario.papel] }}</span>
+      </span>
+    </a>
+    <form method="post" action="{{ url_for('auth.sair') }}">
+      <input type="hidden" name="csrf" value="{{ token_csrf() }}">
+      <button class="top-btn">Sair</button>
+    </form>
+  </header>
+
+  {% set tela = request.endpoint or '' %}
+  {% macro item(endpoint, rotulo, ativo, etiqueta=none, classe_etiqueta='') %}
+    <a class="nav-item {{ 'active' if ativo }}" href="{{ url_for(endpoint) }}" {{ 'aria-current=page' if ativo }}>
+      <span class="dot"></span>{{ rotulo }}
+      {% if etiqueta %}<span class="tag {{ classe_etiqueta }}">{{ etiqueta }}</span>{% endif %}
+    </a>
+  {% endmacro %}
+  <nav class="sidebar" id="menu-lateral" aria-label="Menu">
+    <div class="nav-group">
+      <div class="gh">Filas de trabalho</div>
+      {{ item('filas.minha_fila', 'Minha fila', tela == 'filas.minha_fila', etiqueta=topo_minha_fila) }}
+      {{ item('filas.fila_equipe', 'Fila da equipe', tela == 'filas.fila_equipe') }}
+      {{ item('filas.por_consultor', 'Por consultor', tela == 'filas.por_consultor') }}
+      {{ item('pautas.lista', 'Pautas TM', tela.startswith('pautas.')) }}
+    </div>
+    <div class="nav-group">
+      <div class="gh">Alunos</div>
+      {{ item('programas.busca', 'Buscar aluno', tela in ('programas.busca', 'programas.detalhe', 'tarefas.detalhe')) }}
+    </div>
+    <div class="nav-group">
+      <div class="gh">Dados</div>
+      {{ item('importacoes.lista', 'Importações', tela.startswith('importacoes.'),
+              etiqueta=('prévia' if topo_previas else none), classe_etiqueta='map') }}
+      {{ item('painel.inicio', 'Painel VEG', tela.startswith('painel.')) }}
+    </div>
+    {% if g.usuario.papel == Papel.ADMIN %}
+    <div class="nav-group">
+      <div class="gh">Administração</div>
+      {{ item('cadastros.usuarios', 'Usuários', tela in ('cadastros.usuarios', 'cadastros.editar_usuario')) }}
+      {{ item('cadastros.pautas', 'Pautas e Setores', tela == 'cadastros.pautas') }}
+      {{ item('cadastros.apelidos', 'Nomes de consultor', tela == 'cadastros.apelidos') }}
+      {{ item('cadastros.servicos', 'Serviços', tela == 'cadastros.servicos') }}
+      {{ item('cadastros.publico_teen', 'Público teen', tela == 'cadastros.publico_teen') }}
+      {{ item('cadastros.catalogo', 'Trilhas e etapas', tela in ('cadastros.catalogo', 'cadastros.editar_etapa')) }}
+    </div>
+    {% endif %}
+    <div class="nav-group">
+      <div class="gh">Minha Conta</div>
+      {{ item('auth.trocar_senha', 'Trocar senha', tela == 'auth.trocar_senha') }}
+      {{ item('cadastros.ajuda_neg', 'Quando usar NEG', tela == 'cadastros.ajuda_neg') }}
+    </div>
+  </nav>
+
+  <main class="content">
+    {{ mensagens() }}
+    {% block conteudo %}{% endblock %}
+  </main>
+</div>
+{% else %}
+<main class="sem-login">
+  {{ mensagens() }}
+  {{ self.conteudo() }}
+</main>
+{% endif %}
+</body>
+</html>

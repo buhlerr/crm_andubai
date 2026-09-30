@@ -1,0 +1,8 @@
+{% set tela = request.endpoint or '' %}
+<nav class="abas" aria-label="Cadastros">
+  <a href="{{ url_for('cadastros.usuarios') }}" class="{{ 'ativo' if tela in ('cadastros.usuarios', 'cadastros.editar_usuario') }}">Usuários</a>
+  <a href="{{ url_for('cadastros.pautas') }}" class="{{ 'ativo' if tela == 'cadastros.pautas' }}">Pautas e Setores</a>
+  <a href="{{ url_for('cadastros.apelidos') }}" class="{{ 'ativo' if tela == 'cadastros.apelidos' }}">Nomes de consultor</a>
+  <a href="{{ url_for('cadastros.servicos') }}" class="{{ 'ativo' if tela == 'cadastros.servicos' }}">Serviços</a>
+  <a href="{{ url_for('cadastros.catalogo') }}" class="{{ 'ativo' if tela in ('cadastros.catalogo', 'cadastros.editar_etapa') }}">Trilhas e etapas</a>
+</nav>

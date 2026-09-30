@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block conteudo %}
+{% set endpoint = request.endpoint %}
+{% set args = request.args.to_dict() %}
+{% set _ = args.pop('visao', None) %}{% set _ = args.pop('fixar', None) %}
+<div class="cabecalho">
+  <div>
+    <div class="sobretitulo">Checklist pós-venda</div>
+    <h1>{{ titulo }}</h1>
+    <div class="suave">{{ descricao }}</div>
+  </div>
+  <nav class="seletor-visao" aria-label="Visualização">
+    {% set sem_pagina = args.copy() %}{% set _ = sem_pagina.pop('pagina', None) %}
+    {% for v, rotulo in ROTULOS_VISAO.items() %}
+      <a href="{{ url_for(endpoint, visao=v.value, **sem_pagina) }}" class="{{ 'ativo' if visao == v }}"
+         {{ 'aria-current=page' if visao == v }}>{{ rotulo }}</a>
+    {% endfor %}
+  </nav>
+</div>
+
+{% if visao != VisaoFila.KANBAN %}
+<nav class="abas" aria-label="Status">
+  {% set sem_status = args.copy() %}{% set _ = sem_status.pop('status', None) %}{% set _ = sem_status.pop('pagina', None) %}
+  <a href="{{ url_for(endpoint, **sem_status) }}" class="{{ 'ativo' if not filtros.status }}">
+    Todas abertas <span class="numero">{{ contagem.values() | sum }}</span>
+  </a>
+  {% for s in STATUS_ABERTOS %}
+    <a href="{{ url_for(endpoint, status=s.value, **sem_status) }}" class="{{ 'ativo' if filtros.status == s }}">
+      {{ ROTULOS_STATUS[s] }} <span class="numero">{{ contagem[s] }}</span>
+    </a>
+  {% endfor %}
+</nav>
+{% endif %}
+
+<form class="filtros" method="get">
+  {% if filtros.status and visao != VisaoFila.KANBAN %}<input type="hidden" name="status" value="{{ filtros.status.value }}">{% endif %}
+  {% if visao == VisaoFila.CALENDARIO %}<input type="hidden" name="mes" value="{{ '%04d-%02d' % ano_mes }}">{% endif %}
+  <div class="linha-campos">
+    <div class="campo">
+      <label for="atraso">Atraso (data da Egali)</label>
+      <select id="atraso" name="atraso">
+        {% for valor, rotulo in ROTULOS_ATRASO.items() %}
+          <option value="{{ valor.value }}" {{ 'selected' if filtros.atraso == valor }}>{{ rotulo }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="campo">
+      <label for="trilha">Trilha</label>
+      <select id="trilha" name="trilha">
+        <option value="">Todas</option>
+        {% for t in trilhas %}<option value="{{ t.codigo }}" {{ 'selected' if filtros.trilha == t.codigo }}>{{ t.nome }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="campo" style="flex-basis:260px">
+      <label for="procedimento">Procedimento</label>
+      <select id="procedimento" name="procedimento">
+        <option value="">Todos</option>
+        {% for trilha, etapas in procedimentos | groupby('trilha.ordem') %}
+          <optgroup label="{{ etapas[0].trilha.nome }}" data-trilha="{{ etapas[0].trilha.codigo }}">
+            {% for e in etapas %}<option value="{{ e.id }}" {{ 'selected' if filtros.etapa == e.id }}>{{ e.nome }}</option>{% endfor %}
+          </optgroup>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="campo" style="flex-basis:150px">
+      <label for="publico">Público</label>
+      <select id="publico" name="publico">
+        {% for valor, rotulo in ROTULOS_PUBLICO.items() %}
+          <option value="{{ valor.value }}" {{ 'selected' if filtros.publico == valor }}>{{ rotulo }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% if mostrar_pessoas %}
+    <div class="campo">
+      <label for="responsavel">Responsável</label>
+      <select id="responsavel" name="responsavel">
+        <option value="">Todos</option>
+        <option value="{{ NINGUEM }}" {{ 'selected' if filtros.responsavel == NINGUEM }}>Sem responsável</option>
+        {% for u in usuarios %}<option value="{{ u.id }}" {{ 'selected' if filtros.responsavel == u.id }}>{{ u.nome }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="campo">
+      <label for="consultor">Consultor do programa</label>
+      <select id="consultor" name="consultor">
+        <option value="">Todos</option>
+        <option value="{{ NINGUEM }}" {{ 'selected' if filtros.consultor == NINGUEM }}>Sem consultor</option>
+        {% for u in usuarios %}<option value="{{ u.id }}" {{ 'selected' if filtros.consultor == u.id }}>{{ u.nome }}</option>{% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    {% if visao != VisaoFila.CALENDARIO %}
+    <div class="campo" style="flex-basis:140px">
+      <label for="prazo_de">Data de</label>
+      <input id="prazo_de" type="date" name="prazo_de" value="{{ filtros.prazo_de.isoformat() if filtros.prazo_de else '' }}">
+    </div>
+    <div class="campo" style="flex-basis:140px">
+      <label for="prazo_ate">até</label>
+      <input id="prazo_ate" type="date" name="prazo_ate" value="{{ filtros.prazo_ate.isoformat() if filtros.prazo_ate else '' }}">
+    </div>
+    {% endif %}
+    <div class="campo">
+      <label for="busca">Aluno ou ID</label>
+      <input id="busca" type="text" name="busca" value="{{ filtros.busca }}" placeholder="Nome, aluno_id, programa_id ou #">
+    </div>
+    <div class="acoes" style="flex: 0 0 auto">
+      <button class="botao">Filtrar</button>
+      <a class="botao secundario" href="{{ url_for(endpoint) }}">Limpar</a>
+    </div>
+  </div>
+</form>
+<script>
+  // Com uma trilha escolhida, o filtro de procedimento mostra só os procedimentos dela.
+  (function () {
+    const trilha = document.getElementById('trilha'), proc = document.getElementById('procedimento');
+    function ajustar() {
+      proc.querySelectorAll('optgroup').forEach(function (g) {
+        g.hidden = !!trilha.value && g.dataset.trilha !== trilha.value;
+      });
+      const escolhida = proc.selectedOptions[0];
+      if (escolhida && escolhida.parentElement.hidden) proc.value = '';
+    }
+    trilha.addEventListener('change', ajustar);
+    ajustar();
+  })();
+</script>
+
+{% if visao == VisaoFila.KANBAN %}
+  {% include "filas/_kanban.html" %}
+{% elif visao == VisaoFila.QUADRO %}
+  {% include "filas/_quadro.html" %}
+{% elif visao == VisaoFila.CALENDARIO %}
+  {% include "filas/_calendario.html" %}
+{% else %}
+  {% include "filas/_lista.html" %}
+{% endif %}
+{% endblock %}

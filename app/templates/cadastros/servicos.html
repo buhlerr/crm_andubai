@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}Serviços{% endblock %}
+{% block conteudo %}
+<h1>Cadastros</h1>
+{% include "cadastros/_menu.html" %}
+<p class="suave">Decide o que fazer com uma compra do checklist que não está na planilha de alunos.
+  Curso precisa estar na planilha (senão é erro). Visto pode vir sozinho: vira um programa "só de visto".
+  Avulso é juntado ao programa do aluno. Ignorado não gera tarefa.</p>
+<form method="post">
+  {{ m.csrf() }}
+  <div class="tabela-rolagem">
+    <table>
+      <thead><tr><th>Serviço (como vem da Egali)</th><th>Classificação</th></tr></thead>
+      <tbody>
+      {% for s in servicos %}
+        <tr>
+          <td>{{ s.nome }}{% if s.categoria == CategoriaServico.NAO_CLASSIFICADO %} <span class="selo erro">classificar</span>{% endif %}</td>
+          <td>
+            <select name="categoria_{{ s.id }}" aria-label="Classificação de {{ s.nome }}">
+              {% for c, rotulo in ROTULOS_CATEGORIA.items() %}<option value="{{ c.value }}" {{ 'selected' if s.categoria == c }}>{{ rotulo }}</option>{% endfor %}
+            </select>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p><button class="botao">Salvar</button></p>
+</form>
+{% endblock %}

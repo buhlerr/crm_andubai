@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}Usuários{% endblock %}
+{% block conteudo %}
+<h1>Cadastros</h1>
+{% include "cadastros/_menu.html" %}
+
+<div class="grade" style="grid-template-columns: 2fr 1fr">
+  <div class="tabela-rolagem">
+    <table>
+      <thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Situação</th><th>Senha</th><th></th></tr></thead>
+      <tbody>
+      {% for u in usuarios %}
+        <tr>
+          <td>{{ u.nome }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ ROTULOS_PAPEL[u.papel] }}</td>
+          <td>{% if u.ativo %}<span class="selo ativo">Ativo</span>{% else %}<span class="selo">Inativo</span>{% endif %}</td>
+          <td>{% if u.senha_hash %}<span class="selo concluida">Definida</span>{% else %}<span class="selo aviso">Sem senha</span>{% endif %}</td>
+          <td><a href="{{ url_for('cadastros.editar_usuario', usuario_id=u.id) }}">Editar</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form class="cartao" method="post">
+    {{ m.csrf() }}
+    <h2 style="margin-top:0">Novo usuário</h2>
+    <div class="campo"><label for="nome">Nome completo</label><input id="nome" type="text" name="nome" required></div>
+    <div class="campo"><label for="email">E-mail Egali</label><input id="email" type="email" name="email" required placeholder="nome@egali.com.br"></div>
+    <div class="campo">
+      <label for="papel">Papel</label>
+      <select id="papel" name="papel">{% for p, rotulo in ROTULOS_PAPEL.items() %}<option value="{{ p.value }}">{{ rotulo }}</option>{% endfor %}</select>
+    </div>
+    <div class="campo">
+      <label for="senha">Senha inicial (opcional)</label>
+      <input id="senha" type="password" name="senha" placeholder="Mínimo 6 caracteres (se em branco, o usuário pode definir no 1º acesso)">
+    </div>
+    <p class="pequeno suave">Use o nome como aparece na planilha: assim os programas são ligados à pessoa automaticamente. Administradores podem importar arquivos e mexer nos cadastros.</p>
+    <button class="botao">Cadastrar</button>
+  </form>
+</div>
+{% endblock %}

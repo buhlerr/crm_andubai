@@ -1,0 +1,84 @@
+import os
+import sqlite3
+
+from flask import Flask
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+
+from app.extensions import db, migrate
+
+CHAVE_PADRAO = "dev-troque-em-producao"
+PASTA_PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+@event.listens_for(Engine, "connect")
+def _configurar_sqlite(conexao, _registro):
+    if isinstance(conexao, sqlite3.Connection):
+        cursor = conexao.cursor()
+        # O SQLite só respeita chaves estrangeiras com este PRAGMA ligado.
+        cursor.execute("PRAGMA foreign_keys=ON")
+        # Várias pessoas usando ao mesmo tempo: WAL deixa ler enquanto alguém grava,
+        # e o busy_timeout espera em vez de dar erro quando o banco está ocupado.
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=30000")
+        # Migração automática de compatibilidade: adiciona coluna senha_hash se não existir
+        try:
+            cursor.execute("PRAGMA table_info(usuario)")
+            colunas = [row[1] for row in cursor.fetchall()]
+            if colunas and "senha_hash" not in colunas:
+                cursor.execute("ALTER TABLE usuario ADD COLUMN senha_hash VARCHAR(255)")
+        except Exception:
+            pass
+        cursor.close()
+
+
+def create_app(config: dict | None = None) -> Flask:
+    """Configuração, em ordem (a última vence):
+    1. padrões e variáveis de ambiente (DATABASE_URL, SECRET_KEY, LOGIN_PROVISORIO);
+    2. o arquivo config.py da pasta de dados (gerado pelo instalador no servidor);
+    3. o dicionário `config` (testes).
+
+    A pasta de dados é CHECKLIST_DADOS, se definida; senão, a pasta instance/ do projeto."""
+    pasta_dados = os.environ.get("CHECKLIST_DADOS")
+    app = Flask(__name__, instance_path=os.path.abspath(pasta_dados) if pasta_dados else None, instance_relative_config=True)
+    os.makedirs(app.instance_path, exist_ok=True)
+
+    caminho_banco = os.path.join(app.instance_path, "checklist.db")
+    app.config.from_mapping(
+        SECRET_KEY=os.environ.get("SECRET_KEY", CHAVE_PADRAO),
+        SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL", f"sqlite:///{caminho_banco}"),
+        # Login sem senha, só até o login com Microsoft 365 ficar pronto. Desligar com LOGIN_PROVISORIO=0.
+        LOGIN_PROVISORIO=os.environ.get("LOGIN_PROVISORIO", "1") == "1",
+        # Senha única da equipe para o login provisório. Obrigatória no servidor (o instalador gera).
+        SENHA_PROVISORIA=os.environ.get("SENHA_PROVISORIA") or None,
+        # True quando o proxy reverso (Nginx, Caddy, Cloudflare, IIS) fica na frente com HTTPS.
+        ATRAS_DE_PROXY=os.environ.get("ATRAS_DE_PROXY", "0") in ("1", "true", "True"),
+        SERVIDOR_HOST=os.environ.get("SERVIDOR_HOST", "127.0.0.1"),
+        SERVIDOR_PORTA=int(os.environ.get("SERVIDOR_PORTA", "8080")),
+        SERVIDOR_THREADS=int(os.environ.get("SERVIDOR_THREADS", "8")),
+        BACKUPS_MANTER=30,
+        MAX_CONTENT_LENGTH=30 * 1024 * 1024,  # planilha semanal ~1,3 MB; folga para crescer
+    )
+    app.config.from_pyfile("config.py", silent=True)
+    if config:
+        app.config.update(config)
+
+    if app.config["ATRAS_DE_PROXY"]:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+
+        # O IIS avisa por cabeçalho que a conexão original era HTTPS e qual o endereço público.
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+        app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+    db.init_app(app)
+    migrate.init_app(app, db, directory=os.path.join(PASTA_PROJETO, "migrations"), render_as_batch=True)
+
+    from app import models  # noqa: F401  (registra as tabelas)
+    from app.cli import registrar_comandos
+    from app.web import registrar_web
+
+    registrar_comandos(app)
+    registrar_web(app)
+    return app

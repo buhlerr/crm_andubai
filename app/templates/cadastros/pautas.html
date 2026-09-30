@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}Pautas e Setores{% endblock %}
+{% block conteudo %}
+<h1>Cadastros</h1>
+{% include "cadastros/_menu.html" %}
+
+<p class="suave">
+  Mapeamento de colaboradores externos e seus respectivos setores (substituto da antiga aba <code>Auxiliar!A:B</code>).
+  O sistema usa esta tabela para identificar para quem e para qual setor a pauta foi aberta, quem atualizou e onde quebrou o SLA de 72h.
+  Consultores da unidade <b>AN e Dubai</b> são identificados automaticamente através do menu de <b>Usuários</b>.
+</p>
+
+{% if sugestoes %}
+<div class="mensagem alerta" style="margin-bottom: 20px;">
+  <strong>💡 Colaboradores identificados no último relatório que ainda não têm setor cadastrado:</strong>
+  <p class="suave" style="font-size: 13px; margin: 4px 0 10px;">
+    Cadastre o setor abaixo para que o cálculo de <i>UN Responsável</i>, <i>UN Criou</i> e as quebras de 72h fiquem 100% precisos.
+  </p>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+    {% for nome, qtd in sugestoes[:10] %}
+      <div style="background: white; border: 1px solid var(--borda); border-radius: 4px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px;">
+        <span><b>{{ nome }}</b> ({{ qtd }} pauta{{ 's' if qtd > 1 else '' }})</span>
+        <button type="button" class="botao secundario pequeno" style="padding: 2px 6px; font-size: 11px;"
+                onclick="document.getElementById('input-nome').value = '{{ nome }}'; document.getElementById('input-setor').focus();">
+          Preencher ➔
+        </button>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="grade" style="grid-template-columns: 2fr 1fr; gap: 20px;">
+  <div class="tabela-rolagem cartao" style="padding: 0;">
+    <div style="padding: 12px 16px; border-bottom: 1px solid var(--borda); background: #fafbfc; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0; font-size: 15px;">Mapeamento de Setores para Pautas ({{ mapeados | length }})</h3>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Colaborador</th>
+          <th>Setor / Unidade</th>
+          <th style="width: 80px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in mapeados %}
+          <tr>
+            <td style="font-weight: 500;">{{ c.nome }}</td>
+            <td>
+              <span class="selo neutro" style="font-size: 12px; font-weight: 600;">
+                {{ c.setor }}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <form method="post" onsubmit="return confirm('Remover o mapeamento de {{ c.nome }}?');" style="margin: 0;">
+                {{ m.csrf() }}
+                <input type="hidden" name="acao" value="remover">
+                <input type="hidden" name="id" value="{{ c.id }}">
+                <button type="submit" class="botao perigo pequeno" style="padding: 2px 8px; font-size: 11px;">Remover</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="3" class="vazio" style="text-align: center; padding: 30px;">
+              Nenhum colaborador externo cadastrado ainda.<br>
+              <span class="suave" style="font-size: 13px;">Use o formulário ao lado para cadastrar.</span>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div>
+    <form class="cartao" method="post">
+      {{ m.csrf() }}
+      <input type="hidden" name="acao" value="adicionar">
+      <h3 style="margin-top: 0; font-size: 16px;">Cadastrar / Atualizar Colaborador</h3>
+      <p class="suave" style="font-size: 13px; margin: 0 0 14px;">
+        Digite o nome exatamente como aparece no sistema TM ou selecione das sugestões.
+      </p>
+
+      <div class="campo">
+        <label for="input-nome">Nome do Colaborador</label>
+        <input id="input-nome" type="text" name="nome" required placeholder="Ex: Márcia Bocorny Allgayer">
+      </div>
+
+      <div class="campo">
+        <label for="input-setor">Setor / Departamento</label>
+        <input id="input-setor" type="text" name="setor" required list="lista-setores" placeholder="Ex: Financeiro, Vistos...">
+        <datalist id="lista-setores">
+          {% for s in setores_padrao %}
+            <option value="{{ s }}">
+          {% endfor %}
+        </datalist>
+      </div>
+
+      <button type="submit" class="botao" style="width: 100%; margin-top: 10px;">Salvar Mapeamento</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

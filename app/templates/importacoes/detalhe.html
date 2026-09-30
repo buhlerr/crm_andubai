@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}Importação {{ importacao.id }}{% endblock %}
+{% block conteudo %}
+{% set i = importacao %}
+{% set r = i.resumo or {} %}
+{% set previa = i.situacao == SituacaoImportacao.PREVIA %}
+<div class="cabecalho">
+  <div>
+    <div class="suave"><a href="{{ url_for('importacoes.lista') }}">Importações</a> · nº {{ i.id }}</div>
+    <h1>{{ tipo.nome }}</h1>
+    <div class="suave">
+      {{ i.arquivo_nome or '' }} · lido em {{ i.iniciada_em | data_hora }}
+      {% if i.periodo_inicio %} · período {{ i.periodo_inicio | data }} a {{ i.periodo_fim | data }}{% elif i.tipo.value == 'checklist' %} · exportação completa{% endif %}
+    </div>
+  </div>
+  <span class="selo {{ i.situacao.value }}">{{ {'previa': 'Esperando confirmação', 'confirmada': 'Gravada em ' ~ (i.concluida_em | data_hora), 'descartada': 'Descartada', 'falhou': 'Falhou'}[i.situacao.value] }}</span>
+</div>
+
+{% if previa %}
+<div class="mensagem alerta">
+  <strong>Isto é uma prévia. Nada foi gravado ainda.</strong> Confira os números e os erros abaixo e depois confirme ou descarte.
+</div>
+{% endif %}
+
+<div class="numeros">
+  {% for chave, rotulo in tipo.rotulos.items() %}
+    {% set valor = r.get(chave, 0) %}
+    <div class="numero-cartao {{ 'zero' if not valor }} {{ 'destaque' if valor and chave in ('erros', 'programas_cancelados', 'tarefas_canceladas', 'itens_sem_programa') }}">
+      <div class="valor">{{ valor }}</div>
+      <div class="rotulo">{{ rotulo }}</div>
+    </div>
+  {% endfor %}
+</div>
+
+{% if r.get('detalhes', {}).get('campos_atualizados') %}
+  <p class="suave">O que mudou nas tarefas atualizadas:
+    {% for campo, n in r.detalhes.campos_atualizados.items() %}{{ campo }} ({{ n }}){% if not loop.last %}, {% endif %}{% endfor %}</p>
+{% endif %}
+
+{% if previa and g.usuario.papel == Papel.ADMIN %}
+<div class="acoes cartao">
+  <form method="post" action="{{ url_for('importacoes.confirmar', importacao_id=i.id) }}"
+        onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Gravando...';">
+    {{ m.csrf() }}<button class="botao">Confirmar e gravar</button>
+  </form>
+  <form method="post" action="{{ url_for('importacoes.descartar', importacao_id=i.id) }}">
+    {{ m.csrf() }}<button class="botao perigo">Descartar</button>
+  </form>
+  <span class="suave pequeno">Erros não impedem a gravação: as linhas com erro ficam de fora e podem ser corrigidas na próxima importação.</span>
+</div>
+{% endif %}
+
+{% if fora_do_periodo %}
+<section class="cartao" style="border-color:#f1d9a3">
+  <h2 style="margin-top:0">Tarefas que não estavam no checklist, fora do período ({{ fora_do_periodo | length }})</h2>
+  <p>Estas tarefas não vieram neste arquivo, mas o prazo delas fica fora do período da exportação
+    ({{ i.periodo_inicio | data }} a {{ i.periodo_fim | data }}). Por isso o sistema não as encerrou sozinho.
+    Se elas já foram finalizadas ou ajustadas na Egali, encerre aqui.</p>
+  {% if g.usuario.papel == Papel.ADMIN %}
+  <form method="post" action="{{ url_for('importacoes.encerrar_fora_do_periodo', importacao_id=i.id) }}"
+        onsubmit="return confirm('Encerrar as tarefas marcadas? Se algum item voltar ao checklist da Egali, a tarefa é reaberta.')">
+    {{ m.csrf() }}
+  {% endif %}
+    <div class="tabela-rolagem">
+      <table>
+        <thead><tr>
+          {% if g.usuario.papel == Papel.ADMIN %}<th><input type="checkbox" checked aria-label="Marcar todas"
+            onchange="this.closest('table').querySelectorAll('tbody input[type=checkbox]').forEach(c => c.checked = this.checked)"></th>{% endif %}
+          <th>Prazo</th><th>Aluno</th><th>Procedimento</th><th>Status</th>
+        </tr></thead>
+        <tbody>
+        {% for t in fora_do_periodo %}
+          <tr>
+            {% if g.usuario.papel == Papel.ADMIN %}<td><input type="checkbox" name="tarefa" value="{{ t.id }}" checked aria-label="Encerrar"></td>{% endif %}
+            <td class="prazo">{{ t.prazo_egali | data }}</td>
+            <td><a href="{{ url_for('programas.detalhe', programa_id=t.programa.id) }}">{{ t.programa.aluno.nome }}</a></td>
+            <td><span class="selo trilha">{{ t.etapa.trilha.nome }}</span> <a href="{{ url_for('tarefas.detalhe', tarefa_id=t.id) }}">{{ t.etapa.nome }}</a></td>
+            <td>{{ m.selo_status(t.status) }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% if g.usuario.papel == Papel.ADMIN %}
+    <p><button class="botao">Encerrar as marcadas</button></p>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if ocorrencias %}
+<h2>Erros e avisos ({{ ocorrencias | length }})</h2>
+<div class="tabela-rolagem">
+  <table>
+    <thead><tr><th></th><th>Linha</th><th>O que aconteceu</th></tr></thead>
+    <tbody>
+    {% for o in ocorrencias %}
+      <tr>
+        <td><span class="selo {{ o.gravidade.value }}">{{ 'Erro' if o.gravidade == Gravidade.ERRO else 'Aviso' }}</span></td>
+        <td class="numero">{{ o.linha or '' }}</td>
+        <td>{{ o.mensagem }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% for chave, (titulo, colunas) in DETALHES.items() %}
+  {% set itens = r.get('detalhes', {}).get(chave) %}
+  {% if itens %}
+  <details class="cartao" {{ 'open' if chave in ('programas_cancelados',) and previa }}>
+    <summary>{{ titulo }} ({{ itens | length }})</summary>
+    {% if colunas %}
+    <div class="tabela-rolagem" style="margin-top:8px">
+      <table>
+        <thead><tr>{% for _, cabecalho in colunas %}<th>{{ cabecalho }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for item in itens[:500] %}
+          <tr>{% for campo, _ in colunas %}<td>{% set v = item.get(campo) %}{{ v | join(', ') if v is iterable and v is not string else (v if v is not none else '—') }}</td>{% endfor %}</tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% if itens | length > 500 %}<p class="suave pequeno" style="padding:0 12px">Mostrando 500 de {{ itens | length }}.</p>{% endif %}
+    </div>
+    {% else %}
+      <ul>{% for item in itens %}<li>{{ item }}</li>{% endfor %}</ul>
+    {% endif %}
+  </details>
+  {% endif %}
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,30 @@
+# Exemplo de configuração para produção (config.py)
+# Copie este arquivo para a pasta de dados do sistema (ex: /opt/crm_andubai/dados/config.py ou instance/config.py)
+
+import secrets
+
+# Chave secreta da sessão (obrigatório gerar uma única para produção)
+# Gere no terminal com: python -c "import secrets; print(secrets.token_hex(32))"
+SECRET_KEY = "substitua_por_uma_chave_aleatoria_longa"
+
+# Login provisório (sem senha individual, apenas senha compartilhada da equipe)
+LOGIN_PROVISORIO = True
+SENHA_PROVISORIA = "senha_da_equipe_aqui"
+
+# Configuração de rede
+SERVIDOR_HOST = "0.0.0.0"
+SERVIDOR_PORTA = 8080
+SERVIDOR_THREADS = 8
+
+# Proxy reverso (coloque True se estiver atrás de Nginx, Caddy, Traefik ou Cloudflare)
+ATRAS_DE_PROXY = True
+
+# Banco de dados:
+# Por padrão utiliza SQLite local:
+# SQLALCHEMY_DATABASE_URI = "sqlite:////opt/crm_andubai/dados/checklist.db"
+#
+# Se preferir usar PostgreSQL no Proxmox:
+# SQLALCHEMY_DATABASE_URI = "postgresql://usuario:senha@ip_do_postgres:5432/crm_checklist"
+
+# Quantidade de backups locais para manter
+BACKUPS_MANTER = 30

@@ -1,0 +1,154 @@
+{% macro csrf() %}<input type="hidden" name="csrf" value="{{ token_csrf() }}">{% endmacro %}
+
+{% macro selo_status(status) %}<span class="selo {{ status.value }}">{{ ROTULOS_STATUS[status] }}</span>{% endmacro %}
+
+{# Datas de uma tarefa: a prevista em destaque (planejada, ou a do procedimento);
+   o atraso é sempre contado pela data do procedimento na Egali, que é fixa. #}
+{% macro datas(tarefa) %}
+  {% set atrasada = tarefa.atrasada(hoje()) %}
+  <span class="prazo {{ 'atrasado' if atrasada and not tarefa.data_planejada }}">
+    {{ tarefa.data_prevista | data }}
+    {% if tarefa.data_planejada %}<small>planejada · procedimento {{ tarefa.prazo_egali | data }}</small>{% endif %}
+    {% if atrasada %}<small class="atraso">{{ tarefa.dias_de_atraso(hoje()) }} dia(s) de atraso</small>
+    {% elif tarefa.planejada_apos_prazo %}<small class="depois-do-prazo">depois do prazo da Egali</small>{% endif %}
+  </span>
+{% endmacro %}
+
+{% macro partes_neg(partes) %}
+  {% for p in partes %}
+    <div class="neg-parte">{{ p.texto }}{% if p.autor %} <span class="neg-autor">{{ p.autor }} · {{ p.quando }}</span>{% endif %}</div>
+  {% endfor %}
+{% endmacro %}
+
+{# NEG da Egali + anotações deste sistema. Com `voltar`, mostra o "+ observação" para anotar sem sair da fila. #}
+{% macro neg(tarefa, voltar=none) %}
+  {% set atrasada = tarefa.atrasada(hoje()) %}
+  {% if tarefa.tem_justificativa %}
+    {% set partes = tarefa.obs_egali | separar_neg %}
+    <div class="neg {{ 'destaque' if atrasada }}" title="Observação do sistema Egali">
+      <strong>NEG{{ ' (justificativa do atraso)' if atrasada }}</strong>
+      {{ partes_neg(partes[:1]) }}
+      {% if partes | length > 1 %}
+        <details><summary>mais {{ partes | length - 1 }} observação(ões) anterior(es)</summary>{{ partes_neg(partes[1:]) }}</details>
+      {% endif %}
+    </div>
+  {% elif atrasada %}
+    <div class="sem-neg">Atrasada e sem NEG (sem justificativa)</div>
+  {% endif %}
+  {% if tarefa.anotacoes %}
+    {% set ultima = tarefa.anotacoes[-1] %}
+    <div class="obs-sistema" title="Observação registrada neste sistema (não vai para a Egali)">
+      <strong>Observação</strong> {{ ultima.texto }} <span class="neg-autor">{{ ultima.autor.nome }} · {{ ultima.criado_em | data_hora }}</span>
+      {% if tarefa.anotacoes | length > 1 %}<a class="neg-autor" href="{{ url_for('tarefas.detalhe', tarefa_id=tarefa.id) }}#anotacoes">ver todas ({{ tarefa.anotacoes | length }})</a>{% endif %}
+    </div>
+  {% endif %}
+  {% if voltar %}
+    <details class="nova-obs">
+      <summary>+ observação</summary>
+      <form method="post" action="{{ url_for('tarefas.anotar', tarefa_id=tarefa.id) }}">
+        {{ csrf() }}<input type="hidden" name="voltar" value="{{ voltar }}">
+        <textarea name="texto" rows="2" required aria-label="Nova observação" placeholder="Ex.: 29/09 - aluno enviou o passaporte, aguardando a carta"></textarea>
+        <div class="acoes"><button class="botao pequeno">Salvar observação</button>
+          <span class="neg-autor">Fica neste sistema. A NEG oficial continua sendo registrada na Egali.</span></div>
+      </form>
+    </details>
+  {% endif %}
+{% endmacro %}
+
+{% macro status_rapido(tarefa, voltar) %}
+  <form method="post" action="{{ url_for('tarefas.mudar_status', tarefa_id=tarefa.id) }}" class="status-rapido">
+    {{ csrf() }}
+    <input type="hidden" name="voltar" value="{{ voltar }}">
+    <select name="status" aria-label="Mudar status" onchange="this.form.submit()">
+      {% for s in StatusTarefa %}
+        <option value="{{ s.value }}" {{ 'selected' if s == tarefa.status }}>{{ ROTULOS_STATUS[s] }}</option>
+      {% endfor %}
+    </select>
+    <noscript><button class="botao pequeno">Salvar</button></noscript>
+  </form>
+{% endmacro %}
+
+{% macro cartao_tarefa(t, voltar, mostrar_responsavel=true) %}
+  {% set atrasada = t.atrasada(hoje()) %}
+  <article class="cartao-tarefa {{ 'atrasada' if atrasada }}" draggable="true" data-id="{{ t.id }}" data-status="{{ t.status.value }}"
+           data-url-status="{{ url_for('tarefas.mudar_status', tarefa_id=t.id) }}" data-titulo="{{ t.programa.aluno.nome }} · {{ t.etapa.nome }}">
+    <div class="cartao-topo">
+      <span class="selo trilha">{{ t.etapa.trilha.nome }}</span>
+      <span class="prazo {{ 'atrasado' if atrasada }}" title="Procedimento na Egali: {{ t.prazo_egali | data }}{{ ' · planejada: ' ~ (t.data_planejada | data) if t.data_planejada }}">
+        {{ t.data_prevista | data }}{% if t.data_planejada %} ✎{% endif %}{% if atrasada %} · {{ t.dias_de_atraso(hoje()) }}d{% endif %}
+      </span>
+    </div>
+    <a class="cartao-titulo" href="{{ url_for('tarefas.detalhe', tarefa_id=t.id) }}" draggable="false">{{ t.etapa.nome }}</a>
+    <div class="pequeno">
+      <a href="{{ url_for('programas.detalhe', programa_id=t.programa.id) }}" draggable="false">{{ t.programa.aluno.nome }}</a>
+      {% if t.programa.vip %}<span class="selo vip">VIP</span>{% endif %}{% if t.programa.aluno.teen %} <span class="selo teen" title="Público teen: {{ t.programa.aluno.teen_motivo }}">Teen</span>{% endif %}
+    </div>
+    {% if t.tem_justificativa %}
+      {% set primeira = (t.obs_egali | separar_neg)[0] %}
+      <div class="neg {{ 'destaque' if atrasada }}"><strong>NEG</strong> {{ primeira.texto[:140] }}{{ '…' if primeira.texto | length > 140 }}</div>
+    {% elif atrasada %}
+      <div class="sem-neg">Atrasada e sem NEG</div>
+    {% endif %}
+    <div class="cartao-rodape">
+      {% if mostrar_responsavel %}<span class="suave pequeno">{{ t.responsavel.nome if t.responsavel else 'Sem responsável' }}</span>{% endif %}
+      {{ status_rapido(t, voltar) }}
+    </div>
+  </article>
+{% endmacro %}
+
+{% macro paginacao(endpoint, args, pagina, paginas) %}
+{% if paginas > 1 %}
+  {% set sem_pagina = args.copy() %}{% set _ = sem_pagina.pop('pagina', None) %}
+  <div class="paginacao">
+    {% if pagina > 1 %}<a class="botao secundario pequeno" href="{{ url_for(endpoint, pagina=pagina - 1, **sem_pagina) }}">← Anterior</a>{% endif %}
+    <span class="suave">Página {{ pagina }} de {{ paginas }}</span>
+    {% if pagina < paginas %}<a class="botao secundario pequeno" href="{{ url_for(endpoint, pagina=pagina + 1, **sem_pagina) }}">Próxima →</a>{% endif %}
+  </div>
+{% endif %}
+{% endmacro %}
+
+{% macro tabela_tarefas(tarefas, voltar, mostrar_responsavel=true, mostrar_aluno=true, vazio="Nenhuma tarefa encontrada.") %}
+<div class="tabela-rolagem">
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        {% if mostrar_aluno %}<th>Aluno</th>{% endif %}
+        <th>Procedimento</th>
+        {% if mostrar_responsavel %}<th>Responsável</th>{% endif %}
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for t in tarefas %}
+      <tr class="{{ 'atrasada' if t.atrasada(hoje()) }}">
+        <td>{{ datas(t) }}</td>
+        {% if mostrar_aluno %}
+        <td>
+          <a href="{{ url_for('programas.detalhe', programa_id=t.programa.id) }}">{{ t.programa.aluno.nome }}</a>
+          <div class="suave pequeno">
+            {{ t.programa.pais or '' }}{% if t.programa.data_embarque %} · embarque {{ t.programa.data_embarque | data }}{% endif %}
+            {% if t.programa.vip %} <span class="selo vip">VIP</span>{% endif %}{% if t.programa.aluno.teen %} <span class="selo teen" title="Público teen: {{ t.programa.aluno.teen_motivo }}">Teen</span>{% endif %}
+          </div>
+        </td>
+        {% endif %}
+        <td>
+          <span class="selo trilha">{{ t.etapa.trilha.nome }}</span>
+          <a class="nome-procedimento" href="{{ url_for('tarefas.detalhe', tarefa_id=t.id) }}">{{ t.etapa.nome }}</a>
+          {{ neg(t, voltar) }}
+        </td>
+        {% if mostrar_responsavel %}
+        <td>
+          {% if t.responsavel %}{{ t.responsavel.nome }}{% else %}<span class="suave">Sem responsável</span>{% endif %}
+          {% if t.responsavel_manual %}<div class="suave pequeno">trocado à mão</div>{% endif %}
+        </td>
+        {% endif %}
+        <td>{{ status_rapido(t, voltar) }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="vazio">{{ vazio }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}

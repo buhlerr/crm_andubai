@@ -1,0 +1,100 @@
+# =======================================================
+# 1. AMBIENTE, CONFIGURAÇÕES LOCAIS E SEGREDOS
+# =======================================================
+.env
+.env.*
+*.env
+*.env.local
+config.py
+*.key
+*.pem
+*.cert
+*.crt
+*.pfx
+*.p12
+
+# =======================================================
+# 2. BANCOS DE DADOS E ARQUIVOS DE DADOS LOCAIS
+# =======================================================
+instance/*
+!instance/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.sqlite-journal
+*.db-wal
+*.db-shm
+
+# =======================================================
+# 3. PYTHON / CACHES / COMPILAÇÃO
+# =======================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# =======================================================
+# 4. TESTES, COBERTURA E LOGS
+# =======================================================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+nosetests.xml
+coverage.xml
+*.log
+logs/
+
+# =======================================================
+# 5. AMBIENTES VIRTUAIS
+# =======================================================
+.venv/
+venv/
+ENV/
+env/
+.venv*/
+
+# =======================================================
+# 6. ARQUIVOS COMPACTADOS, BACKUPS E SCRATCH
+# =======================================================
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.bak
+*.swp
+*.swo
+*~
+*.orig
+
+# =======================================================
+# 7. IDES, EDITORES E SISTEMA OPERACIONAL
+# =======================================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini

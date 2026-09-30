@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titulo %}Importações{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div>
+    <h1>Importações</h1>
+    <div class="suave">Toda semana: primeiro a planilha de alunos, depois o checklist da Egali, exportados no mesmo dia.</div>
+  </div>
+  {% if g.usuario.papel == Papel.ADMIN %}<a class="botao" href="{{ url_for('importacoes.nova') }}">Nova importação</a>{% endif %}
+</div>
+<div class="tabela-rolagem">
+  <table>
+    <thead><tr><th>Nº</th><th>Quando</th><th>Tipo</th><th>Arquivo</th><th>Situação</th><th class="numero">Erros</th><th class="numero">Avisos</th></tr></thead>
+    <tbody>
+    {% for i in importacoes %}
+      <tr>
+        <td><a href="{{ url_for('importacoes.detalhe', importacao_id=i.id) }}">{{ i.id }}</a></td>
+        <td class="prazo">{{ i.iniciada_em | data_hora }}</td>
+        <td>{{ TIPOS[i.tipo].nome }}</td>
+        <td>{{ i.arquivo_nome or '—' }}</td>
+        <td><span class="selo {{ i.situacao.value }}">{{ {'previa': 'Esperando confirmação', 'confirmada': 'Gravada', 'descartada': 'Descartada', 'falhou': 'Falhou'}[i.situacao.value] }}</span></td>
+        <td class="numero">{{ i.resumo.erros if i.resumo else 0 }}</td>
+        <td class="numero">{{ i.resumo.avisos if i.resumo else 0 }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="vazio">Nenhuma importação ainda.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

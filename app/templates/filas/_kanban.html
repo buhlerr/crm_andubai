@@ -1,0 +1,109 @@
+{% import "_macros.html" as m %}
+<p class="suave pequeno">{{ total }} tarefa(s) aberta(s). Arraste um cartão para outra coluna para mudar o status, ou use o seletor do cartão.
+  Cada coluna mostra até {{ limite_kanban }} cartões, os de prazo mais antigo primeiro.</p>
+
+<div class="kanban" id="kanban" data-csrf="{{ token_csrf() }}">
+  {% for coluna in colunas %}
+  <section class="kanban-coluna" data-status="{{ coluna.status.value }}" aria-label="{{ ROTULOS_STATUS[coluna.status] }}">
+    <header>
+      {{ m.selo_status(coluna.status) }}
+      <span class="numero" data-contagem>{{ coluna.total }}</span>
+    </header>
+    <div class="kanban-cartoes">
+      {% for t in coluna.tarefas %}
+        {{ m.cartao_tarefa(t, request.full_path, mostrar_responsavel=mostrar_pessoas) }}
+      {% else %}
+        <p class="kanban-vazio">Nenhuma tarefa.</p>
+      {% endfor %}
+    </div>
+    {% if coluna.total > coluna.tarefas | length %}
+      {% set mais = args.copy() %}{% set _ = mais.update({'status': coluna.status.value, 'visao': 'lista', 'fixar': '0'}) %}
+      <a class="kanban-mais" href="{{ url_for(endpoint, **mais) }}">Ver todas as {{ coluna.total }} na lista →</a>
+    {% endif %}
+  </section>
+  {% endfor %}
+  <section class="kanban-coluna kanban-concluir" data-status="concluida" aria-label="Concluir">
+    <header>{{ m.selo_status(StatusTarefa.CONCLUIDA) }} <span class="numero" data-contagem>0</span></header>
+    <div class="kanban-cartoes"><p class="kanban-vazio">Solte aqui para concluir.</p></div>
+  </section>
+</div>
+
+<div class="aviso-flutuante" id="aviso-kanban" role="status" hidden></div>
+
+<script>
+(() => {
+  const quadro = document.getElementById("kanban");
+  const aviso = document.getElementById("aviso-kanban");
+  let arrastado = null;
+
+  function avisar(texto, erro) {
+    aviso.textContent = texto;
+    aviso.className = "aviso-flutuante" + (erro ? " erro" : "");
+    aviso.hidden = false;
+    clearTimeout(avisar.t);
+    avisar.t = setTimeout(() => { aviso.hidden = true; }, 3500);
+  }
+  function somar(coluna, n) {
+    const contador = coluna.querySelector("[data-contagem]");
+    contador.textContent = Math.max(0, parseInt(contador.textContent, 10) + n);
+  }
+
+  quadro.addEventListener("dragstart", (e) => {
+    const cartao = e.target.closest(".cartao-tarefa");
+    if (!cartao) return;
+    arrastado = cartao;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", cartao.dataset.id);
+    requestAnimationFrame(() => cartao.classList.add("arrastando"));
+  });
+  quadro.addEventListener("dragend", () => {
+    if (arrastado) arrastado.classList.remove("arrastando");
+    quadro.querySelectorAll(".alvo").forEach((c) => c.classList.remove("alvo"));
+    arrastado = null;
+  });
+
+  quadro.querySelectorAll(".kanban-coluna").forEach((coluna) => {
+    coluna.addEventListener("dragover", (e) => {
+      if (!arrastado) return;
+      e.preventDefault();
+      coluna.classList.add("alvo");
+    });
+    coluna.addEventListener("dragleave", (e) => {
+      if (!coluna.contains(e.relatedTarget)) coluna.classList.remove("alvo");
+    });
+    coluna.addEventListener("drop", (e) => {
+      e.preventDefault();
+      coluna.classList.remove("alvo");
+      const cartao = arrastado;
+      if (!cartao) return;
+      const novo = coluna.dataset.status;
+      const origem = cartao.closest(".kanban-coluna");
+      if (origem === coluna) return;
+      const lugar = cartao.nextSibling;
+      const listaDestino = coluna.querySelector(".kanban-cartoes");
+      listaDestino.querySelector(".kanban-vazio")?.remove();
+      listaDestino.prepend(cartao);
+      somar(origem, -1);
+      somar(coluna, 1);
+
+      const dados = new FormData();
+      dados.append("csrf", quadro.dataset.csrf);
+      dados.append("status", novo);
+      fetch(cartao.dataset.urlStatus, { method: "POST", body: dados, headers: { "X-Requested-With": "fetch" } })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+        .then((resposta) => {
+          cartao.dataset.status = resposta.status;
+          const seletor = cartao.querySelector("select[name=status]");
+          if (seletor) seletor.value = resposta.status;
+          avisar(`${cartao.dataset.titulo}: agora está "${resposta.rotulo}".`);
+        })
+        .catch(() => {
+          origem.querySelector(".kanban-cartoes").insertBefore(cartao, lugar);
+          somar(origem, 1);
+          somar(coluna, -1);
+          avisar("Não foi possível mudar o status. Recarregue a página e tente de novo.", true);
+        });
+    });
+  });
+})();
+</script>

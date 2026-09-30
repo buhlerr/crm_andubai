@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titulo %}Buscar aluno{% endblock %}
+{% block conteudo %}
+<h1>Buscar aluno</h1>
+<form class="filtros" method="get">
+  <div class="linha-campos">
+    <div class="campo">
+      <label for="q">Nome, aluno_id ou programa_id</label>
+      <input id="q" type="text" name="q" value="{{ termo }}" autofocus>
+    </div>
+    <div style="flex:0 0 auto"><button class="botao">Buscar</button></div>
+  </div>
+</form>
+{% if termo %}
+<div class="tabela-rolagem">
+  <table>
+    <thead><tr><th>Aluno</th><th>ID</th><th>Programas</th></tr></thead>
+    <tbody>
+    {% for a in alunos %}
+      <tr>
+        <td>{{ a.nome }}</td>
+        <td>{{ a.aluno_id_egali }}</td>
+        <td>
+          {% for p in a.programas %}
+            <a href="{{ url_for('programas.detalhe', programa_id=p.id) }}">{{ 'Programa ' ~ p.programa_id_egali if p.programa_id_egali else 'Só de visto' }}</a>
+            <span class="selo {{ p.situacao.value }}">{{ p.situacao.value }}</span>{% if not loop.last %} · {% endif %}
+          {% endfor %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="3" class="vazio">Nenhum aluno encontrado para "{{ termo }}".</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

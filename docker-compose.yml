@@ -1,0 +1,23 @@
+services:
+  crm-checklist:
+    build: .
+    container_name: crm_andubai
+    restart: unless-stopped
+    ports:
+      - "${PORTA:-8080}:8080"
+    environment:
+      - CHECKLIST_DADOS=/dados
+      - SERVIDOR_HOST=0.0.0.0
+      - SERVIDOR_PORTA=8080
+      - SERVIDOR_THREADS=8
+      - ATRAS_DE_PROXY=${ATRAS_DE_PROXY:-1}
+      - SECRET_KEY=${SECRET_KEY:-4798000f03ade8ce180f7cd2874373429f351b79c11728baef8421cd92e53d6c}
+      - LOGIN_PROVISORIO=1
+      - SENHA_PROVISORIA=${SENHA_PROVISORIA:-egali2026}
+    volumes:
+      # O volume persistente guarda o banco de dados checklist.db, logs e backups
+      - crm_dados:/dados
+
+volumes:
+  crm_dados:
+    driver: local
