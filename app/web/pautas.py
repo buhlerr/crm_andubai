@@ -32,16 +32,20 @@ bp = Blueprint("pautas", __name__, url_prefix="/pautas")
 
 def _caminho_arquivo_pautas() -> str:
     """Retorna o caminho do arquivo mais recente de pautas disponível."""
+    if os.environ.get("PAUTAS_ARQUIVO") and os.path.exists(os.environ["PAUTAS_ARQUIVO"]):
+        return os.path.abspath(os.environ["PAUTAS_ARQUIVO"])
+
     pastas = [
         current_app.instance_path,
         os.path.join(current_app.root_path, ".."),
         os.path.abspath("."),
+        os.path.join(current_app.root_path, "..", "tests", "amostras"),
     ]
     nomes = [
         "pautas_recente.csv",
-        "pautaList-30_09_2026.csv",
         "pautas_recente.mhtml",
-        "pautas_home.mhtml",
+        "pautas_amostra.mhtml",
+        "pautas_amostra.csv",
     ]
 
     for p in pastas:

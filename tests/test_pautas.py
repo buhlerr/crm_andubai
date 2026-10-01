@@ -6,7 +6,7 @@ from app.extensions import db
 from app.importacao.pautas import carregar_pautas, normalizar_nome
 from app.models import Papel, Usuario
 
-CAMINHO_MHTML = os.path.join(os.path.dirname(__file__), "..", "pautas_home.mhtml")
+CAMINHO_MHTML = os.path.join(os.path.dirname(__file__), "amostras", "pautas_amostra.mhtml")
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def test_carregar_pautas_mhtml_existente():
     data_ref = date(2026, 9, 30)
     pautas = carregar_pautas(CAMINHO_MHTML, data_referencia=data_ref)
 
-    assert len(pautas) == 77
+    assert len(pautas) == 3
 
     # Verifica pauta 3102692
     p1 = next((p for p in pautas if p["ID"] == "3102692"), None)
@@ -39,10 +39,10 @@ def test_carregar_pautas_mhtml_existente():
     assert p1["Atualizada?"] == "FALSE"
     assert p1["Dias"] == "0"
     assert p1["UN Atualizou"] == ""
-    assert p1["Responsável"] == "Márcia Bocorny Allgayer"
-    assert p1["Criada por"] == "Vitor Bühler Rau"
-    assert p1["Atualizado por"] == "Márcia Bocorny Allgayer"
-    assert p1["Aluno"] == "Thays Baptista De Souza"
+    assert p1["Responsável"] == "Consultor Teste Um"
+    assert p1["Criada por"] == "Consultor Teste Dois"
+    assert p1["Atualizado por"] == "Consultor Teste Um"
+    assert p1["Aluno"] == "Aluno Um Teste"
     assert p1["Status"] == "Em aberto"
 
     # Verifica pauta 3101587 (atualizada pela unidade)
@@ -51,36 +51,33 @@ def test_carregar_pautas_mhtml_existente():
     assert p2["Atualizada?"] == "TRUE"
     assert p2["Dias"] == "2"
     assert p2["UN Atualizou"] == "AN e Dubai"
-    assert p2["Responsável"] == "Vitor Bühler Rau"
     assert p2["TAG"] == "Atrasada"
 
     # Verifica pauta 3102536 (com extração inteligente de aluno)
     p3 = next((p for p in pautas if p["ID"] == "3102536"), None)
     assert p3 is not None
-    assert p3["Aluno"] == "Letícia Vitória Silva Gomes"
-    assert p3["Criada por"] == "Vitor Bühler Rau"
+    assert p3["Aluno"] == "Aluna Tres Teste"
 
 
 def test_carregar_pautas_csv_existente():
-    caminho_csv = os.path.join(os.path.dirname(__file__), "..", "pautaList-30_09_2026.csv")
+    caminho_csv = os.path.join(os.path.dirname(__file__), "amostras", "pautas_amostra.csv")
     if not os.path.exists(caminho_csv):
         return
 
     data_ref = date(2026, 9, 30)
     pautas = carregar_pautas(caminho_csv, data_referencia=data_ref)
 
-    assert len(pautas) == 77
+    assert len(pautas) == 3
     p1 = next((p for p in pautas if p["ID"] == "3102692"), None)
     assert p1 is not None
-    assert p1["Responsável"] == "Márcia Bocorny Allgayer"
-    assert p1["Aluno"] == "Thays Baptista De Souza"
+    assert p1["Responsável"] == "Consultor Teste Um"
+    assert p1["Aluno"] == "Aluno Um Teste"
     assert p1["Status"] == "Em aberto"
     assert p1["Atualizada?"] == "FALSE"
 
 
-
 def test_rota_web_pautas(app, client):
-    u = Usuario(nome="Vitor Bühler Rau", email="vitor@egali.com.br", papel=Papel.ADMIN)
+    u = Usuario(nome="Consultor Teste Um", email="consultor@exemplo.test", papel=Papel.ADMIN)
     db.session.add(u)
     db.session.commit()
 
@@ -93,7 +90,7 @@ def test_rota_web_pautas(app, client):
     assert "3102692" in res.text
 
     # Teste de exportação JSON
-    res_json = client.get("/pautas/exportar-json?consultor=Vitor Bühler Rau")
+    res_json = client.get(f"/pautas/exportar-json?consultor={u.nome}")
     assert res_json.status_code == 200
     assert res_json.content_type.startswith("application/json")
     dados = res_json.json

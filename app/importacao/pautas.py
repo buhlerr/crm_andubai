@@ -73,10 +73,12 @@ def carregar_sla_categorias() -> dict[str, int]:
 
     mapa: dict[str, int] = {}
     caminhos = [
+        os.environ.get("PAUTA_CAT_CSV", ""),
+        os.path.join(os.path.dirname(__file__), "..", "..", "tests", "amostras", "pautaCatListCsv.csv"),
         os.path.join(os.path.dirname(__file__), "..", "..", "pautaCatListCsv.csv"),
         os.path.abspath("pautaCatListCsv.csv"),
     ]
-    caminho_csv = next((c for c in caminhos if os.path.exists(c)), None)
+    caminho_csv = next((c for c in caminhos if c and os.path.exists(c)), None)
     if not caminho_csv:
         _CACHE_SLA_CATEGORIAS = {}
         return {}
@@ -163,8 +165,8 @@ def converter_data_tm(data_str: str | None) -> datetime | None:
 
 
 def extrair_linhas_csv(conteudo_bytes: bytes) -> list[dict]:
-    """Lê bytes de um arquivo CSV de pautas (latin1, delimiter ';') e retorna lista de dicionários."""
-    for enc in ["latin1", "cp1252", "iso-8859-1", "utf-8-sig", "utf-8"]:
+    """Lê bytes de um arquivo CSV de pautas (delimitador ';') e retorna lista de dicionários."""
+    for enc in ["utf-8-sig", "utf-8", "cp1252", "latin1", "iso-8859-1"]:
         try:
             texto = conteudo_bytes.decode(enc)
             break
@@ -264,7 +266,7 @@ def processar_linhas_para_pautas(linhas_brutas: list[dict], data_referencia: dat
         if not nome_pessoa:
             return ""
         norm = normalizar_nome(nome_pessoa)
-        if norm in membros_map:
+        if norm == normalizar_nome(NOME_UNIDADE_PADRAO) or norm in membros_map:
             return NOME_UNIDADE_PADRAO
         if norm in colaborador_setor_map:
             return colaborador_setor_map[norm]
@@ -283,20 +285,31 @@ def processar_linhas_para_pautas(linhas_brutas: list[dict], data_referencia: dat
 
         pauta_str = row.get("Pauta", "").strip()
         status = row.get("Status", "").strip()
-        responsavel = row.get("Consultor", "").strip()
+        responsavel = (row.get("Consultor") or row.get("Responsável") or "").strip()
         if responsavel in ["Sem respons&aacute;vel", "Sem responsável"]:
             responsavel = "Sem responsável"
 
-        cria_em_str = row.get("Criado em", "").strip()
-        cria_por = row.get("Criado por", "").strip()
-        atual_em_str = row.get("Atualizado em", "").strip()
-        atual_por = row.get("Atualizado por", "").strip()
+        cria_em_str = (row.get("Criado em") or row.get("Criada em") or "").strip()
+        cria_por = (row.get("Criado por") or row.get("Criada por") or "").strip()
+        if " por " in cria_por:
+            m_cria = re.match(r"(\d{2}/\d{2}/\d{4})\s*(?:\d{2}:\d{2}:\d{2})?\s*(?:por\s*(.*))?", cria_por)
+            if m_cria:
+                cria_em_str = cria_em_str or m_cria.group(1)
+                cria_por = m_cria.group(2).strip() if m_cria.group(2) else cria_por
+
+        atual_em_str = (row.get("Atualizado em") or row.get("Atualizada em") or "").strip()
+        atual_por = (row.get("Atualizado por") or row.get("Atualizada por") or "").strip()
+        if " por " in atual_por:
+            m_atual = re.match(r"(\d{2}/\d{2}/\d{4})\s*(?:\d{2}:\d{2}:\d{2})?\s*(?:por\s*(.*))?", atual_por)
+            if m_atual:
+                atual_em_str = atual_em_str or m_atual.group(1)
+                atual_por = m_atual.group(2).strip() if m_atual.group(2) else atual_por
 
         aluno_raw = row.get("Aluno", "").strip()
         aluno = extrair_nome_aluno(pauta_str, aluno_raw, str(pid))
 
         tag = row.get("TAG", "").strip()
-        tempo_str = row.get("Atualizado", "").strip()
+        tempo_str = (row.get("Atualizado") or row.get("Tempo Inativo") or "").strip()
         horas_inativas = extrair_horas_inativas(tempo_str)
 
         # Determina SLA da categoria

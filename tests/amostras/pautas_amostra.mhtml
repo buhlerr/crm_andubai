@@ -1,0 +1,48 @@
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+
+<html>
+<body>
+<table>
+<tr>
+  <td>#</td><td>Categoria</td><td>Pauta</td><td>Status</td><td>Responsável</td><td>Criada por</td><td>Atualizada por</td><td>Aluno</td><td>Tempo Inativo</td><td>TAG</td>
+</tr>
+<tr>
+  <td>3102692</td>
+  <td>Acomodação</td>
+  <td>3104087 - AC-SA-AND - Aluno Um Teste - Escola Ficticia - 26/09/2026</td>
+  <td>Em aberto</td>
+  <td>Consultor Teste Um</td>
+  <td>30/09/2026 por Consultor Teste Dois</td>
+  <td>30/09/2026 por Consultor Teste Um</td>
+  <td>Aluno Um Teste</td>
+  <td>00:00:00</td>
+  <td></td>
+</tr>
+<tr>
+  <td>3101587</td>
+  <td>Vistos</td>
+  <td>Pauta Visto Aluno Dois</td>
+  <td>Em andamento</td>
+  <td>Consultor Teste Dois</td>
+  <td>28/09/2026 por Consultor Teste Um</td>
+  <td>28/09/2026 por AN e Dubai</td>
+  <td>Aluno Dois Teste</td>
+  <td>48:00:00</td>
+  <td>Atrasada</td>
+</tr>
+<tr>
+  <td>3102536</td>
+  <td>Financeiro</td>
+  <td>Visto CAD negado - Aluna Tres Teste</td>
+  <td>Em aberto</td>
+  <td>Consultor Teste Um</td>
+  <td>25/09/2026 por Consultor Teste Dois</td>
+  <td>25/09/2026 por Consultor Teste Um</td>
+  <td></td>
+  <td>120:00:00</td>
+  <td>Atrasada 72h +</td>
+</tr>
+</table>
+</body>
+</html>
