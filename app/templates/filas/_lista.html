@@ -1,7 +1,8 @@
 {% import "_macros.html" as m %}
-<p class="suave pequeno">{{ total }} tarefa(s){% if paginas > 1 %} · página {{ pagina }} de {{ paginas }}{% endif %}. Prazo mais antigo primeiro.</p>
+<p class="suave pequeno">{{ total }} tarefa(s){% if paginas > 1 %} · página {{ pagina }} de {{ paginas }}{% endif %}.
+  {{ 'Prazo mais antigo primeiro.' if organizar.value == 'data' else 'Organizado por ' ~ (ROTULOS_ORGANIZAR[organizar] | lower) ~ ', e dentro de cada grupo o prazo mais antigo primeiro.' }}</p>
 
-{{ m.tabela_tarefas(tarefas, request.full_path, mostrar_responsavel=mostrar_pessoas,
+{{ m.tabela_tarefas(tarefas, request.full_path, mostrar_responsavel=mostrar_pessoas, grupos=grupos,
      vazio="Nenhuma tarefa com esses filtros." if request.args else "Nenhuma tarefa aberta. 🎉") }}
 
 {{ m.paginacao(endpoint, args, pagina, paginas) }}

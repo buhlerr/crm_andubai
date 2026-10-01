@@ -10,7 +10,18 @@ from datetime import date, timedelta
 from flask import Blueprint, g, redirect, render_template, request, url_for
 
 from app import consultas
-from app.consultas import NINGUEM, ROTULOS_ATRASO, ROTULOS_PUBLICO, FiltroAtraso, FiltroPublico, Filtros
+from app.consultas import (
+    NINGUEM,
+    ORGANIZAR_QUADRO,
+    ROTULOS_ATRASO,
+    ROTULOS_ORGANIZAR,
+    ROTULOS_PUBLICO,
+    SEM_VISTO,
+    FiltroAtraso,
+    FiltroPublico,
+    Filtros,
+    Organizar,
+)
 from app.extensions import db
 from app.importacao.valores import para_data
 from app.models import STATUS_ABERTOS, StatusTarefa, Trilha, Usuario, VisaoFila
@@ -28,7 +39,7 @@ ROTULOS_VISAO = {
     VisaoFila.QUADRO: "Quadro por aluno",
     VisaoFila.CALENDARIO: "Calendário",
 }
-MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
+MESES = consultas.MESES
 
 
 def _id_ou_ninguem(valor: str | None):
@@ -59,6 +70,7 @@ def _filtros_da_url() -> Filtros:
         consultor=_id_ou_ninguem(request.args.get("consultor")),
         trilha=request.args.get("trilha") or None,
         etapa=request.args.get("procedimento", type=int),
+        visto=request.args.get("visto") or None,
         atraso=FiltroAtraso(atraso) if atraso in {a.value for a in FiltroAtraso} else FiltroAtraso.TODAS,
         busca=request.args.get("busca", ""),
         prazo_de=_data_ou_nada(request.args.get("prazo_de")),
@@ -80,6 +92,20 @@ def _visao() -> VisaoFila:
     return g.usuario.visao_fila or VisaoFila.LISTA
 
 
+def _organizar(visao: VisaoFila) -> Organizar:
+    """"Organizar por" da URL (e passa a ser o preferido da pessoa para esta visão) ou o último usado."""
+    campo, permitidos = ("organizar_quadro", ORGANIZAR_QUADRO) if visao == VisaoFila.QUADRO else ("organizar_lista", tuple(Organizar))
+    pedido = request.args.get("organizar")
+    if pedido in {o.value for o in permitidos}:
+        if getattr(g.usuario, campo) != pedido and request.args.get("fixar") != "0":
+            setattr(g.usuario, campo, pedido)
+            db.session.commit()
+        return Organizar(pedido)
+    guardado = getattr(g.usuario, campo)
+    padrao = Organizar.EMBARQUE if visao == VisaoFila.QUADRO else Organizar.DATA
+    return Organizar(guardado) if guardado in {o.value for o in permitidos} else padrao
+
+
 def _mes_da_url(hoje: date) -> tuple[int, int]:
     texto = request.args.get("mes", "")
     try:
@@ -99,8 +125,14 @@ def _vizinho(ano: int, mes: int, passo: int) -> str:
 
 def _render_fila(titulo: str, filtros: Filtros, mostrar_pessoas: bool, descricao: str):
     visao = _visao()
+    organizar = _organizar(visao)
     pagina = max(request.args.get("pagina", 1, type=int), 1)
     contexto = dict(
+        organizar=organizar,
+        opcoes_organizar=ORGANIZAR_QUADRO if visao == VisaoFila.QUADRO else tuple(Organizar),
+        ROTULOS_ORGANIZAR=ROTULOS_ORGANIZAR,
+        vistos_opcoes=consultas.vistos_na_fila(filtros.visto),
+        SEM_VISTO=SEM_VISTO,
         titulo=titulo,
         descricao=descricao,
         filtros=filtros,
@@ -125,7 +157,7 @@ def _render_fila(titulo: str, filtros: Filtros, mostrar_pessoas: bool, descricao
         contexto["limite_kanban"] = CARTOES_POR_COLUNA
         contexto["total"] = sum(c.total for c in contexto["colunas"])
     elif visao == VisaoFila.QUADRO:
-        cartoes, total = consultas.quadro_por_aluno(filtros, pagina, ALUNOS_POR_PAGINA)
+        cartoes, total = consultas.quadro_por_aluno(filtros, pagina, ALUNOS_POR_PAGINA, organizar)
         contexto.update(cartoes=cartoes, total=total, paginas=max((total + ALUNOS_POR_PAGINA - 1) // ALUNOS_POR_PAGINA, 1))
     elif visao == VisaoFila.CALENDARIO:
         ano, mes = _mes_da_url(filtros.hoje)
@@ -136,8 +168,9 @@ def _render_fila(titulo: str, filtros: Filtros, mostrar_pessoas: bool, descricao
             mes_anterior=_vizinho(ano, mes, -1), mes_seguinte=_vizinho(ano, mes, 1),
         )
     else:
-        tarefas, total = consultas.tarefas(filtros, pagina, POR_PAGINA)
-        contexto.update(tarefas=tarefas, total=total, paginas=max((total + POR_PAGINA - 1) // POR_PAGINA, 1))
+        tarefas, total = consultas.tarefas(filtros, pagina, POR_PAGINA, organizar)
+        contexto.update(tarefas=tarefas, grupos=consultas.agrupar(tarefas, organizar), total=total,
+                        paginas=max((total + POR_PAGINA - 1) // POR_PAGINA, 1))
     return render_template("fila.html", **contexto)
 
 
@@ -160,6 +193,40 @@ def minha_fila():
 @login_obrigatorio
 def fila_equipe():
     return _render_fila("Fila da equipe", _filtros_da_url(), True, "Todas as tarefas abertas de programas ativos.")
+
+
+@bp.route("/concluidas")
+@login_obrigatorio
+def concluidas():
+    """Tarefas concluídas ou "não se aplica": as daqui e as que saíram do checklist da Egali."""
+    filtros = _filtros_da_url()
+    status = request.args.get("status")
+    filtros.status = StatusTarefa(status) if status in (StatusTarefa.CONCLUIDA.value, StatusTarefa.NAO_SE_APLICA.value) else None
+    de, ate = _data_ou_nada(request.args.get("de")), _data_ou_nada(request.args.get("ate"))
+    pagina = max(request.args.get("pagina", 1, type=int), 1)
+    linhas, total = consultas.concluidas(filtros, de, ate, pagina, POR_PAGINA)
+    return render_template(
+        "concluidas.html", linhas=linhas, total=total, pagina=pagina, paginas=max((total + POR_PAGINA - 1) // POR_PAGINA, 1),
+        filtros=filtros, de=de, ate=ate,
+        trilhas=db.session.execute(db.select(Trilha).order_by(Trilha.ordem)).scalars().all(),
+        usuarios=db.session.execute(db.select(Usuario).filter_by(ativo=True).order_by(Usuario.nome)).scalars().all(),
+        vistos_opcoes=consultas.vistos_na_fila(filtros.visto), SEM_VISTO=SEM_VISTO,
+        ROTULOS_PUBLICO=ROTULOS_PUBLICO, NINGUEM=NINGUEM,
+    )
+
+
+@bp.route("/para-lancar")
+@login_obrigatorio
+def para_lancar():
+    """O que foi feito aqui e ainda precisa ser lançado no sistema da Egali."""
+    equipe = request.args.get("quem") == "equipe"
+    usuario_id = None if equipe else g.usuario.id
+    return render_template(
+        "para_lancar.html", equipe=equipe,
+        tarefas=consultas.tarefas_para_lancar(usuario_id),
+        conferir=consultas.lancadas_mas_abertas(usuario_id),
+        anotacoes=consultas.anotacoes_para_lancar(usuario_id),
+    )
 
 
 @bp.route("/consultores")

@@ -23,7 +23,8 @@ def registrar_web(app: Flask) -> None:
     @app.before_request
     def verificar_csrf():
         if request.method == "POST" and not app.config.get("CSRF_DESLIGADO"):
-            enviado = request.form.get("csrf", "")
+            # Formulários mandam o campo "csrf"; chamadas fetch com JSON mandam o cabeçalho X-CSRF-Token.
+            enviado = request.form.get("csrf", "") or request.headers.get("X-CSRF-Token", "")
             if not enviado or not secrets.compare_digest(enviado, session.get("csrf", "")):
                 abort(400, "O formulário expirou. Volte, recarregue a página e tente de novo.")
 
@@ -40,6 +41,10 @@ def registrar_web(app: Flask) -> None:
         return ROTULOS_STATUS.get(StatusTarefa(valor), valor) if valor else "—"
 
     app.add_template_filter(separar_neg, "separar_neg")
+
+    from app import vistos
+
+    app.add_template_filter(vistos.tipos_de_visto, "vistos")  # programa -> ["Visto - Canadá - eTA", ...]
 
     @app.context_processor
     def dados_do_topo():
@@ -63,6 +68,7 @@ def registrar_web(app: Flask) -> None:
             "topo_planilha": ultima(TipoImportacao.BASE_ALUNOS),
             "topo_checklist": ultima(TipoImportacao.CHECKLIST),
             "topo_minha_fila": consultas.contar(consultas.Filtros(responsavel=g.usuario.id)),
+            "topo_para_lancar": consultas.contar_para_lancar(g.usuario.id),
             "topo_previas": db.session.execute(
                 db.select(db.func.count()).select_from(Importacao).filter_by(situacao=SituacaoImportacao.PREVIA)
             ).scalar_one(),

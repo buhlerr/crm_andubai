@@ -19,6 +19,8 @@ class Papel(enum.StrEnum):
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
+SENHA_MINIMA = 10
+
 
 class VisaoFila(enum.StrEnum):
     LISTA = "lista"
@@ -39,12 +41,17 @@ class Usuario(ComDatas, db.Model):
     visao_fila: Mapped[VisaoFila] = mapped_column(coluna_enum(VisaoFila), default=VisaoFila.LISTA, server_default="lista")
     # Identificador da conta no Microsoft 365 (Entra ID), gravado no primeiro login.
     microsoft_oid: Mapped[str | None] = mapped_column(String(64), unique=True)
+    # "Organizar por" escolhido na lista e no quadro (valores de consultas.Organizar; texto, validado no código).
+    organizar_lista: Mapped[str] = mapped_column(String(20), default="data", server_default="data")
+    organizar_quadro: Mapped[str] = mapped_column(String(20), default="embarque", server_default="embarque")
     # Hash da senha para autenticação local por e-mail e senha.
     senha_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     def definir_senha(self, senha: str) -> None:
         if not senha or not senha.strip():
             raise ValueError("A senha não pode ser vazia.")
+        if len(senha.strip()) < SENHA_MINIMA:
+            raise ValueError(f"A senha deve ter pelo menos {SENHA_MINIMA} caracteres.")
         self.senha_hash = generate_password_hash(senha.strip())
 
     def verificar_senha(self, senha: str) -> bool:

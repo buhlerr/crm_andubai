@@ -99,12 +99,17 @@ def detalhe(importacao_id):
     ultima = checklist.ultima_importacao_confirmada()
     if ultima is not None and ultima.id == importacao.id:
         fora_do_periodo = checklist.tarefas_fora_do_periodo(importacao)
+    # Só vem marcado para encerrar o que ficou para trás (prazo antes do período). O que tem prazo depois do
+    # fim do período só não veio porque a exportação terminava antes: em geral continua pendente.
+    inicio = importacao.periodo_inicio
+    marcar = {t.id: bool(t.prazo_egali and inicio and t.prazo_egali < inicio) for t in fora_do_periodo}
     return render_template(
         "importacoes/detalhe.html",
         importacao=importacao,
         tipo=TIPOS[importacao.tipo],
         ocorrencias=ocorrencias,
         fora_do_periodo=fora_do_periodo,
+        marcar=marcar,
         DETALHES=DETALHES,
         Gravidade=Gravidade,
         SituacaoImportacao=SituacaoImportacao,

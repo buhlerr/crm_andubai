@@ -55,7 +55,7 @@
       <dt>Consultor</dt><dd>{{ p.consultor.nome if p.consultor else (p.consultor_texto or 'Sem consultor') }}{% if p.consultor_texto and not p.consultor %} <span class="selo aviso">não cadastrado</span>{% endif %}</dd>
       <dt>Mês de embarque</dt><dd>{{ p.mes_embarque.strftime('%m/%Y') if p.mes_embarque else '—' }}</dd>
       <dt>Data de embarque</dt><dd>{{ p.data_embarque | data }}</dd>
-      <dt>Visto</dt><dd>{{ p.visto_normalizado or '—' }}</dd>
+      <dt>Visto</dt><dd>{{ m.selos_visto(p) if p | vistos else 'Sem visto informado' }}</dd>
       <dt>País / cidade</dt><dd>{{ [p.pais, p.cidade] | select | join(' · ') or '—' }}</dd>
       <dt>Escola</dt><dd>{{ p.escola or '—' }}</dd>
       <dt>Acomodação</dt><dd>{{ p.acomodacao or '—' }}</dd>

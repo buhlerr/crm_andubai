@@ -83,6 +83,7 @@
       <a href="{{ url_for('programas.detalhe', programa_id=t.programa.id) }}" draggable="false">{{ t.programa.aluno.nome }}</a>
       {% if t.programa.vip %}<span class="selo vip">VIP</span>{% endif %}{% if t.programa.aluno.teen %} <span class="selo teen" title="Público teen: {{ t.programa.aluno.teen_motivo }}">Teen</span>{% endif %}
     </div>
+    <div>{{ selos_visto(t.programa) }}</div>
     {% if t.tem_justificativa %}
       {% set primeira = (t.obs_egali | separar_neg)[0] %}
       <div class="neg {{ 'destaque' if atrasada }}"><strong>NEG</strong> {{ primeira.texto[:140] }}{{ '…' if primeira.texto | length > 140 }}</div>
@@ -107,7 +108,13 @@
 {% endif %}
 {% endmacro %}
 
-{% macro tabela_tarefas(tarefas, voltar, mostrar_responsavel=true, mostrar_aluno=true, vazio="Nenhuma tarefa encontrada.") %}
+{% macro selos_visto(programa) %}
+  {% for v in programa | vistos %}<span class="selo visto">{{ v }}</span> {% endfor %}
+{% endmacro %}
+
+{# `grupos`: lista de (título, tarefas) do "Organizar por"; sem ela, uma tabela corrida. #}
+{% macro tabela_tarefas(tarefas, voltar, mostrar_responsavel=true, mostrar_aluno=true, vazio="Nenhuma tarefa encontrada.", grupos=none) %}
+{% set colunas = 3 + (1 if mostrar_aluno else 0) + (1 if mostrar_responsavel else 0) %}
 <div class="tabela-rolagem">
   <table>
     <thead>
@@ -120,7 +127,9 @@
       </tr>
     </thead>
     <tbody>
-    {% for t in tarefas %}
+    {% for rotulo, lista in (grupos if grupos is not none else [(none, tarefas)]) %}
+    {% if rotulo %}<tr class="grupo-linha"><th colspan="{{ colunas }}">{{ rotulo }} <span class="numero">{{ lista | length }}</span></th></tr>{% endif %}
+    {% for t in lista %}
       <tr class="{{ 'atrasada' if t.atrasada(hoje()) }}">
         <td>{{ datas(t) }}</td>
         {% if mostrar_aluno %}
@@ -130,6 +139,7 @@
             {{ t.programa.pais or '' }}{% if t.programa.data_embarque %} · embarque {{ t.programa.data_embarque | data }}{% endif %}
             {% if t.programa.vip %} <span class="selo vip">VIP</span>{% endif %}{% if t.programa.aluno.teen %} <span class="selo teen" title="Público teen: {{ t.programa.aluno.teen_motivo }}">Teen</span>{% endif %}
           </div>
+          <div>{{ selos_visto(t.programa) }}</div>
         </td>
         {% endif %}
         <td>
@@ -145,9 +155,9 @@
         {% endif %}
         <td>{{ status_rapido(t, voltar) }}</td>
       </tr>
-    {% else %}
-      <tr><td colspan="5" class="vazio">{{ vazio }}</td></tr>
     {% endfor %}
+    {% endfor %}
+    {% if not tarefas %}<tr><td colspan="{{ colunas }}" class="vazio">{{ vazio }}</td></tr>{% endif %}
     </tbody>
   </table>
 </div>
