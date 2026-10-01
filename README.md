@@ -9,39 +9,45 @@ Sistema de gestão e acompanhamento de tarefas pós-venda para consultores e equ
 - **Autenticação Individual e Gestão de Acessos:**
   - Login individual por e-mail e senha com hash seguro (`PBKDF2-SHA256`).
   - Primeiro acesso facilitado com fluxo de definição de senha para consultores.
+  - Rate-limiting integrado contra ataques de força bruta no login.
   - Painel de administração para controle de usuários e papéis (`admin`, `consultor`, `estagiário`).
-- **Filas de Atendimento e Visualizações:**
+- **Filas de Atendimento e Organização Avançada:**
   - Minha Fila, Fila da Equipe e Visão por Consultor.
-  - Visualizações em **Lista**, **Kanban**, **Quadro por Aluno** e **Calendário**.
-  - Filtros avançados por trilha, procedimento, atraso, público teen e datas.
+  - Visualizações em **Lista**, **Kanban**, **Quadro por Aluno (com expansão em dropdown)** e **Calendário**.
+  - **Organizar por:** Agrupamento e ordenação flexível por data prevista, procedimento, visto, embarque, responsável ou status, com persistência da preferência por usuário.
+  - **Tipos de Visto Normalizados:** Conversão de múltiplos vistos ("Turista - EUA,eTA - Canadá") em selos padronizados com suporte a filtros e busca.
+  - **Concluídas (`/concluidas`):** Auditoria de itens concluídos no sistema ou baixados no checklist original.
+  - **Para Lançar na Egali (`/para-lancar`):** Fila de pendências concluídas localmente que precisam de baixa no sistema da Egali com botão "Lancei na Egali" e contador no menu lateral.
+- **Módulo de Pautas TM:**
+  - Importação de pautas de comunicação interna (CSV/MHTML do TM) com preservação perpétua de observações e histórico da unidade AN e Dubai.
 - **Acompanhamento do Aluno:**
   - Cálculo de "Andamento até o embarque" em percentual estimado.
-  - Registro de observações internas de NEG e histórico de alterações.
+  - Registro de observações internas de NEG e histórico de alterações com autoria.
 - **Mecanismo de Importação Inteligente:**
-  - Importação de planilhas Excel (`.xlsx`, `.xlsb`, `.xls`) da Base de Alunos (utilizando leitor de alta performance com Calamine/Python-calamine).
-  - Importação de relatórios CSV de checklist exportados da Egali.
-  - Mapeamento automático de apelidos de consultores e resolução de nomes.
+  - Importação de planilhas Excel (`.xlsx`, `.xlsb`, `.xls`) da Base de Alunos via Calamine (`python-calamine` em Rust, processando milhares de linhas em milissegundos).
+  - Importação de relatórios CSV de checklist exportados da Egali com prévia antes da confirmação.
+  - Identificação de tarefas fora do período de corte da exportação.
 
 ---
 
 ## 🛠️ Stack Tecnológica
 
-- **Backend:** Python 3.12+ / Flask 3.x
-- **Banco de Dados & ORM:** SQLite 3 (local) / SQLAlchemy 2.x com migrações via Flask-Migrate (Alembic)
-- **Servidor WSGI / Produção:** Waitress (multithreaded de alta performance)
-- **Leitura de Planilhas:** `calamine` (Rust engine via `python-calamine` / fallback `openpyxl`)
-- **Frontend:** Jinja2 templates, CSS puro responsivo com suporte a modo escuro/claro, sem frameworks externos pesados
+- **Backend:** Python 3.12+ / Flask 3.x com SQLAlchemy 2.x
+- **Banco de Dados:** SQLite 3 com WAL habilitado e migrações versionadas via Flask-Migrate (Alembic)
+- **Servidores WSGI:** `gunicorn` (produção Linux/Docker) e `waitress` (Windows)
+- **Leitura de Planilhas:** `calamine` (`python-calamine`) com fallback `openpyxl`
+- **Frontend:** Jinja2 templates, CSS puro moderno e responsivo sem frameworks pesados
 - **Deploy & Infraestrutura:** Docker / Docker Compose / LXC Proxmox VE / Túnel Pangolin ZTNA
 
 ---
 
 ## 📦 Como Rodar o Projeto
 
-### Opção 1: Via Docker Compose (Recomendado para Produção/Servidores)
+### Opção 1: Via Docker Compose (Produção / Servidores)
 
 1. Clone o repositório:
    ```bash
-   git clone https://github.com/seu-usuario/crm_andubai.git
+   git clone https://github.com/buhlerr/crm_andubai.git
    cd crm_andubai
    ```
 
@@ -52,7 +58,7 @@ Sistema de gestão e acompanhamento de tarefas pós-venda para consultores e equ
 
 3. Acesse em `http://localhost:8080`.
 
-Para criar ou promover o primeiro administrador via CLI no Docker:
+Para criar o primeiro administrador via CLI no Docker:
 ```bash
 docker exec -it crm_andubai flask criar-admin
 ```
@@ -62,8 +68,8 @@ docker exec -it crm_andubai flask criar-admin
 ### Opção 2: Execução Local (Windows)
 
 1. Certifique-se de ter o **Python 3.12+** instalado.
-2. Dê dois cliques no arquivo `iniciar.cmd` (ou execute via terminal).
-3. Na primeira execução, ele criará o ambiente virtual `.venv`, instalará as dependências e abrirá o navegador em `http://127.0.0.1:8080`.
+2. Dê dois cliques no arquivo `iniciar.cmd` (ou execute `scripts/iniciar_local.ps1`).
+3. O script criará o ambiente virtual `.venv` se necessário, atualizará o banco via migrações e iniciará a aplicação na porta **5000** (`http://127.0.0.1:5000`).
 
 ---
 
@@ -79,17 +85,26 @@ docker exec -it crm_andubai flask criar-admin
 
 ## ⚙️ Variáveis de Ambiente e Configurações
 
-Copie o arquivo `config.py.exemplo` para `instance/config.py` ou configure as variáveis de ambiente:
+Copie o arquivo `config.py.exemplo` para `instance/config.py` ou declare as variáveis no ambiente:
 
 | Variável | Padrão | Descrição |
 | :--- | :--- | :--- |
-| `SECRET_KEY` | *(gerada aleatória)* | Chave de assinatura criptográfica das sessões Flask |
-| `CHECKLIST_DADOS` | `instance` | Diretório onde o banco `checklist.db` e backups são salvos |
-| `SERVIDOR_HOST` | `0.0.0.0` | IP de escuta do servidor Waitress |
-| `SERVIDOR_PORTA` | `8080` | Porta HTTP do servidor |
+| `SECRET_KEY` | *(persistida em secret_key)* | Chave de assinatura criptográfica das sessões. Se omitida, gerada automaticamente em `<CHECKLIST_DADOS>/secret_key`. A aplicação recusa valores padrão inseguros. |
+| `CHECKLIST_DADOS` | `instance` | Diretório onde o banco `checklist.db`, chave e backups são mantidos |
+| `SERVIDOR_HOST` | `0.0.0.0` | IP de escuta do servidor WSGI |
+| `SERVIDOR_PORTA` | `8080` (Docker) / `5000` (Local) | Porta HTTP do servidor |
 | `SERVIDOR_THREADS` | `8` | Quantidade de threads de atendimento simultâneas |
-| `ATRAS_DE_PROXY` | `1` | Ativa suporte a cabeçalhos `X-Forwarded-For` / `X-Forwarded-Proto` |
-| `LOGIN_PROVISORIO` | `0` | Se ativo (`1`), permite login simplificado por seleção de nome |
+| `ATRAS_DE_PROXY` | `0` | Se ativo (`1`), injeta headers de segurança `Strict-Transport-Security` (HSTS) e habilita `ProxyFix` |
+| `LOGIN_PROVISORIO` | `0` | Se ativo (`1`), permite que usuários sem senha usem a `SENHA_PROVISORIA` da equipe para transição e cadastro de senha individual (bloqueado para admin). |
+| `SENHA_PROVISORIA` | `None` | Senha da equipe obrigatória quando `LOGIN_PROVISORIO=1`. Não possui valor padrão no código. |
+
+---
+
+## 🛡️ Segurança, Conformidade e LGPD
+
+- **Publicação Externa & ZTNA:** O acesso externo através de `https://crm.vbr.dpdns.org` é intermediado por infraestrutura de Zero Trust Network Access (ZTNA via Pangolin/Traefik com isolamento de rede), com aprovação formal da administração da unidade para fins operacionais da equipe.
+- **Cabeçalhos de Segurança HTTP:** Todas as respostas injetam `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` e `Strict-Transport-Security` quando `ATRAS_DE_PROXY=1`.
+- **Proteção de Dados Pessoais:** O repositório segue a regra estrita de não versionar arquivos com dados reais de alunos e colaboradores. Testes automatizados utilizam exclusivamente dados fictícios.
 
 ---
 
@@ -113,26 +128,9 @@ flask redefinir-senha usuario@egali.com.br
 # Listar todos os usuários cadastrados e status
 flask usuarios listar
 
-# Importar planilha da Base de Alunos
-flask importar base /caminho/para/planilha.xlsx
+# Executar migrações pendentes do banco
+flask db upgrade
 
-# Importar CSV do Checklist Egali
-flask importar checklist /caminho/para/checklist.csv
-```
-
----
-
-## 🧪 Testes Automatizados
-
-Para rodar a suíte de testes unitários e de integração:
-
-```bash
+# Rodar a suíte completa de testes (270 testes)
 pytest
 ```
-
----
-
-## 📄 Licença e Uso
-
-Projeto interno desenvolvido para a equipe Egali / Andubai.
-Proibida a distribuição pública de dados de clientes e alunos.
