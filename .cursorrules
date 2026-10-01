@@ -1,0 +1,10 @@
+# Cursor Rules - CRM AN / Dubai
+
+Todas as instruções, padrões de arquitetura, regras de negócio inegociáveis e restrições de segurança deste projeto estão declaradas centralmente em:
+-> AGENTS.md
+
+Ao propor código, refatorar ou diagnosticar problemas neste repositório:
+- Siga estritamente as diretrizes de AGENTS.md.
+- Não reverta para COM/Excel de Windows nem reintroduza dependência de SSO IIS.
+- Preserve o módulo de Pautas TM e a autenticação local.
+- Garanta que todos os testes (`pytest`) passem antes de concluir.
