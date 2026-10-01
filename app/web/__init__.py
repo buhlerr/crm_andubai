@@ -41,6 +41,10 @@ def registrar_web(app: Flask) -> None:
 
     app.add_template_filter(separar_neg, "separar_neg")
 
+    from app import vistos
+
+    app.add_template_filter(vistos.tipos_de_visto, "vistos")  # programa -> ["Visto - Canadá - eTA", ...]
+
     @app.context_processor
     def dados_do_topo():
         """Topo e barra lateral: últimas importações, tamanho da minha fila, prévias pendentes."""
@@ -63,6 +67,7 @@ def registrar_web(app: Flask) -> None:
             "topo_planilha": ultima(TipoImportacao.BASE_ALUNOS),
             "topo_checklist": ultima(TipoImportacao.CHECKLIST),
             "topo_minha_fila": consultas.contar(consultas.Filtros(responsavel=g.usuario.id)),
+            "topo_para_lancar": consultas.contar_para_lancar(g.usuario.id),
             "topo_previas": db.session.execute(
                 db.select(db.func.count()).select_from(Importacao).filter_by(situacao=SituacaoImportacao.PREVIA)
             ).scalar_one(),

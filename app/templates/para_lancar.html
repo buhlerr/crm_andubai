@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}Para lançar na Egali{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div>
+    <div class="sobretitulo">Checklist pós-venda</div>
+    <h1>Para lançar na Egali</h1>
+    <div class="suave">O que foi feito aqui e ainda precisa ir para o sistema da Egali. Lance lá e clique em
+      <b>Lancei na Egali</b>. A próxima importação do checklist confirma: quando o item some do CSV, ele sai desta lista.</div>
+  </div>
+  <nav class="seletor-visao" aria-label="De quem">
+    <a href="{{ url_for('filas.para_lancar') }}" class="{{ 'ativo' if not equipe }}">Minhas</a>
+    <a href="{{ url_for('filas.para_lancar', quem='equipe') }}" class="{{ 'ativo' if equipe }}">Toda a equipe</a>
+  </nav>
+</div>
+
+{% set voltar = request.full_path %}
+
+{% if conferir %}
+<section class="cartao" style="border-color:#f1c9c5">
+  <h2 style="margin-top:0">Marcadas como lançadas, mas ainda abertas na Egali ({{ conferir | length }})</h2>
+  <p class="pequeno">Uma importação feita depois da marcação ainda trouxe o item aberto no checklist da Egali.
+    Confira no sistema da Egali se o procedimento foi mesmo finalizado.</p>
+  <div class="tabela-rolagem"><table>
+    <thead><tr><th>Aluno</th><th>Procedimento</th><th>Item na Egali</th><th>Marcada em</th><th></th></tr></thead>
+    <tbody>
+    {% for t in conferir %}
+      <tr>
+        <td><a href="{{ url_for('programas.detalhe', programa_id=t.programa.id) }}">{{ t.programa.aluno.nome }}</a></td>
+        <td><a class="nome-procedimento" href="{{ url_for('tarefas.detalhe', tarefa_id=t.id) }}">{{ t.etapa.nome }}</a></td>
+        <td>#{{ t.item_checklist_egali }}</td>
+        <td class="prazo">{{ t.lancada_egali_em | data_hora }}<div class="suave pequeno">{{ t.lancada_egali_por.nome if t.lancada_egali_por }}</div></td>
+        <td><form method="post" action="{{ url_for('tarefas.marcar_lancada', tarefa_id=t.id) }}">{{ m.csrf() }}
+          <input type="hidden" name="voltar" value="{{ voltar }}"><button class="botao pequeno">Lancei de novo</button></form></td>
+      </tr>
+    {% endfor %}
+    </tbody></table></div>
+</section>
+{% endif %}
+
+<section class="cartao">
+  <h2 style="margin-top:0">Procedimentos concluídos aqui ({{ tarefas | length }})</h2>
+  <p class="pequeno suave">Marcados como Concluída ou Não se aplica neste sistema, e ainda abertos no checklist da Egali.</p>
+  {% if tarefas %}
+  <div class="tabela-rolagem"><table>
+    <thead><tr><th>Aluno</th><th>Procedimento</th><th>Item na Egali</th><th>Situação aqui</th><th>Responsável</th><th></th></tr></thead>
+    <tbody>
+    {% for t in tarefas %}
+      <tr>
+        <td><a href="{{ url_for('programas.detalhe', programa_id=t.programa.id) }}">{{ t.programa.aluno.nome }}</a>
+          <div class="suave pequeno">aluno {{ t.programa.aluno.aluno_id_egali }}</div></td>
+        <td><span class="selo trilha">{{ t.etapa.trilha.nome }}</span>
+          <a class="nome-procedimento" href="{{ url_for('tarefas.detalhe', tarefa_id=t.id) }}">{{ t.etapa.nome }}</a></td>
+        <td>#{{ t.item_checklist_egali }}</td>
+        <td>{{ m.selo_status(t.status) }}{% if t.concluida_em %}<div class="suave pequeno">{{ t.concluida_em | data_hora }}</div>{% endif %}</td>
+        <td>{{ t.responsavel.nome if t.responsavel else '—' }}</td>
+        <td><form method="post" action="{{ url_for('tarefas.marcar_lancada', tarefa_id=t.id) }}">{{ m.csrf() }}
+          <input type="hidden" name="voltar" value="{{ voltar }}"><button class="botao pequeno">Lancei na Egali</button></form></td>
+      </tr>
+    {% endfor %}
+    </tbody></table></div>
+  {% else %}
+    <p class="vazio">Nada para lançar. 🎉</p>
+  {% endif %}
+</section>
+
+<section class="cartao">
+  <h2 style="margin-top:0">Observações feitas aqui ({{ anotacoes | length }})</h2>
+  <p class="pequeno suave">Se a observação justifica um atraso, ela precisa virar NEG no sistema da Egali: só a NEG conta como
+    justificativa. Se for só um lembrete interno, marque "Não precisa".</p>
+  {% if anotacoes %}
+  <div class="tabela-rolagem"><table>
+    <thead><tr><th>Aluno</th><th>Procedimento</th><th>Observação</th><th></th></tr></thead>
+    <tbody>
+    {% for a in anotacoes %}
+      {% set t = a.tarefa %}
+      <tr class="{{ 'atrasada' if t.atrasada(hoje()) }}">
+        <td><a href="{{ url_for('programas.detalhe', programa_id=t.programa.id) }}">{{ t.programa.aluno.nome }}</a></td>
+        <td><a class="nome-procedimento" href="{{ url_for('tarefas.detalhe', tarefa_id=t.id) }}">{{ t.etapa.nome }}</a>
+          <div class="suave pequeno">#{{ t.item_checklist_egali }}{% if t.atrasada(hoje()) %} · <span class="atraso">atrasada{{ ', sem NEG' if not t.tem_justificativa }}</span>{% endif %}</div></td>
+        <td>{{ a.texto }}<div class="neg-autor">{{ a.autor.nome }} · {{ a.criado_em | data_hora }}</div></td>
+        <td><form method="post" action="{{ url_for('tarefas.anotacao_lancada', anotacao_id=a.id) }}" class="acoes">{{ m.csrf() }}
+          <input type="hidden" name="voltar" value="{{ voltar }}">
+          <button class="botao pequeno">Lancei como NEG</button>
+          <button class="botao secundario pequeno" name="nao_precisa" value="1">Não precisa</button></form></td>
+      </tr>
+    {% endfor %}
+    </tbody></table></div>
+  {% else %}
+    <p class="vazio">Nenhuma observação pendente.</p>
+  {% endif %}
+</section>
+{% endblock %}

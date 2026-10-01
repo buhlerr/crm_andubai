@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}Concluídas{% endblock %}
+{% block conteudo %}
+{% set endpoint = request.endpoint %}
+{% set args = request.args.to_dict() %}
+<div class="cabecalho">
+  <div>
+    <div class="sobretitulo">Checklist pós-venda</div>
+    <h1>Concluídas</h1>
+    <div class="suave">Procedimentos finalizados: os concluídos neste sistema e os que saíram do checklist da Egali
+      (finalizados ou cancelados lá). A mais recente primeiro.</div>
+  </div>
+</div>
+
+<form class="filtros" method="get">
+  <div class="linha-campos">
+    <div class="campo" style="flex-basis:140px"><label for="de">Concluída de</label>
+      <input id="de" type="date" name="de" value="{{ de.isoformat() if de else '' }}"></div>
+    <div class="campo" style="flex-basis:140px"><label for="ate">até</label>
+      <input id="ate" type="date" name="ate" value="{{ ate.isoformat() if ate else '' }}"></div>
+    <div class="campo" style="flex-basis:150px"><label for="status">Situação</label>
+      <select id="status" name="status">
+        <option value="">Todas</option>
+        <option value="concluida" {{ 'selected' if filtros.status and filtros.status.value == 'concluida' }}>Concluída</option>
+        <option value="nao_se_aplica" {{ 'selected' if filtros.status and filtros.status.value == 'nao_se_aplica' }}>Não se aplica</option>
+      </select></div>
+    <div class="campo"><label for="responsavel">Responsável</label>
+      <select id="responsavel" name="responsavel">
+        <option value="">Todos</option>
+        {% for u in usuarios %}<option value="{{ u.id }}" {{ 'selected' if filtros.responsavel == u.id }}>{{ u.nome }}</option>{% endfor %}
+      </select></div>
+    <div class="campo"><label for="trilha">Trilha</label>
+      <select id="trilha" name="trilha">
+        <option value="">Todas</option>
+        {% for t in trilhas %}<option value="{{ t.codigo }}" {{ 'selected' if filtros.trilha == t.codigo }}>{{ t.nome }}</option>{% endfor %}
+      </select></div>
+    <div class="campo" style="flex-basis:200px"><label for="visto">Tipo de visto</label>
+      <select id="visto" name="visto">
+        <option value="">Todos</option>
+        {% for valor, rotulo in vistos_opcoes %}<option value="{{ valor }}" {{ 'selected' if filtros.visto == valor }}>{{ rotulo }}</option>{% endfor %}
+        <option value="{{ SEM_VISTO }}" {{ 'selected' if filtros.visto == SEM_VISTO }}>Sem visto informado</option>
+      </select></div>
+    <div class="campo" style="flex-basis:150px"><label for="publico">Público</label>
+      <select id="publico" name="publico">
+        {% for valor, rotulo in ROTULOS_PUBLICO.items() %}<option value="{{ valor.value }}" {{ 'selected' if filtros.publico == valor }}>{{ rotulo }}</option>{% endfor %}
+      </select></div>
+    <div class="campo"><label for="busca">Aluno ou ID</label>
+      <input id="busca" type="text" name="busca" value="{{ filtros.busca }}" placeholder="Nome, aluno_id, programa_id ou #"></div>
+    <div class="acoes" style="flex: 0 0 auto">
+      <button class="botao">Filtrar</button>
+      <a class="botao secundario" href="{{ url_for(endpoint) }}">Limpar</a>
+    </div>
+  </div>
+</form>
+
+<p class="suave pequeno">{{ total }} procedimento(s){% if paginas > 1 %} · página {{ pagina }} de {{ paginas }}{% endif %}.
+  Para os que saíram do checklist da Egali, a data é a da importação em que o sistema viu que o item sumiu.</p>
+
+<div class="tabela-rolagem">
+  <table>
+    <thead><tr><th>Concluída em</th><th>Aluno</th><th>Procedimento</th><th>Responsável</th><th>Prazo</th><th>Como</th></tr></thead>
+    <tbody>
+    {% for l in linhas %}
+      {% set t = l.tarefa %}
+      <tr>
+        <td class="prazo">{{ l.quando | data_hora }}</td>
+        <td><a href="{{ url_for('programas.detalhe', programa_id=t.programa.id) }}">{{ t.programa.aluno.nome }}</a>
+          <div>{{ m.selos_visto(t.programa) }}</div></td>
+        <td><span class="selo trilha">{{ t.etapa.trilha.nome }}</span>
+          <a class="nome-procedimento" href="{{ url_for('tarefas.detalhe', tarefa_id=t.id) }}">{{ t.etapa.nome }}</a>
+          {% if t.status.value == 'nao_se_aplica' %} {{ m.selo_status(t.status) }}{% endif %}</td>
+        <td>{{ t.responsavel.nome if t.responsavel else '—' }}</td>
+        <td class="prazo">{{ t.prazo_egali | data }}
+          {% set dias = l.dias_depois_do_prazo %}
+          {% if dias is none %}{% elif dias == 0 %}<small class="selo ok">no prazo</small>{% else %}<small class="atraso">{{ dias }} dia(s) depois</small>{% endif %}</td>
+        <td>{{ l.origem }}{% if l.quem %}<div class="suave pequeno">{{ l.quem }}</div>{% endif %}
+          {% if t.motivo_encerramento and l.origem != 'Neste sistema' %}<div class="suave pequeno">{{ 'cancelado' if t.motivo_encerramento.value == 'cancelado' else 'finalizado' }}</div>{% endif %}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="vazio">Nenhum procedimento concluído com esses filtros.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{{ m.paginacao(endpoint, args, pagina, paginas) }}
+{% endblock %}

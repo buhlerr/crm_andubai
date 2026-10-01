@@ -57,6 +57,11 @@
   <p>Estas tarefas não vieram neste arquivo, mas o prazo delas fica fora do período da exportação
     ({{ i.periodo_inicio | data }} a {{ i.periodo_fim | data }}). Por isso o sistema não as encerrou sozinho.
     Se elas já foram finalizadas ou ajustadas na Egali, encerre aqui.</p>
+  {% set todas_marcadas = marcar.values() | select | list | length == fora_do_periodo | length %}
+  {% if not todas_marcadas %}
+  <div class="mensagem alerta">As tarefas com prazo <b>depois de {{ i.periodo_fim | data }}</b> vêm desmarcadas: elas só não estavam
+    no arquivo porque a exportação terminava nessa data, e devem continuar pendentes. Encerre só se tiver certeza.</div>
+  {% endif %}
   {% if g.usuario.papel == Papel.ADMIN %}
   <form method="post" action="{{ url_for('importacoes.encerrar_fora_do_periodo', importacao_id=i.id) }}"
         onsubmit="return confirm('Encerrar as tarefas marcadas? Se algum item voltar ao checklist da Egali, a tarefa é reaberta.')">
@@ -65,15 +70,15 @@
     <div class="tabela-rolagem">
       <table>
         <thead><tr>
-          {% if g.usuario.papel == Papel.ADMIN %}<th><input type="checkbox" checked aria-label="Marcar todas"
+          {% if g.usuario.papel == Papel.ADMIN %}<th><input type="checkbox" {{ 'checked' if todas_marcadas }} aria-label="Marcar todas"
             onchange="this.closest('table').querySelectorAll('tbody input[type=checkbox]').forEach(c => c.checked = this.checked)"></th>{% endif %}
           <th>Prazo</th><th>Aluno</th><th>Procedimento</th><th>Status</th>
         </tr></thead>
         <tbody>
         {% for t in fora_do_periodo %}
           <tr>
-            {% if g.usuario.papel == Papel.ADMIN %}<td><input type="checkbox" name="tarefa" value="{{ t.id }}" checked aria-label="Encerrar"></td>{% endif %}
-            <td class="prazo">{{ t.prazo_egali | data }}</td>
+            {% if g.usuario.papel == Papel.ADMIN %}<td><input type="checkbox" name="tarefa" value="{{ t.id }}" {{ 'checked' if marcar[t.id] }} aria-label="Encerrar"></td>{% endif %}
+            <td class="prazo">{{ t.prazo_egali | data }}{% if not marcar[t.id] %}<small>{{ 'sem data' if t.prazo_egali is none else 'depois do período: deve continuar pendente' }}</small>{% endif %}</td>
             <td><a href="{{ url_for('programas.detalhe', programa_id=t.programa.id) }}">{{ t.programa.aluno.nome }}</a></td>
             <td><span class="selo trilha">{{ t.etapa.trilha.nome }}</span> <a href="{{ url_for('tarefas.detalhe', tarefa_id=t.id) }}">{{ t.etapa.nome }}</a></td>
             <td>{{ m.selo_status(t.status) }}</td>

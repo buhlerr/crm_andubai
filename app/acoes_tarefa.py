@@ -21,8 +21,30 @@ def mudar_status(tarefa: Tarefa, status: StatusTarefa, usuario: Usuario) -> bool
     _historico(tarefa, usuario, "status", tarefa.status.value, status.value)
     tarefa.status = status
     tarefa.concluida_em = agora() if status == StatusTarefa.CONCLUIDA else None
+    if tarefa.aberta and tarefa.lancada_egali_em:
+        # Voltou a ficar aberta: o "lancei na Egali" anterior não vale mais.
+        tarefa.lancada_egali_em = tarefa.lancada_egali_por_id = None
     db.session.commit()
     return True
+
+
+def marcar_lancada(tarefa: Tarefa, usuario: Usuario) -> bool:
+    """A pessoa lançou na Egali o que concluiu aqui. A importação seguinte confirma (o item some do CSV)."""
+    if tarefa.aberta:
+        return False
+    _historico(tarefa, usuario, "lancamento_egali", None, "lançada no sistema da Egali")
+    tarefa.lancada_egali_em = agora()
+    tarefa.lancada_egali_por_id = usuario.id
+    db.session.commit()
+    return True
+
+
+def marcar_anotacao(anotacao: Anotacao, usuario: Usuario, nao_precisa: bool = False) -> None:
+    """Observação lançada como NEG na Egali, ou que não precisa ser lançada."""
+    anotacao.lancada_egali_em = agora()
+    anotacao.lancada_egali_por_id = usuario.id
+    anotacao.nao_precisa_lancar = nao_precisa
+    db.session.commit()
 
 
 def mudar_responsavel(tarefa: Tarefa, novo: Usuario | None, usuario: Usuario) -> bool:
@@ -71,6 +93,7 @@ ROTULOS_CAMPOS_HISTORICO = {
     "programa": "Programa",
     "procedimento": "Procedimento",
     "encerramento": "Saiu do checklist",
+    "lancamento_egali": "Lançada na Egali",
 }
 
 

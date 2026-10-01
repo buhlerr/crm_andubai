@@ -64,6 +64,9 @@
       {{ item('filas.minha_fila', 'Minha fila', tela == 'filas.minha_fila', etiqueta=topo_minha_fila) }}
       {{ item('filas.fila_equipe', 'Fila da equipe', tela == 'filas.fila_equipe') }}
       {{ item('filas.por_consultor', 'Por consultor', tela == 'filas.por_consultor') }}
+      {{ item('filas.concluidas', 'Concluídas', tela == 'filas.concluidas') }}
+      {{ item('filas.para_lancar', 'Para lançar na Egali', tela == 'filas.para_lancar',
+              etiqueta=(topo_para_lancar or none), classe_etiqueta='map') }}
       {{ item('pautas.lista', 'Pautas TM', tela.startswith('pautas.')) }}
     </div>
     <div class="nav-group">

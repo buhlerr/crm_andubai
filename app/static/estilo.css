@@ -278,7 +278,29 @@ details summary { cursor: pointer; font-weight: 600; margin: 6px 0; }
 .aviso-flutuante.erro { border-left-color: var(--perigo); }
 @keyframes entra { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-/* ---------- quadro por aluno ---------- */
+/* ---------- tipo de visto e grupos do "Organizar por" ---------- */
+.selo.visto { background: var(--marca-clara); color: var(--marca-escura); font-weight: 600; margin-top: 3px; }
+tr.grupo-linha th { background: var(--fundo); color: var(--navy-800); font-family: var(--fonte-titulo); font-size: 12.5px;
+  text-transform: none; letter-spacing: 0; padding: 9px 12px; border-top: 2px solid var(--borda); }
+tr.grupo-linha .numero { background: var(--cartao); border-radius: 999px; padding: 1px 8px; margin-left: 6px; font-size: 11px; color: var(--suave); }
+
+/* ---------- quadro por aluno: uma linha por aluno, que abre as tarefas ---------- */
+.quadro-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.quadro-grupo { margin: 18px 0 8px; font-size: 13px; color: var(--suave); text-transform: uppercase; letter-spacing: .04em; }
+details.cartao-aluno { margin-bottom: 8px; }
+details.cartao-aluno.com-atraso { border-left: 3px solid var(--perigo); }
+details.cartao-aluno > summary { display: flex; align-items: center; gap: 12px; padding: 11px 14px; cursor: pointer;
+  list-style: none; background: var(--cartao); margin: 0; font-weight: 400; }
+details.cartao-aluno > summary::-webkit-details-marker { display: none; }
+details.cartao-aluno > summary:hover { background: #f8fbfc; }
+details.cartao-aluno[open] > summary { border-bottom: 1px solid var(--borda); background: var(--cabeca-tabela); }
+.cartao-aluno-seta { color: var(--suave); transition: transform .15s; flex: none; }
+details.cartao-aluno[open] .cartao-aluno-seta { transform: rotate(90deg); }
+.cartao-aluno-resumo { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.cartao-aluno-contas { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 720px) { details.cartao-aluno > summary { flex-wrap: wrap; } .cartao-aluno-contas { justify-content: flex-start; } }
+
+/* ---------- quadro por aluno (cartões) ---------- */
 .quadro { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); align-items: start; }
 .cartao-aluno { background: var(--cartao); border: 1px solid var(--borda); border-radius: var(--raio); overflow: hidden; box-shadow: var(--sombra); }
 .cartao-aluno header { padding: 11px 14px; border-bottom: 1px solid var(--borda); background: var(--cabeca-tabela); }

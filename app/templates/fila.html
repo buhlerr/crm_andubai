@@ -12,7 +12,7 @@
     <div class="suave">{{ descricao }}</div>
   </div>
   <nav class="seletor-visao" aria-label="Visualização">
-    {% set sem_pagina = args.copy() %}{% set _ = sem_pagina.pop('pagina', None) %}
+    {% set sem_pagina = args.copy() %}{% set _ = sem_pagina.pop('pagina', None) %}{% set _ = sem_pagina.pop('organizar', None) %}
     {% for v, rotulo in ROTULOS_VISAO.items() %}
       <a href="{{ url_for(endpoint, visao=v.value, **sem_pagina) }}" class="{{ 'ativo' if visao == v }}"
          {{ 'aria-current=page' if visao == v }}>{{ rotulo }}</a>
@@ -64,6 +64,14 @@
         {% endfor %}
       </select>
     </div>
+    <div class="campo" style="flex-basis:200px">
+      <label for="visto">Tipo de visto</label>
+      <select id="visto" name="visto">
+        <option value="">Todos</option>
+        {% for valor, rotulo in vistos_opcoes %}<option value="{{ valor }}" {{ 'selected' if filtros.visto == valor }}>{{ rotulo }}</option>{% endfor %}
+        <option value="{{ SEM_VISTO }}" {{ 'selected' if filtros.visto == SEM_VISTO }}>Sem visto informado</option>
+      </select>
+    </div>
     <div class="campo" style="flex-basis:150px">
       <label for="publico">Público</label>
       <select id="publico" name="publico">
@@ -104,6 +112,14 @@
       <label for="busca">Aluno ou ID</label>
       <input id="busca" type="text" name="busca" value="{{ filtros.busca }}" placeholder="Nome, aluno_id, programa_id ou #">
     </div>
+    {% if visao in (VisaoFila.LISTA, VisaoFila.QUADRO) %}
+    <div class="campo" style="flex-basis:170px">
+      <label for="organizar">Organizar por</label>
+      <select id="organizar" name="organizar" onchange="this.form.submit()">
+        {% for o in opcoes_organizar %}<option value="{{ o.value }}" {{ 'selected' if organizar == o }}>{{ ROTULOS_ORGANIZAR[o] }}</option>{% endfor %}
+      </select>
+    </div>
+    {% endif %}
     <div class="acoes" style="flex: 0 0 auto">
       <button class="botao">Filtrar</button>
       <a class="botao secundario" href="{{ url_for(endpoint) }}">Limpar</a>

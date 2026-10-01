@@ -3,7 +3,7 @@ from flask import Blueprint, abort, flash, g, jsonify, redirect, render_template
 from app import acoes_tarefa
 from app.extensions import db
 from app.importacao.valores import para_data
-from app.models import ROTULOS_STATUS, HistoricoTarefa, StatusTarefa, Tarefa, Usuario
+from app.models import ROTULOS_STATUS, Anotacao, HistoricoTarefa, StatusTarefa, Tarefa, Usuario
 from app.web.auth import destino_seguro, login_obrigatorio
 
 bp = Blueprint("tarefas", __name__, url_prefix="/tarefas")
@@ -99,6 +99,28 @@ def mudar_data_planejada(tarefa_id):
         else:
             flash("Data planejada salva.", "ok")
     return _voltar(tarefa)
+
+
+@bp.route("/<int:tarefa_id>/lancada-na-egali", methods=["POST"])
+@login_obrigatorio
+def marcar_lancada(tarefa_id):
+    tarefa = _tarefa(tarefa_id)
+    if acoes_tarefa.marcar_lancada(tarefa, g.usuario):
+        flash(f"{tarefa.programa.aluno.nome} · {tarefa.etapa.nome}: marcada como lançada na Egali. "
+              "A próxima importação do checklist confirma.", "ok")
+    else:
+        flash("Essa tarefa está aberta: conclua aqui antes de marcar como lançada.", "erro")
+    return redirect(destino_seguro(request.form.get("voltar"), url_for("filas.para_lancar")))
+
+
+@bp.route("/anotacoes/<int:anotacao_id>/lancada-na-egali", methods=["POST"])
+@login_obrigatorio
+def anotacao_lancada(anotacao_id):
+    anotacao = db.session.get(Anotacao, anotacao_id) or abort(404, "Observação não encontrada.")
+    nao_precisa = request.form.get("nao_precisa") == "1"
+    acoes_tarefa.marcar_anotacao(anotacao, g.usuario, nao_precisa)
+    flash("Observação marcada como " + ("\"não precisa lançar\"." if nao_precisa else "lançada como NEG na Egali."), "ok")
+    return redirect(destino_seguro(request.form.get("voltar"), url_for("filas.para_lancar")))
 
 
 @bp.route("/<int:tarefa_id>/anotacoes", methods=["POST"])
