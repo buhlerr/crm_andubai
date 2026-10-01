@@ -32,6 +32,8 @@ O repositório `crm_andubai` possui decisões arquiteturais deliberadas que dife
 5. **Data Fixa vs Data Planejada:** O `prazo_egali` é a data do procedimento oficial e é o único critério que define atraso da tarefa. A `data_planejada` é a estimativa operacional do consultor e não altera o cálculo do atraso.
 6. **Interface em Português Claro:** Todo o sistema e suas mensagens de erro e validação devem ser apresentados em português sem jargões técnicos para a equipe de atendimento.
 
+Para o detalhamento exaustivo de cada entidade, importações e regras de negócio do Checklist, consulte [`docs/REGRAS_CHECKLIST.md`](file:///d:/dev/crm_andubai/docs/REGRAS_CHECKLIST.md) e [`REGRAS_PAUTAS.md`](file:///d:/dev/crm_andubai/REGRAS_PAUTAS.md).
+
 ---
 
 ## 🛡️ Segurança e LGPD
@@ -45,4 +47,4 @@ O repositório `crm_andubai` possui decisões arquiteturais deliberadas que dife
 ```bash
 pytest
 ```
-Todos os **270 testes automatizados** em `tests/` devem passar com 100% de sucesso a cada modificação no código.
+Todos os **271 testes automatizados** em `tests/` devem passar com 100% de sucesso a cada modificação no código.

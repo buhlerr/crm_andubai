@@ -20,7 +20,9 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
   - Rate limiting no endpoint de login `/entrar` (10 tentativas a cada 15 minutos por IP/usuário).
   - Cabeçalhos de segurança HTTP (`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `HSTS`).
   - Bloqueio definitivo do login provisório para contas de Administrador.
-- **Suíte de Testes:** 270 testes automatizados cobrindo autenticação, migrações, importações, pautas TM e visualizações web.
+- **Documentação de Negócio:** Adicionado `docs/REGRAS_CHECKLIST.md` contendo a especificação detalhada de regras, entidades e prazos.
+- **Tabela de SLA de Pautas:** `app/dados/pautas_sla.csv` incorporado para cálculo automático de SLA sem dependência de planilhas externas.
+- **Suíte de Testes:** 271 testes automatizados cobrindo autenticação, rate-limiting, migrações, importações, pautas TM e visualizações web.
 
 ### Modificado
 - **Migrações:** Migração `ec1a54ac4fe8` tornando a criação das tabelas de pautas e campos de senha idempotentes.
@@ -29,4 +31,5 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ### Segurança e LGPD
 - Remoção e bloqueio via `.gitignore` de planilhas e exportações reais de alunos e colaboradores.
+- Nomes reais de colaboradores substituídos por configuração dinâmica (`PAUTAS_MEMBROS_UNIDADE`).
 - Adição de fixtures higienizadas e fictícias em `tests/amostras/`.

@@ -1,193 +1,134 @@
-from datetime import date
+"""Pautas TM. Só amostras fictícias (tests/amostras/, geradas por gerar_amostras.py): nunca arquivos reais."""
+
+import io
 import os
+from datetime import date
+
 import pytest
+
 from app import create_app
 from app.extensions import db
-from app.importacao.pautas import carregar_pautas, normalizar_nome
+from app.importacao.pautas import carregar_pautas
 from app.models import Papel, Usuario
 
-CAMINHO_MHTML = os.path.join(os.path.dirname(__file__), "amostras", "pautas_amostra.mhtml")
+AMOSTRAS = os.path.join(os.path.dirname(__file__), "amostras")
+CSV = os.path.join(AMOSTRAS, "pautas_exemplo.csv")
+HTML = os.path.join(AMOSTRAS, "pautas_exemplo.html")
+TOKEN = "token-de-teste"
 
 
+@pytest.fixture
+def app(tmp_path):
+    app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"})
+    app.instance_path = str(tmp_path)  # o envio grava o arquivo na pasta de dados: nunca na do projeto
+    with app.app_context():
+        db.create_all()
+        db.session.add_all([
+            Usuario(nome="Consultora Ana", email="ana@exemplo.test", papel=Papel.CONSULTOR),
+            Usuario(nome="Admin Teste", email="admin@exemplo.test", papel=Papel.ADMIN),
+        ])
+        db.session.commit()
+        yield app
+        db.session.remove()
+        db.drop_all()
 
 
-def test_carregar_pautas_mhtml_existente():
-    if not os.path.exists(CAMINHO_MHTML):
-        return
-
-    data_ref = date(2026, 9, 30)
-    pautas = carregar_pautas(CAMINHO_MHTML, data_referencia=data_ref)
-
-    assert len(pautas) == 3
-
-    # Verifica pauta 3102692
-    p1 = next((p for p in pautas if p["ID"] == "3102692"), None)
-    assert p1 is not None
-    assert p1["Atualizada?"] == "FALSE"
-    assert p1["Dias"] == "0"
-    assert p1["UN Atualizou"] == ""
-    assert p1["Responsável"] == "Consultor Teste Um"
-    assert p1["Criada por"] == "Consultor Teste Dois"
-    assert p1["Atualizado por"] == "Consultor Teste Um"
-    assert p1["Aluno"] == "Aluno Um Teste"
-    assert p1["Status"] == "Em aberto"
-
-    # Verifica pauta 3101587 (atualizada pela unidade)
-    p2 = next((p for p in pautas if p["ID"] == "3101587"), None)
-    assert p2 is not None
-    assert p2["Atualizada?"] == "TRUE"
-    assert p2["Dias"] == "2"
-    assert p2["UN Atualizou"] == "AN e Dubai"
-    assert p2["TAG"] == "Atrasada"
-
-    # Verifica pauta 3102536 (com extração inteligente de aluno)
-    p3 = next((p for p in pautas if p["ID"] == "3102536"), None)
-    assert p3 is not None
-    assert p3["Aluno"] == "Aluna Tres Teste"
+@pytest.fixture
+def client(app):
+    return app.test_client()
 
 
-def test_carregar_pautas_csv_existente():
-    caminho_csv = os.path.join(os.path.dirname(__file__), "amostras", "pautas_amostra.csv")
-    if not os.path.exists(caminho_csv):
-        return
-
-    data_ref = date(2026, 9, 30)
-    pautas = carregar_pautas(caminho_csv, data_referencia=data_ref)
-
-    assert len(pautas) == 3
-    p1 = next((p for p in pautas if p["ID"] == "3102692"), None)
-    assert p1 is not None
-    assert p1["Responsável"] == "Consultor Teste Um"
-    assert p1["Aluno"] == "Aluno Um Teste"
-    assert p1["Status"] == "Em aberto"
-    assert p1["Atualizada?"] == "FALSE"
+def entrar(client, email):
+    usuario = db.session.execute(db.select(Usuario).filter_by(email=email)).scalar_one()
+    with client.session_transaction() as sessao:
+        sessao["usuario_id"], sessao["csrf"] = usuario.id, TOKEN
+    return usuario
 
 
-def test_rota_web_pautas(app, client):
-    u = Usuario(nome="Consultor Teste Um", email="consultor@exemplo.test", papel=Papel.ADMIN)
-    db.session.add(u)
-    db.session.commit()
-
-    with client.session_transaction() as sess:
-        sess["usuario_id"] = u.id
-
-    res = client.get("/pautas/")
-    assert res.status_code == 200
-    assert "Pautas por Consultor" in res.text
-    assert "3102692" in res.text
-
-    # Teste de exportação JSON
-    res_json = client.get(f"/pautas/exportar-json?consultor={u.nome}")
-    assert res_json.status_code == 200
-    assert res_json.content_type.startswith("application/json")
-    dados = res_json.json
-    assert isinstance(dados, list)
-    assert len(dados) > 0
-    assert any(p["ID"] == "3102692" for p in dados)
+def enviar(client, caminho):
+    with open(caminho, "rb") as f:
+        return client.post("/pautas/enviar", data={"csrf": TOKEN, "arquivo": (io.BytesIO(f.read()), os.path.basename(caminho))},
+                           content_type="multipart/form-data", follow_redirects=True)
 
 
-def test_salvar_observacao_ajax_e_upsert(app, client):
-    u = Usuario(nome="Consultor Teste", email="consultor@teste.com", papel=Papel.CONSULTOR)
-    db.session.add(u)
-    db.session.commit()
+@pytest.mark.parametrize("caminho", [CSV, HTML])
+def test_le_csv_e_pagina_salva(app, caminho):
+    pautas = {p["ID"]: p for p in carregar_pautas(caminho, data_referencia=date(2026, 10, 1))}
+    assert set(pautas) == {"9000001", "9000002", "9000003"}
+    p1 = pautas["9000001"]
+    assert p1["Aluno"] == "Aluno Ficticio Um"  # tirado do título da pauta
+    assert p1["Criada por"] == "Consultora Ana" and p1["Responsável"] == "Pessoa Acomodacao"
+    assert p1["SLA"] == 72  # "MKT - Criação de material" na tabela app/dados/pautas_sla.csv
+    assert p1["UN Criou"] == "AN e Dubai" and p1["UN Responsável"] == "Outro Setor"
+    assert p1["Quebra Outro"] and not p1["Quebra UN"]
+    assert pautas["9000002"]["Aluno"] == "Aluna Ficticia Dois"  # formato "... - Nome"
+    assert pautas["9000002"]["Atualizada?"] == "TRUE"
+    assert pautas["9000003"]["SLA"] is None  # categoria fora da tabela
 
-    with client.session_transaction() as sess:
-        sess["usuario_id"] = u.id
-        sess["csrf"] = "token-teste-pautas"
 
-    # Garante que pautas foram carregadas no banco
-    client.get("/pautas/")
+def test_rotas_de_pautas_exigem_login(client):
+    for url in ("/pautas/", "/pautas/exportar-json"):
+        resposta = client.get(url)
+        assert resposta.status_code == 302 and "/entrar" in resposta.headers["Location"], url
+    assert client.post("/pautas/9000001/observacao", json={"observacao": "x"}).status_code in (302, 400)
 
-    from app.models.pautas import Pauta, PautaAnotacao
-    pauta = Pauta.query.first()
-    assert pauta is not None
-    pauta_id = pauta.id
 
-    # Salva observação via endpoint AJAX
-    res = client.post(
-        f"/pautas/{pauta_id}/observacao",
-        json={"observacao": "Aguardando confirmação de voo com aluno.", "csrf": "token-teste-pautas"},
-    )
-    assert res.status_code == 200
-    data = res.get_json()
-    assert data["sucesso"] is True
-    assert data["observacao"] == "Aguardando confirmação de voo com aluno."
+def test_envio_so_para_admin_e_sincroniza(app, client):
+    entrar(client, "ana@exemplo.test")
+    assert enviar(client, CSV).status_code == 403
+    entrar(client, "admin@exemplo.test")
+    resposta = enviar(client, CSV)
+    assert "Base de pautas sincronizada" in resposta.get_data(as_text=True)
+    assert os.path.exists(os.path.join(app.instance_path, "pautas_recente.csv"))
+    pagina = client.get("/pautas/").get_data(as_text=True)
+    assert "9000001" in pagina
+    dados = client.get("/pautas/exportar-json?consultor=Consultora Ana").get_json()
+    assert any(p["ID"] == "9000001" for p in dados)
 
-    # Verifica persistência no banco
-    pauta_atualizada = db.session.get(Pauta, pauta_id)
-    assert pauta_atualizada.observacao == "Aguardando confirmação de voo com aluno."
-    assert len(pauta_atualizada.anotacoes) == 1
-    assert pauta_atualizada.anotacoes[0].texto == "Aguardando confirmação de voo com aluno."
-    assert pauta_atualizada.anotacoes[0].autor_id == u.id
 
-    # Testa que nova sincronização do TM preserva a observação interna
-    from app.importacao.pautas import carregar_pautas, sincronizar_pautas_no_banco
-    linhas = carregar_pautas(CAMINHO_MHTML)
-    sincronizar_pautas_no_banco(linhas, arquivo_origem="teste_reimport.mhtml")
+def test_observacao_por_fetch_com_token_e_reimportacao_preserva(app, client):
+    from app.importacao.pautas import sincronizar_pautas_no_banco
+    from app.models.pautas import Pauta
 
-    pauta_apos_sync = db.session.get(Pauta, pauta_id)
-    assert pauta_apos_sync.observacao == "Aguardando confirmação de voo com aluno."
-    assert len(pauta_apos_sync.anotacoes) == 1
+    entrar(client, "admin@exemplo.test")
+    enviar(client, CSV)
+    sem_token = client.post("/pautas/9000001/observacao", json={"observacao": "nota"})
+    assert sem_token.status_code == 400  # o CSRF vale também para o fetch
+    com_token = client.post("/pautas/9000001/observacao", json={"observacao": "Aguardando retorno do setor."},
+                            headers={"X-CSRF-Token": TOKEN})
+    assert com_token.status_code == 200 and com_token.get_json()["sucesso"] is True
+    assert "X-CSRF-Token" in client.get("/pautas/").get_data(as_text=True)  # a tela manda o token
+
+    sincronizar_pautas_no_banco(carregar_pautas(HTML), arquivo_origem="reimportacao.html")
+    pauta = db.session.get(Pauta, 9000001)
+    assert pauta.observacao == "Aguardando retorno do setor." and len(pauta.anotacoes) == 1
+
+
+def test_membros_da_unidade_vem_da_configuracao(app):
+    from app.importacao.pautas import membros_padrao
+
+    assert membros_padrao() == []  # nada de nomes no código
+    app.config["PAUTAS_MEMBROS_UNIDADE"] = ["Nome Sobrenome"]
+    assert membros_padrao() == ["Nome Sobrenome"]
 
 
 def test_cadastros_pautas_setores(app, client):
-    admin = Usuario(nome="Admin Master", email="admin@teste.com", papel=Papel.ADMIN)
-    db.session.add(admin)
-    db.session.commit()
-
-    with client.session_transaction() as sess:
-        sess["usuario_id"] = admin.id
-        sess["csrf"] = "token-teste-pautas"
-
-    # 1. Acessa a tela de configurações de pautas
+    entrar(client, "admin@exemplo.test")
     res = client.get("/cadastros/pautas")
-    assert res.status_code == 200
-    assert "Mapeamento de Setores para Pautas" in res.text
+    assert res.status_code == 200 and "Mapeamento de Setores para Pautas" in res.text
 
-    # 2. Adiciona novo colaborador -> setor
-    res_add = client.post(
-        "/cadastros/pautas",
-        data={
-            "acao": "adicionar",
-            "nome": "Marcia Bocorny Allgayer",
-            "setor": "Acomodação",
-            "csrf": "token-teste-pautas",
-        },
-        follow_redirects=True,
-    )
-    assert "cadastrado(a) no setor" in res_add.text
-    assert "Marcia Bocorny Allgayer" in res_add.text
+    res_add = client.post("/cadastros/pautas", data={"csrf": TOKEN, "acao": "adicionar", "nome": "Pessoa Acomodacao",
+                                                     "setor": "Acomodação"}, follow_redirects=True)
+    assert "cadastrado(a) no setor" in res_add.text and "Pessoa Acomodacao" in res_add.text
 
     from app.models.pautas import ColaboradorSetor
-    colab = ColaboradorSetor.query.filter_by(nome="Marcia Bocorny Allgayer").first()
-    assert colab is not None
+    colab = db.session.execute(db.select(ColaboradorSetor).filter_by(nome="Pessoa Acomodacao")).scalar_one()
     assert colab.setor == "Acomodação"
 
-    # 3. Edita o mapeamento atualizando o setor
-    res_edit = client.post(
-        "/cadastros/pautas",
-        data={
-            "acao": "adicionar",
-            "nome": "Marcia Bocorny Allgayer",
-            "setor": "Aéreo / Reembolsos",
-            "csrf": "token-teste-pautas",
-        },
-        follow_redirects=True,
-    )
-    assert res_edit.status_code == 200
+    client.post("/cadastros/pautas", data={"csrf": TOKEN, "acao": "adicionar", "nome": "Pessoa Acomodacao",
+                                           "setor": "Aéreo / Reembolsos"}, follow_redirects=True)
     db.session.refresh(colab)
     assert colab.setor == "Aéreo / Reembolsos"
 
-    # 4. Remove o mapeamento
-    res_del = client.post(
-        "/cadastros/pautas",
-        data={
-            "acao": "remover",
-            "id": colab.id,
-            "csrf": "token-teste-pautas",
-        },
-        follow_redirects=True,
-    )
-    assert res_del.status_code == 200
-    assert db.session.get(ColaboradorSetor, colab.id) is None
-
+    res_del = client.post("/cadastros/pautas", data={"csrf": TOKEN, "acao": "remover", "id": colab.id}, follow_redirects=True)
+    assert res_del.status_code == 200 and db.session.get(ColaboradorSetor, colab.id) is None

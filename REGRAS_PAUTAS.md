@@ -50,7 +50,7 @@ O CRM analisa o par (`Atualizado por`, `Responsável`):
 No formato de planilha manual, existia uma aba auxiliar mapeando cada colaborador ao seu respectivo setor. No CRM Andubai, esse mecanismo foi incorporado à arquitetura:
 1. **Consultores da Unidade:** São os registros da tabela `Usuario` com `ativo = True`. Quando o nome de quem criou, atualizou ou é responsável bate com um usuário do CRM, o sistema atribui o rótulo **`AN e Dubai`**.
 2. **Colaboradores Externos:** Ficam registrados na tabela `ColaboradorSetor`, gerenciável pelo painel administrativo em `/cadastros/pautas`. Exemplo:
-   - *Márcia Bocorny Allgayer* ➔ `Acomodação`
+   - *Nome Sobrenome (colaboradora do setor)* ➔ `Acomodação`
    - *Renata Ferreira* ➔ `Aéreo / Reembolsos`
    - *Fernanda Santos* ➔ `Vistos`
 
@@ -69,7 +69,7 @@ A partir do mapeamento, cada pauta tem 4 metadados computados:
 ## 4. Regras de Prazos, SLA e Quebra de 72h+ ("Quebrou")
 
 ### Catálogo de SLAs por Categoria
-O sistema lê a tabela oficial de categorias (`pautaCatListCsv.csv`), que define o prazo nominal de resposta em horas para cada assunto (ex: 24h, 48h, 72h, etc.).
+O sistema lê a tabela de prazos por categoria (`app/dados/pautas_sla.csv`, só `categoria;horas`, tirada da lista de categorias do TM; para atualizar sem mexer no código, ponha um `pautas_sla.csv` no mesmo formato na pasta de dados), que define o prazo nominal de resposta em horas para cada assunto (ex: 24h, 48h, 72h, etc.).
 
 ### Categorização de Atrasos:
 1. **Dentro do Prazo:** Tempo de inatividade menor ou igual ao SLA da categoria (+ tolerância).

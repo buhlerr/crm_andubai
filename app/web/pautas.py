@@ -18,6 +18,7 @@ from app.importacao.pautas import (
     carregar_pautas,
     extrair_linhas_csv,
     extrair_linhas_mhtml,
+    membros_padrao,
     normalizar_nome,
     obter_membros_unidade,
     processar_linhas_para_pautas,
@@ -26,34 +27,17 @@ from app.importacao.pautas import (
 from app.models.base import agora
 from app.models.cadastro import Usuario
 from app.models.pautas import Pauta, PautaAnotacao
+from app.web.auth import admin_obrigatorio, login_obrigatorio
 
 bp = Blueprint("pautas", __name__, url_prefix="/pautas")
 
 
 def _caminho_arquivo_pautas() -> str:
-    """Retorna o caminho do arquivo mais recente de pautas disponível."""
-    if os.environ.get("PAUTAS_ARQUIVO") and os.path.exists(os.environ["PAUTAS_ARQUIVO"]):
-        return os.path.abspath(os.environ["PAUTAS_ARQUIVO"])
-
-    pastas = [
-        current_app.instance_path,
-        os.path.join(current_app.root_path, ".."),
-        os.path.abspath("."),
-        os.path.join(current_app.root_path, "..", "tests", "amostras"),
-    ]
-    nomes = [
-        "pautas_recente.csv",
-        "pautas_recente.mhtml",
-        "pautas_amostra.mhtml",
-        "pautas_amostra.csv",
-    ]
-
-    for p in pastas:
-        for n in nomes:
-            c = os.path.join(p, n)
-            if os.path.exists(c):
-                return os.path.abspath(c)
-
+    """Último arquivo de pautas enviado pela tela (fica só na pasta de dados, nunca no código)."""
+    for nome in ("pautas_recente.csv", "pautas_recente.mhtml", "pautas_recente.html", "pautas_recente.htm"):
+        caminho = os.path.join(current_app.instance_path, nome)
+        if os.path.exists(caminho):
+            return os.path.abspath(caminho)
     return ""
 
 
@@ -128,18 +112,10 @@ def _obter_pautas_gerais(data_ref: date | None = None) -> list[dict]:
 
 
 @bp.route("/")
+@login_obrigatorio
 def lista():
     membros_map = obter_membros_unidade()
-    membros = [u.nome for u in membros_map.values() if u]
-    if not membros:
-        membros = [
-            "Vitor Bühler Rau",
-            "Camila Panciera Grazziotin",
-            "Maria Eduarda Oliveira Dall Áqua",
-            "Maria Eduarda de Azevedo Brum",
-            "Nicole Kistt",
-            "Ramon Soares",
-        ]
+    membros = [u.nome for u in membros_map.values() if u] or membros_padrao()
 
     todas_pautas = _obter_pautas_gerais()
 
@@ -262,6 +238,7 @@ def lista():
 
 
 @bp.route("/<int:pauta_id>/observacao", methods=["POST"])
+@login_obrigatorio
 def salvar_observacao(pauta_id):
     """Salva anotação ou observação interna da pauta sem afetar dados do TM."""
     pauta = db.session.get(Pauta, pauta_id)
@@ -296,6 +273,7 @@ def salvar_observacao(pauta_id):
 
 
 @bp.route("/enviar", methods=["POST"])
+@admin_obrigatorio
 def enviar_arquivo():
     """Recebe upload do arquivo CSV ou MHTML e executa a sincronização segura."""
     arquivo = request.files.get("arquivo")
@@ -346,6 +324,7 @@ def enviar_arquivo():
 
 
 @bp.route("/exportar-json")
+@login_obrigatorio
 def exportar_json():
     consultor = request.args.get("consultor", "")
     pautas = _obter_pautas_gerais()

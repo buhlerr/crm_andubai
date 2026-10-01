@@ -96,24 +96,30 @@ def test_sem_login_vai_para_a_tela_de_entrar(cliente, dados):
     assert "/entrar" in resposta.headers["Location"]
 
 
-def test_login_provisorio(cliente, dados):
+def test_login_por_email_e_senha(db, cliente, dados):
+    dados["ana"].definir_senha("senha-da-ana-123")
+    db.session.commit()
     pagina = cliente.get("/entrar")
-    assert "Checklist do Suporte ao Aluno" in texto(pagina)
+    assert 'name="email"' in texto(pagina) and "Consultora Ana" not in texto(pagina)  # não lista os nomes
     with cliente.session_transaction() as sessao:
         token = sessao["csrf"]
-    resposta = cliente.post("/entrar?proximo=/fila", data={"email": dados["ana"].email, "senha": "senha-equipe-forte-2026", "csrf": token})
-    assert resposta.status_code == 302
+    resposta = cliente.post("/entrar?proximo=/fila", data={"email": "ANA@exemplo.test", "senha": "senha-da-ana-123", "csrf": token})
+    assert resposta.headers["Location"] == "/fila"
     assert cliente.get("/minha-fila").status_code == 200
 
 
-def test_login_provisorio_desligado(app, cliente, dados):
-    app.config["LOGIN_PROVISORIO"] = False
+def test_login_limita_tentativas(db, cliente, dados):
+    from app.web import auth
+
+    auth._tentativas.clear()
     cliente.get("/entrar")
     with cliente.session_transaction() as sessao:
         token = sessao["csrf"]
-    resposta = cliente.post("/entrar", data={"email": dados["ana"].email, "senha": "senha-equipe-forte-2026", "csrf": token})
-    assert resposta.status_code == 200
-    assert "incorret" in texto(resposta).lower()
+    for _ in range(auth.TENTATIVAS_MAXIMAS):
+        cliente.post("/entrar", data={"email": "ana@exemplo.test", "senha": "errada", "csrf": token})
+    bloqueada = cliente.post("/entrar", data={"email": "ana@exemplo.test", "senha": "errada", "csrf": token})
+    assert bloqueada.status_code == 429 and "Muitas tentativas" in texto(bloqueada)
+    auth._tentativas.clear()
 
 
 def test_usuario_inativo_perde_acesso(db, cliente, dados):

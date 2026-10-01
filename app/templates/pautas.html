@@ -432,19 +432,22 @@ async function salvarObsAjax(pautaId, isTab) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-CSRF-Token': '{{ token_csrf() }}',
       },
       body: JSON.stringify({ observacao: novoTexto })
     });
-    
+
     if (res.ok) {
       const data = await res.json();
-      const formatado = data.observacao ? data.observacao : '<span style="color: #94a3b8; font-style: italic;">Clique para adicionar uma nota interna...</span>';
-      
+      // O texto da observação entra como texto (textContent), nunca como HTML.
+      const mostrar = (el) => {
+        if (!el) return;
+        if (data.observacao) { el.textContent = data.observacao; }
+        else { el.innerHTML = '<span style="color: #94a3b8; font-style: italic;">Clique para adicionar uma nota interna...</span>'; }
+      };
       // Atualiza tanto na tabela quanto no card se ambos existirem
-      const elCard = document.getElementById(`texto-obs-card-${pautaId}`);
-      const elTab = document.getElementById(`texto-obs-tab-${pautaId}`);
-      if (elCard) elCard.innerHTML = formatado;
-      if (elTab) elTab.innerHTML = formatado;
+      mostrar(document.getElementById(`texto-obs-card-${pautaId}`));
+      mostrar(document.getElementById(`texto-obs-tab-${pautaId}`));
 
       cancelarEdicaoObs(pautaId, isTab);
     } else {

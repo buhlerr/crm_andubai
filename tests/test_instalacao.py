@@ -43,27 +43,38 @@ def test_atras_do_iis_usa_https(pasta_dados):
     assert resposta.get_data(as_text=True) == "https"
 
 
-def test_senha_da_equipe_no_login_provisorio(pasta_dados):
-    app = create_app({
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-        "LOGIN_PROVISORIO": True,
-        "SENHA_PROVISORIA": "segredo",
-        "SECRET_KEY": "chave-forte-teste-2026",
-    })
+def test_transicao_com_senha_da_equipe_nunca_vale_para_admin(pasta_dados):
+    app = create_app({"SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:", "LOGIN_PROVISORIO": True,
+                      "SENHA_PROVISORIA": "senha-nova-da-equipe"})
     with app.app_context():
         db.create_all()
-        usuario = Usuario(nome="Pessoa Teste", email="p@exemplo.test")
-        db.session.add(usuario)
+        consultor = Usuario(nome="Pessoa Teste", email="p@exemplo.test")
+        admin = Usuario(nome="Admin Teste", email="a@exemplo.test", papel=Papel.ADMIN)
+        db.session.add_all([consultor, admin])
         db.session.commit()
         cliente = app.test_client()
-        pagina = cliente.get("/entrar").get_data(as_text=True)
-        assert "e-mail" in pagina.lower() and "senha" in pagina.lower()
+        cliente.get("/entrar")
         with cliente.session_transaction() as sessao:
             token = sessao["csrf"]
-        errada = cliente.post("/entrar", data={"email": usuario.email, "senha": "outra", "csrf": token})
-        assert errada.status_code == 200 and "incorret" in errada.get_data(as_text=True).lower()
-        certa = cliente.post("/entrar", data={"email": usuario.email, "senha": "segredo", "csrf": token})
-        assert certa.status_code == 302
+        errada = cliente.post("/entrar", data={"email": "p@exemplo.test", "senha": "outra", "csrf": token})
+        assert errada.status_code == 200 and "E-mail ou senha incorretos" in errada.get_data(as_text=True)
+        certa = cliente.post("/entrar", data={"email": "p@exemplo.test", "senha": "senha-nova-da-equipe", "csrf": token})
+        assert certa.status_code == 302 and certa.headers["Location"].endswith("/trocar-senha")
+        cliente.post("/sair", data={"csrf": token})
+        cliente.get("/entrar")
+        with cliente.session_transaction() as sessao:
+            token = sessao["csrf"]
+        do_admin = cliente.post("/entrar", data={"email": "a@exemplo.test", "senha": "senha-nova-da-equipe", "csrf": token})
+        assert do_admin.status_code == 200 and "Administradores precisam de senha individual" in do_admin.get_data(as_text=True)
+
+    desligada = create_app({"SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:", "LOGIN_PROVISORIO": False,
+                            "SENHA_PROVISORIA": "senha-nova-da-equipe", "CSRF_DESLIGADO": True})
+    with desligada.app_context():
+        db.create_all()
+        db.session.add(Usuario(nome="Pessoa Teste", email="p@exemplo.test"))
+        db.session.commit()
+        resposta = desligada.test_client().post("/entrar", data={"email": "p@exemplo.test", "senha": "senha-nova-da-equipe"})
+        assert resposta.status_code == 200  # transição desligada: não entra
 
 
 def test_backup_e_rodizio(pasta_dados):
@@ -94,22 +105,22 @@ def test_backup_recusa_banco_em_memoria(pasta_dados):
 def test_diagnostico(pasta_dados):
     from app.manutencao import diagnosticar
 
-    app = create_app({"SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:", "LOGIN_PROVISORIO": True, "SECRET_KEY": CHAVE_PADRAO})
+    app = create_app({"SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"})
     with app.app_context():
         db.create_all()
         resultado = {v.nome: v for v in diagnosticar(app, testar_excel=False)}
-        assert resultado["Chave secreta"].ok is False  # valor padrão
-        assert resultado["Login"].ok is False  # provisório sem senha
+        assert resultado["Chave secreta"].ok is True and "gerada" in resultado["Chave secreta"].detalhe
+        assert resultado["Login"].ok is True  # só e-mail e senha individual
         assert resultado["Pasta de dados"].ok is True
         assert resultado["Administradores"].ok is False
         assert resultado["Banco de dados"].ok is False  # criado sem as migrações
 
         db.session.add(Usuario(nome="Admin", email="a@exemplo.test", papel=Papel.ADMIN))
         db.session.commit()
-        app.config.update(SECRET_KEY="outra", SENHA_PROVISORIA="x")
+        app.config.update(LOGIN_PROVISORIO=True, SENHA_PROVISORIA="senha-nova-da-equipe")
         resultado = {v.nome: v for v in diagnosticar(app, testar_excel=False)}
-        assert resultado["Chave secreta"].ok and resultado["Administradores"].ok
-        assert resultado["Login"].ok is None  # aviso: ainda é provisório
+        assert resultado["Administradores"].ok
+        assert resultado["Login"].ok is None  # aviso: transição ligada
 
 
 def test_comando_usuario_repetido_da_mensagem_curta(pasta_dados):
@@ -124,23 +135,41 @@ def test_comando_usuario_repetido_da_mensagem_curta(pasta_dados):
         assert "Traceback" not in resultado.output
 
 
-def test_servidor_recusa_chave_padrao(pasta_dados, monkeypatch):
-    import servidor
+def test_sem_chave_o_sistema_gera_e_guarda(pasta_dados, monkeypatch):
+    # Vale para qualquer forma de subir (gunicorn importa wsgi:app e não passa pelo servidor.py).
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+    primeira = create_app().config["SECRET_KEY"]
+    assert primeira != CHAVE_PADRAO and len(primeira) == 64
+    assert (pasta_dados / "secret_key").read_text().strip() == primeira
+    assert create_app().config["SECRET_KEY"] == primeira  # a mesma em cada subida: ninguém perde a sessão
 
-    escrever_config(pasta_dados, f'SECRET_KEY = "{CHAVE_PADRAO}"\n')
-    monkeypatch.setattr("waitress.serve", lambda *a, **k: pytest.fail("não devia iniciar"))
-    with pytest.raises((SystemExit, RuntimeError)):
-        servidor.main()
-    assert create_app().config["SECRET_KEY"] == CHAVE_PADRAO
+
+def test_recusa_chave_e_senha_publicadas(pasta_dados, monkeypatch):
+    from app import ConfiguracaoInsegura, VALORES_PROIBIDOS_SHA256
+    import hashlib
+
+    assert hashlib.sha256(b"senha_da_equipe_aqui").hexdigest() in VALORES_PROIBIDOS_SHA256
+    escrever_config(pasta_dados, 'LOGIN_PROVISORIO = True\nSENHA_PROVISORIA = "senha_da_equipe_aqui"\n')
+    with pytest.raises(ConfiguracaoInsegura, match="SENHA_PROVISORIA"):
+        create_app()
+    escrever_config(pasta_dados, f'SECRET_KEY = "{CHAVE_PADRAO}"\n')  # a padrão é trocada pela gerada
+    assert create_app().config["SECRET_KEY"] != CHAVE_PADRAO
 
 
-def test_servidor_recusa_login_provisorio_sem_senha(pasta_dados, monkeypatch):
-    import servidor
+def test_recusa_transicao_sem_senha(pasta_dados):
+    from app import ConfiguracaoInsegura
 
     escrever_config(pasta_dados, 'SECRET_KEY = "chave"\nLOGIN_PROVISORIO = True\n')
-    monkeypatch.setattr("waitress.serve", lambda *a, **k: pytest.fail("não devia iniciar"))
-    with pytest.raises(SystemExit):
-        servidor.main()
+    with pytest.raises(ConfiguracaoInsegura, match="sem SENHA_PROVISORIA"):
+        create_app()
+
+
+def test_cabecalhos_de_seguranca(pasta_dados):
+    escrever_config(pasta_dados, "ATRAS_DE_PROXY = True\n")
+    resposta = create_app({"SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"}).test_client().get("/entrar")
+    assert resposta.headers["X-Frame-Options"] == "DENY"
+    assert resposta.headers["X-Content-Type-Options"] == "nosniff"
+    assert "max-age" in resposta.headers["Strict-Transport-Security"]
 
 
 def test_servidor_sobe_com_config_completo(pasta_dados, monkeypatch):

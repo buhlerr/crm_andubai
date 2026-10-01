@@ -86,13 +86,18 @@ def diagnosticar(app: Flask, planilha: str | None = None, testar_excel: bool = T
     # Segurança
     if app.config["SECRET_KEY"] == CHAVE_PADRAO:
         resultado.append(Verificacao(False, "Chave secreta", "está com o valor padrão. Defina SECRET_KEY no config.py."))
+    elif os.path.exists(os.path.join(app.instance_path, "secret_key")) and not os.environ.get("SECRET_KEY"):
+        resultado.append(Verificacao(True, "Chave secreta", "gerada pelo sistema e guardada na pasta de dados (secret_key)"))
     else:
         resultado.append(Verificacao(True, "Chave secreta", "configurada"))
     if app.config.get("LOGIN_PROVISORIO"):
         if app.config.get("SENHA_PROVISORIA"):
-            resultado.append(Verificacao(None, "Login", "provisório, com senha da equipe. Trocar pelo Microsoft 365 quando a TI liberar."))
+            resultado.append(Verificacao(None, "Login", "transição ligada: quem ainda não tem senha entra com a da equipe "
+                                         "(nunca admin). Desligue LOGIN_PROVISORIO quando todos tiverem senha."))
         else:
-            resultado.append(Verificacao(False, "Login", "provisório SEM senha: qualquer pessoa da rede entra. Defina SENHA_PROVISORIA no config.py."))
+            resultado.append(Verificacao(False, "Login", "transição ligada SEM senha da equipe. Defina SENHA_PROVISORIA ou desligue LOGIN_PROVISORIO."))
+    else:
+        resultado.append(Verificacao(True, "Login", "e-mail e senha individual"))
     if not app.config.get("ATRAS_DE_PROXY"):
         resultado.append(Verificacao(None, "HTTPS", "sem proxy (IIS) na frente: as senhas trafegam sem criptografia na rede."))
 
