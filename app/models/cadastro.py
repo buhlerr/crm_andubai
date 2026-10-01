@@ -37,6 +37,9 @@ class Usuario(ComDatas, db.Model):
     ativo: Mapped[bool] = mapped_column(Boolean, default=True)
     # Última visualização das filas escolhida pela pessoa.
     visao_fila: Mapped[VisaoFila] = mapped_column(coluna_enum(VisaoFila), default=VisaoFila.LISTA, server_default="lista")
+    # "Organizar por" escolhido na lista e no quadro (valores de consultas.Organizar; texto, validado no código).
+    organizar_lista: Mapped[str] = mapped_column(String(20), default="data", server_default="data")
+    organizar_quadro: Mapped[str] = mapped_column(String(20), default="embarque", server_default="embarque")
     # Identificador da conta no Microsoft 365 (Entra ID), gravado no primeiro login.
     microsoft_oid: Mapped[str | None] = mapped_column(String(64), unique=True)
     # Hash da senha para autenticação local por e-mail e senha.

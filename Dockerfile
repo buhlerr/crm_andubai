@@ -26,5 +26,5 @@ RUN mkdir -p /dados/logs /dados/backups
 
 EXPOSE 8080
 
-# Inicializa migrações e sobe com gunicorn (ou waitress)
-CMD ["sh", "-c", "python -m flask db upgrade && python -m flask catalogo carregar 2>/dev/null || true && gunicorn -w 4 -b 0.0.0.0:8080 --timeout 300 wsgi:app"]
+# Inicializa migrações (falha aborta container) e sobe com gunicorn
+CMD ["sh", "-c", "python -m flask db upgrade && (python -m flask catalogo carregar 2>/dev/null || true) && exec gunicorn -w 4 -b 0.0.0.0:8080 --timeout 300 wsgi:app"]

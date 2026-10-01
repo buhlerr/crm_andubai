@@ -21,14 +21,6 @@ def _configurar_sqlite(conexao, _registro):
         # e o busy_timeout espera em vez de dar erro quando o banco está ocupado.
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA busy_timeout=30000")
-        # Migração automática de compatibilidade: adiciona coluna senha_hash se não existir
-        try:
-            cursor.execute("PRAGMA table_info(usuario)")
-            colunas = [row[1] for row in cursor.fetchall()]
-            if colunas and "senha_hash" not in colunas:
-                cursor.execute("ALTER TABLE usuario ADD COLUMN senha_hash VARCHAR(255)")
-        except Exception:
-            pass
         cursor.close()
 
 
@@ -47,9 +39,9 @@ def create_app(config: dict | None = None) -> Flask:
     app.config.from_mapping(
         SECRET_KEY=os.environ.get("SECRET_KEY") or None,
         SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL", f"sqlite:///{caminho_banco}"),
-        # Login sem senha, só até o login com Microsoft 365 ficar pronto. Desligar com LOGIN_PROVISORIO=0.
-        LOGIN_PROVISORIO=os.environ.get("LOGIN_PROVISORIO", "1") == "1",
-        # Senha única da equipe para o login provisório. Obrigatória no servidor (o instalador gera).
+        # Login de transição com senha única da equipe. Desligado por padrão (0). Ativar com LOGIN_PROVISORIO=1.
+        LOGIN_PROVISORIO=os.environ.get("LOGIN_PROVISORIO", "0") in ("1", "true", "True"),
+        # Senha única da equipe para o login provisório. Obrigatória se LOGIN_PROVISORIO=1.
         SENHA_PROVISORIA=os.environ.get("SENHA_PROVISORIA") or None,
         # True quando o proxy reverso (Nginx, Caddy, Cloudflare, IIS) fica na frente com HTTPS.
         ATRAS_DE_PROXY=os.environ.get("ATRAS_DE_PROXY", "0") in ("1", "true", "True"),

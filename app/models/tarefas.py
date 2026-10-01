@@ -1,7 +1,7 @@
 import enum
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.extensions import db
@@ -77,10 +77,17 @@ class Tarefa(ComDatas, db.Model):
 
     ultima_importacao_id: Mapped[int | None] = mapped_column(ForeignKey("importacao.id"))
 
+    # Concluída (ou "não se aplica") neste sistema e já lançada pela pessoa no sistema da Egali.
+    # A confirmação de verdade vem na importação seguinte, quando o item some do CSV.
+    lancada_egali_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    lancada_egali_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuario.id"))
+
     programa: Mapped["Programa"] = relationship(back_populates="tarefas")  # noqa: F821
+    ultima_importacao: Mapped["Importacao | None"] = relationship()  # noqa: F821
+    lancada_egali_por: Mapped["Usuario | None"] = relationship(foreign_keys=[lancada_egali_por_id])  # noqa: F821
     compra: Mapped["Compra | None"] = relationship()  # noqa: F821
     etapa: Mapped["EtapaModelo"] = relationship()  # noqa: F821
-    responsavel_manual: Mapped["Usuario | None"] = relationship()  # noqa: F821
+    responsavel_manual: Mapped["Usuario | None"] = relationship(foreign_keys=[responsavel_manual_id])  # noqa: F821
     anotacoes: Mapped[list["Anotacao"]] = relationship(back_populates="tarefa", order_by="Anotacao.criado_em")
 
     @property
@@ -128,9 +135,14 @@ class Anotacao(db.Model):
     autor_id: Mapped[int] = mapped_column(ForeignKey("usuario.id"))
     texto: Mapped[str] = mapped_column(Text)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+    # Tela "Para lançar na Egali": a pessoa lançou como NEG no sistema da Egali, ou disse que não precisa.
+    lancada_egali_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    lancada_egali_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuario.id"))
+    nao_precisa_lancar: Mapped[bool] = mapped_column(Boolean, default=False, server_default=db.false())
 
     tarefa: Mapped["Tarefa"] = relationship(back_populates="anotacoes")
-    autor: Mapped["Usuario"] = relationship()  # noqa: F821
+    autor: Mapped["Usuario"] = relationship(foreign_keys=[autor_id])  # noqa: F821
+    lancada_egali_por: Mapped["Usuario | None"] = relationship(foreign_keys=[lancada_egali_por_id])  # noqa: F821
 
 
 class HistoricoTarefa(db.Model):
