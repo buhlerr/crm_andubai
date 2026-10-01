@@ -48,3 +48,19 @@ Para o detalhamento exaustivo de cada entidade, importações e regras de negóc
 pytest
 ```
 Todos os **271 testes automatizados** em `tests/` devem passar com 100% de sucesso a cada modificação no código.
+
+---
+
+## 🤝 Protocolo de Colaboração Multi-Agente e Concorrência
+
+Para garantir que múltiplos desenvolvedores e agentes autônomos de IA (Antigravity, Cursor, Claude Code, Copilot) colaborem sem retrabalho, divergência no Git ou quebra de subsistemas:
+
+1. **Sincronização Prévia Obrigatória:** Antes de iniciar qualquer tarefa ou criar uma branch de feature, execute sempre `git pull origin master` e baseie seu trabalho no commit mais recente da `master`.
+2. **Linearidade e Idempotência de Migrações:**
+   - Antes de criar nova migração, verifique `flask db heads`.
+   - Nunca crie migrações concorrentes com o mesmo `down_revision`.
+   - Toda migração deve ser batch (`render_as_batch=True`), usar `server_default=sa.false()` para booleanos e inspecionar tabelas/colunas existentes com `inspect(op.get_bind())` para garantir idempotência sem falhar em bancos já atualizados.
+3. **Módulo de Pautas TM é Intocável:** O módulo de Pautas TM (`app/models/pautas.py`, `app/web/pautas.py`, `app/dados/pautas_sla.csv`) e seus links na barra de navegação são exclusivos da unidade AN e Dubai. Nenhum agente tem permissão para remover, desativar ou ocultar rotas de pautas.
+4. **Zero Nomes Hardcoded no Código (LGPD):** Nunca insira nomes reais de colaboradores ou alunos em arquivos de código, scripts ou commits. Use a variável de ambiente `PAUTAS_MEMBROS_UNIDADE` ou cadastros no banco. Em testes, use exclusivamente nomes fictícios em `tests/amostras/`.
+5. **Portão de Testes Não Negociável:** A contagem de testes só pode aumentar ou permanecer estável (mínimo de **271 testes**). É proibido deletar ou desativar testes para mascarar falhas.
+6. **Registro no CHANGELOG.md:** Qualquer alteração funcional, de tela, banco ou segurança deve ser documentada no [`CHANGELOG.md`](file:///d:/dev/crm_andubai/CHANGELOG.md).
