@@ -18,15 +18,9 @@ import sys
 import unicodedata
 from datetime import date, datetime
 
-# Consultores da unidade AN e Dubai (cadastrados no CRM)
-MEMBROS_PADRAO_UNIDADE = {
-    "vitor buhler rau",
-    "maria eduarda oliveira dall aqua",
-    "maria eduarda de azevedo brum",
-    "camila panciera grazziotin",
-    "nicole kistt",
-    "ramon soares",
-}
+# Consultores da unidade AN e Dubai: vêm da variável de ambiente PAUTAS_MEMBROS_UNIDADE (nomes separados
+# por ponto e vírgula) ou do parâmetro --membros. Nomes de pessoas não ficam no código, que é versionado.
+MEMBROS_PADRAO_UNIDADE = {m.strip() for m in os.environ.get("PAUTAS_MEMBROS_UNIDADE", "").split(";") if m.strip()}
 
 
 def normalizar_texto(txt: str | None) -> str:
@@ -76,7 +70,7 @@ def extrair_nome_aluno(pauta_texto: str, aluno_coluna: str, pauta_id: str) -> st
         return aluno_limpo
 
     # Padrão típico do TM: ID - CODIGO_SETOR - NOME ALUNO - ESCOLA (CIDADE) - DATA
-    # Exemplo: "3102692 - AC-SA-AND - Thays Baptista De Souza - CES (Centre of English Studies) - (Toronto) - 15/05/2026"
+    # Exemplo: "9000001 - AC-SA-AND - Nome do Aluno - Escola Exemplo - (Toronto) - 15/05/2026"
     partes = [p.strip() for p in pauta_texto.split(" - ")]
     if len(partes) >= 3:
         # Se a primeira parte for o ID ou dígitos, a 3ª parte costuma ser o aluno
@@ -130,13 +124,13 @@ def extrair_pautas(
         status = clean_tds[3]
         responsavel = clean_tds[4]
 
-        # Criação: "17/09/2026 18:14:42 por Vitor Bühler Rau"
+        # Criação: "17/09/2026 18:14:42 por Nome Sobrenome"
         cria_raw = clean_tds[5] if len(clean_tds) > 5 else ""
         cria_m = re.match(r"(\d{2}/\d{2}/\d{4})\s*(?:\d{2}:\d{2}:\d{2})?\s*(?:por\s*(.*))?", cria_raw)
         cria_em = cria_m.group(1) if cria_m else ""
         cria_por = cria_m.group(2).strip() if (cria_m and cria_m.group(2)) else ""
 
-        # Atualizado: "30/09/2026 08:55:51 por Márcia Bocorny Allgayer"
+        # Atualizado: "30/09/2026 08:55:51 por Outro Nome"
         atual_raw = clean_tds[6] if len(clean_tds) > 6 else ""
         atual_m = re.match(r"(\d{2}/\d{2}/\d{4})\s*(?:\d{2}:\d{2}:\d{2})?\s*(?:por\s*(.*))?", atual_raw)
         atual_em = atual_m.group(1) if atual_m else ""
@@ -204,7 +198,8 @@ def filtrar_por_consultor(pautas: list[dict], consultor: str) -> list[dict]:
 def main():
     parser = argparse.ArgumentParser(description="Exporta pautas do TM para JSON estruturado.")
     parser.add_argument("arquivo", help="Caminho do arquivo .mhtml ou .html")
-    parser.add_argument("--consultor", help="Filtrar por nome do consultor (ex: 'Vitor Bühler Rau')")
+    parser.add_argument("--consultor", help="Filtrar por nome do consultor (ex: 'Nome Sobrenome')")
+    parser.add_argument("--membros", help="Nomes da unidade separados por ponto e vírgula (senão, PAUTAS_MEMBROS_UNIDADE)")
     parser.add_argument("--saida", help="Arquivo de saída JSON (padrão: stdout)")
     parser.add_argument("--data-ref", help="Data de referência para cálculo de dias (DD/MM/AAAA)")
     args = parser.parse_args()
@@ -213,7 +208,8 @@ def main():
     if args.data_ref:
         data_ref = datetime.strptime(args.data_ref, "%d/%m/%Y").date()
 
-    pautas = extrair_pautas(args.arquivo, data_referencia=data_ref)
+    membros = {m.strip() for m in args.membros.split(";") if m.strip()} if args.membros else None
+    pautas = extrair_pautas(args.arquivo, data_referencia=data_ref, membros_unidade=membros)
 
     if args.consultor:
         pautas = filtrar_por_consultor(pautas, args.consultor)

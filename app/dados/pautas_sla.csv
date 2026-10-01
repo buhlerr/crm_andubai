@@ -1,0 +1,854 @@
+categoria;horas
+(Inativo) MKT -  Não Conformidade no setor;72
+AC - Comunicação Comercial;48
+AC - Comunicação Interna;24
+AC - Situação jurídica;24
+AER - Alteração involuntária (revalidação de bilhete);48
+AER - Cancelamento Aéreo Pendente;0
+AER - Cobrança em desacordo com a OP;72
+AER - Cotar voo programas de grupo - pós período de venda Wiki;8
+AER - Cotação de Grupo (a partir de 10 alunos);48
+AER - Cotação de grupo para calling;48
+AER - Deixar passagem em aberto;48
+AER - Dúvidas pós venda (não relacionado a pagamento);72
+AER - Dúvidas sobre cancelamento, pagamento e reembolso;72
+AER - Erro de Pesquisa/Reserva no Portal Aéreo;8
+AER - Farol para o Setor;48
+AER - Informar alteração em passagem;48
+AER - Lançamento de OBZ Indenizações;24
+AER - ONE - Dúvidas pós-vendas;72
+AER - ONE - Serviços especiais: assentos, menor desacompanhado, bagagem, medicação, etc...;48
+AER - ONE - Solicitar cancelamento de passagem aérea;48
+AER - Orçamento mais barato (+R$ 150,00);4
+AER - Orçamento mais barato (+R$ 50,00);4
+AER - REM AA - Exceção / Problemas;24
+AER - Remarcação assentos teens;48
+AER - Serviços especiais: Marcação de assentos, menor desacompanhado, bagagem extra, medicação à bordo, etc...;48
+AER - Solicitar alterações em passagens de bloqueio;72
+AER - Solicitação de Termo de Cancelamento de Passagem;24
+AER - Tarifa Cash;2
+AER/SA - Alteração em voo de aluno;24
+AER/SA - Alteração em voo de aluno - AUS/NZ;24
+AER/SA - Alteração em voo de aluno - CAN;24
+AER/SA - Alteração em voo de aluno - EUA;24
+AER/SA - Alteração em voo de aluno - NV;24
+AER/SA - Política de Passagem aérea;48
+AER/SUP - Remarcação não efetivada;12
+AER_Cobrança em desacordo com a OP;72
+AER_Considerações Farol;48
+AER_Cotar voo programas de grupo - pós período de venda Wiki;24
+AER_Cotação de Grupo (a partir de 10 alunos);48
+AER_Deixar passagem em aberto;24
+AER_Dúvidas pós-vendas (não relacionado a pagamento);48
+AER_Dúvidas sobre cancelamento, pagamento e reembolso;72
+AER_Serviços especiais: Marcação de assentos, menor desacompanhado, bagagem extra, medicação à bordo, etc...;48
+AER_Solicitação de Termo de Cancelamento de Passagem;24
+AER_Taxa de serviço não aprovada;24
+Base AUS - Adiantamento de aplicação de visto;48
+CAM_Abas de câmbio excluídas automaticamente;24
+CAM_Dúvidas sobre câmbio;24
+CAM_Problemas VTM EXIM;24
+CAM_Solicitação de Estorno_Cambio/VTM;48
+CAM_Solicitação de cartões VTM;48
+CAM_Solicitação de papel-moeda;24
+CAM_Solicitação de resgate de saldo VTM;48
+CPV - Alteração de data de embarque;48
+CPV - Aprovação de verba para impressão;24
+CPV - Autorização de deslocamento de trade;48
+CPV - Cadastro, Alteração e Exclusão de  PONTUE;48
+CPV - Comprovação Partners;48
+CPV - Problemas ou Sugestões de Melhoria TM / EPS;72
+CPV - Quebra de contrato por pedido do aluno;48
+CPV - RG - Não conformidade;72
+CPV - Resgate de e-pontos, reserva técnica e GL Summer Schools;72
+CPV - Solicitação de Typeform/flyers de smart Groups / Summer Schools;48
+CPV ? Aluno sumido ? Recolocação de pontuação;24
+CPV_Alteração de data e quebra de contrato por iniciativa do aluno;48
+CPV_Dúvidas Egali Trail;48
+CPV_Incentivos Calling/Black Card;72
+CPV_Problemas ou Sugestões de Melhoria TM / EPS;72
+CPV_RG_Não conformidade;72
+CRC - Alunos inadimplentes cancelados pelo Financeiro;0
+CRC - Erro na solicitação de cancelamento/reembolso pela área do aluno;0
+CRC_Problemas com aluno inadimplente ou erro de pedido de cancelamento via AA;48
+Comercial - Alunos sem passagem;24
+Comercial - Autorización para cambio/cancelación parcial sin multa;48
+Comercial - Autorização para alteração/cancelamento parcial sem multa;48
+Comercial - Base AUS - Solicitação de Informações;48
+Comercial - CAPEX - Validação de nova sala / troca de sala;72
+Comercial - COLOMBIA Carta de cesantías;48
+Comercial - Cartão não aprovado;24
+Comercial - Compra de aba Pontue;48
+Comercial - Multa de StayWise By Egali;24
+Comercial - Não conformidade na matrícula/alteração/cancelamento;48
+Comercial - Perfil vetado para aplicação de visto;0
+Comercial - Renovação StayWise By Egali;24
+Comercial - Resolução de problema ocasionado na venda;24
+Comercial - Tomografia Atendimento no escritório sem registro escritório;0
+Comercial - Troca de destino / venda visto CAD Turista (Ação EUA);0
+Comercial ? Aluno não vinculado ao Grupo;0
+Comercial/AC - Custo da unidade;48
+Comercial/AER - Emissão/Tarifa cash não aprovada;72
+Comercial/AER - Informações gerais;48
+Comercial/AER - Remarcação não realizada;24
+Comercial/DP - Saldo de Horas;48
+Comercial/FIN - Informações gerais;48
+Comercial/FIN - Problemas/Reprovação de Lançamento;24
+Comercial/FIN - Relatório de Fluxo de Entradas (Anexar Comprovante);48
+Comercial/PROD - Erro em matrícula ? datas, cursos, acomodações, etc.;48
+Comercial/PROD - Informações gerais;48
+Comercial/SA - Alteração de datas - Envio de deadline para aluno;48
+Comercial/SA - Informações gerais;48
+Comercial/SA - Visto Negado - Cancelamento;0
+Comercial_Aluno não vinculado ao Grupo;0
+Comercial_Chargeback - Cartão de Crédito;48
+Comercial_Comunicação Financeiro;24
+Comunicação - Financeiro/Relacionamento(CRC);24
+Comunicação DP/Aéreo (interno);48
+Comunicação DP/Produtos (interno);48
+Comunicação Financeiro/Aéreo (interno);24
+Comunicação Financeiro/Produtos (interno);4
+Comunicação Financeiro/Suporte ao Aluno (interno);24
+Comunicação Interna - AC - DOF/GP/equipe produto;0
+Comunicação Interna - Abertura de Nova StayWise By Egali;0
+Comunicação Produtos - Suporte (Renovação);24
+Comunicação Produtos/Base Austrália;48
+Comunicação Produtos/Bases Canadá;48
+Comunicação Produtos/Irlanda Renovações - Informações gerais;0
+Comunicação SA-QA/AER;72
+Comunicação Suporte ao Aluno/Aéreo (interno);24
+DESATIVADA - CPV - Cadastro/Renovação de Parceiro de Summer;24
+DESATIVAR - Produto/SA - AUSTRÁLIA - Comunicación entre departamentos - HISPANO;48
+DESATIVAR - Produto/SA - CANADÁ - Comunicación entre departamentos - HISPANO;48
+DESATIVAR - Produto/SA - EE.UU - Comunicación entre departamentos - HISPANO;48
+DESATIVAR - Produto/SA - EUA - Comunicação entre setores - BRA;48
+DESATIVAR - Produto/SA - EUROPA (EXC IRL) / AFRICA - Comunicación entre departamentos - HISPANO;48
+DESATIVAR - Produto/SA - IRLANDA - Comunicación entre departamentos - HISPANO;48
+DESATIVAR - Produto/SA - NOVA ZELÂNDIA - Comunicação entre setores - BRA;48
+DESATIVAR - Produto/SA - NUEVA ZELANDA - Comunicación entre departamentos - HISPANO;48
+DESATIVAR - SA - EE.UU ? Error en flight details o archivos corrompidos - HISPANO;48
+DESATIVAR - SA - Erro em Flight details ou arquivos corrompidos, ou finalizados errados (América do Norte);48
+DESATIVAR - SA - Erro em Flight details ou arquivos corrompidos, ou finalizados errados (Austrália Renovação);48
+DESATIVAR - SA - Erro em Flight details ou arquivos corrompidos, ou finalizados errados (Não Vistos);48
+DESATIVAR - SA - Erro em Flight details ou arquivos corrompidos, ou finalizados errados (Oceania);48
+DESATIVAR - SA - MH - Error en Flight details - Archivos dañados o finalizados con error (América del Norte);48
+DESATIVAR - SA - MH - Error en Flight details - Archivos dañados o finalizados con error (NV);48
+DESATIVAR - SA - MH - Error en Flight details - Archivos dañados o finalizados con error (Oceania);48
+DESATIVAR - SA/PROD - EE.UU - Documento del alumno / prueba de nivel  - HISPANO;48
+DESATIVAR - SA/Produto - EE.UU - Comunicación entre departamentos - HISPANO;24
+DESATIVAR - SA/Produto - NOVA ZELÂNDIA - Comunicação entre setores - BRA;24
+DESATIVAR - SA/Produto - NUEVA ZELANDA - Comunicación entre departamentos - HISPANO;24
+DOF - Alteração de fornecedor Egali;72
+DOF - Diferença entre TM e orçamento TM;48
+DOF - Erros Egali;48
+DOF - Pauta com diretor operacional;48
+DOF - Recibos Fantasmas;0
+DOF - TM - Sugestões;72
+DOF/FIN - Auditorias;48
+DOF/FIN - Contabilidade Exterior;48
+DOF_Ouvidoria Victoria;72
+DOF_Ouvidoria Victoria Anônima;72
+DOF_Pauta com diretor operacional;72
+DP - Acessos de TM;48
+DP - Advertência/Falta Injustificada/Fake Points (Solicitação de Advertência Formal);24
+DP - Atestado Médico/Licença;72
+DP - Aumento de remuneração;72
+DP - BRASIL Admissão (aviso, documentos e dados);72
+DP - BRASIL Dúvidas/Problemas Folha de Pagamento;48
+DP - BRASIL Pedido de férias;72
+DP - BRASIL Rescisão;48
+DP - Benefícios - Dúvidas ou Solicitações (VT, VR, Unimed, Outros);72
+DP - Black Card - Dúvidas ou Solicitação do benefício;48
+DP - Europe e Sydney Calling;72
+DP - MUNDO HISPANO - Admisión (notificación, documentos y datos);24
+DP - MUNDO HISPANO Despido/Renuncia;48
+DP - MUNDO HISPANO Dudas/Problemas de nómina/Afiliaciones;24
+DP - MUNDO HISPANO Solicitud de Vacaciones;48
+DP - ONSHORE Admission (Communication, documents and data);24
+DP - ONSHORE Payroll Questions;24
+DP - ONSHORE Statement Request/Payslip Request;24
+DP - ONSHORE Termination;48
+DP - ONSHORE Vacation Request;48
+DP - Promoções / Ascensos;48
+DP - Saldo de Horas e Solicitação de Ajustes;72
+DP - Solicitação de Declaração/Contracheque;48
+DP - Transferência entre unidades;48
+DP - VT e VR - Solicitações ou Dúvidas;48
+DP_ Folha de Pagamento/Valores adicionais;24
+DP_Admissão (aviso, documentos e dados);48
+DP_Atestado Médico/Licença;48
+DP_Atualização Cadastral;48
+DP_Aumento de remuneração;48
+DP_Black Card_Dúvidas ou Solicitação do benefício;72
+DP_Dúvidas Folha de Pagamento;24
+DP_Incentivos Calling;72
+DP_Pedido de férias;48
+DP_Problemas: Folha de Pagamento| Férias | Admissão/Rescisão | Benefícios (Vale Alimentação, Refeição e Transporte);24
+DP_Rescisão;24
+DP_Saldo de Horas e Solicitação de Ajustes;72
+DP_Solicitação de Advertência Formal (Advertência/Falta Injustificada);24
+DP_Solicitação de Declaração/Contracheque;48
+DP_Transferência entre unidades;48
+EGALI TRAIL - CLOSING THE WHITE BELT;48
+Egali hostel - problemas de bookings/overbookings;12
+FIN - Abas de câmbio excluídas automaticamente;0
+FIN - Acomodações Exterior: Abertura/Alteração;72
+FIN - Arg, Esp - Pagos en tarjeta de crédito;48
+FIN - Autorização Cartão Aluno;48
+FIN - Boletos (2º via e Emissão);48
+FIN - Cadastro Fornecedor;48
+FIN - Caixa (Notas, Extra e dúvidas);48
+FIN - Cartão de Crédito Empresarial Egali;48
+FIN - Considerações Farol;24
+FIN - Custo Empresa;72
+FIN - Diferença de Caixa na Unidade;48
+FIN - Documentação de Financiamento Santander Brasil;48
+FIN - Dúvidas sobre contratos;24
+FIN - Dúvidas sobre câmbio;24
+FIN - Envio de correio para AC;72
+FIN - Estorno de pagamento;72
+FIN - Liberação Saldo de Cancelamento;48
+FIN - Liberty Comunicação;48
+FIN - MH Solicitación factura estudiante;168
+FIN - Materiais/Problemas de estrutura AC;48
+FIN - México VTM;48
+FIN - Offshore Pagamento Carteira Cambial;24
+FIN - Offshore Renegociação de pagamento / Ajuste de Recibo;72
+FIN - Offshore Termo de Cancelamento / Redução de programa;48
+FIN - Onshore Gastos com Trip;72
+FIN - Onshore Pagamento Carteira Cambial;4
+FIN - Onshore Pagamento E-CAMBIO;72
+FIN - Onshore Solicitação de Pagamento de Exceção;48
+FIN - Onshore Termo de Cancelamento / Redução de programa;48
+FIN - Orçamento novas compras e reformas;24
+FIN - Problemas VTM EXIM;24
+FIN - Problemas ou Solicitações nas linhas telefônicas/internet;24
+FIN - Reclamação/Atraso Reembolso de Cancelamento ao Aluno;24
+FIN - Reserva hotel/passagem aérea funcionário;48
+FIN - Solicitação de Estorno - Cambio/VTM;48
+FIN - Solicitação de cartões VTM;24
+FIN - Solicitação de contrato online;24
+FIN - Solicitação de papel-moeda;24
+FIN - Solicitação de resgate de saldo VTM;48
+FIN - Solicitação para criação/alteração de contrato;48
+FIN - StayWise (Devolução Bond);0
+FIN - Troca de Sala/Nova Unidade;48
+FIN _Envio de correio para AC;48
+FIN/DP - Farol para o setor;24
+FIN_ Atualização de Parceiros/Atualização de Contratos/Atualização Valores;72
+FIN_AER - Chargeback;72
+FIN_AER - Pagamento de Fatura;48
+FIN_Acessos de TM;48
+FIN_Acomodações Exterior: Abertura/Alteração;24
+FIN_Ajustes de lançamentos do Orçado x Realizado;48
+FIN_Bases - Lançamento positivo de comissão;0
+FIN_Boletos (2º via e Emissão);48
+FIN_Cadastro Debito Automático (Alunos);24
+FIN_Cadastro Fornecedor;24
+FIN_Caixa (Notas, Extra e dúvidas);72
+FIN_Cartão Empresarial;48
+FIN_Comunicação Onshore;48
+FIN_Considerações Farol;24
+FIN_Custo Empresa;72
+FIN_Devolução Bond;24
+FIN_Diferença de Caixa na Unidade;72
+FIN_Divergência de juros na importação do arquivo de boletos;48
+FIN_Documentação de Financiamento Santander Brasil;48
+FIN_Duvidas e problemas com Contas fixas Unidade;48
+FIN_Dúvidas sobre contratos;24
+FIN_Emissão de NF;72
+FIN_Equipamentos para novos colaboradores;72
+FIN_Estorno de pagamento;72
+FIN_Liberty Comunicação;48
+FIN_Limpeza na conciliação;48
+FIN_Materiais_Problemas de estrutura AC;48
+FIN_Offshore Renegociação de pagamento / Ajuste de Recibo;72
+FIN_Offshore Termo de Cancelamento / Redução de programa;48
+FIN_Onshore Gastos com Trip;48
+FIN_Onshore Pagamento E-CAMBIO;48
+FIN_Onshore Renegociação de pagamento / Ajuste de Recibo;72
+FIN_Onshore Solicitação de Pagamento de Exceção;48
+FIN_Onshore Termo de Cancelamento / Redução de programa;48
+FIN_Orçamento novas compras e reformas;72
+FIN_Pagamento Carteira Cambial;24
+FIN_Pagamento de Reserva Técnica;48
+FIN_Pagamento sem matrícula;48
+FIN_Pagamento via Cartão de Crédito Aluno;48
+FIN_Pagos en tarjeta de crédito;48
+FIN_Problemas ou Solicitações nas linhas telefônicas/internet;72
+FIN_Reservas de Ônibus/Hotel para Funcionários;72
+FIN_Solicitação de Financiamento PraValer;4
+FIN_Solicitação de Pagamento Não Recorrente;48
+FIN_Solicitação de Recibo Fiscal de Aluno;48
+FIN_Solicitação de contrato online;24
+FIN_Solicitação de reembolso ao aluno;24
+FIN_Solicitação para criação/alteração de contrato;48
+FIN_Solicitações/Problemas E-mails/Pacote Office;48
+FIN_Troca de Sala/Nova Unidade;72
+MAT_Aluno Cancelado REATIVADO;72
+MAT_Aluno com necessidades especiais;48
+MAT_Comunicação Onshore;48
+MAT_Irlanda, UK, África do Sul e Não-Inglês - Alteração de data;24
+MAT_Irlanda, UK, África do Sul e Não-Inglês - Alteração de data (15D);24
+MAT_Irlanda, UK, África do Sul e Não-Inglês - Anomalia via QA/Onshore;24
+MAT_Irlanda, UK, África do Sul e Não-Inglês - Compra avulsa;48
+MAT_Oceania - Alteração de data;24
+MAT_Oceania - Alteração de data (15D);24
+MAT_Oceania - Anomalia via QA/Onshore;24
+MAT_Oceania - Compra avulsa;48
+MAT_Oceania, Ásia, Malta e América do Norte - Alteração de data;24
+MAT_Oceania, Ásia, Malta e América do Norte - Alteração de data (15D);24
+MAT_Oceania, Ásia, Malta e América do Norte - Anomalia via QA/Onshore;24
+MAT_Oceania, Ásia, Malta e América do Norte - Compra avulsa;48
+MAT_Oceania, Ásia, Malta e América do Norte - Onshore - Cancelamento OSHC;168
+MAT_Offshore - Antecipação de documentos para visto e seguro viagem;48
+MAT_Onshore - Antecipação de documentos para visto;48
+MAT_Pagamento de escola gross;72
+MAT_Seguro viagem - Anomalia via QA;24
+MAT_Seguro viagem - Dúvida via pauta solicitada na janela de atendimento;48
+MAT_Seguro viagem - Exceção Comercial;48
+MAT_Seguro viagem - Problemas ao solicitar assistência via app/site;48
+MAT_Seguro viagem - Solicitação de apólice para alunos com embarque inferior a 15 dias;48
+MAT_Seguro viagem - Upgrade de Cobertura;48
+MAT_Substituição de arquivos errados, reprovados ou corrompidos;24
+MAT_Teste de nivelamento e certificado para CT Canadá;48
+MKT - Abertura de unidade/base ou alteração de endereço;72
+MKT - Alteração no Site e Google;96
+MKT - Cadastro outros blogs;0
+MKT - Criação de material;72
+MKT - Design_Aereo;72
+MKT - Design_Comercial - Cartão de visita;72
+MKT - Design_Fin/DP/RH;72
+MKT - Design_OneOperadora;72
+MKT - Design_Produtos - Atualização de material de produto existente;72
+MKT - Design_Produtos - Criação ou atualização de carta de acomodação;72
+MKT - Design_Produtos TEENS - Criação ou atualização de book;120
+MKT - Design_SA/Bases;72
+MKT - Design_StayWise;96
+MKT - Farol para o Setor;24
+MKT - Impressão ou remanejo de materiais;72
+MKT - Materiais do Pontu-E e Trade;72
+MKT - Materiais/Eventos de bases;72
+MKT - Pedido Cartão de visitas;48
+MKT - Post no Blog;72
+MKT - Remanejo de materiais;72
+MKT - Solicitação de Video;72
+MKT - Solicitação de verba para evento local;72
+MKT - Sugestões;72
+MKT - Trip Onshore;48
+MKT ? Alteração no Google;72
+MKT ? Envio de email marketing;72
+MKT_Arte - Convite para evento;72
+MKT_Arte - Criação e edição de PPTs;72
+MKT_Arte - Edição de vídeo;72
+MKT_Arte - Flyer ou material impresso;72
+MKT_Arte - Gabarito;72
+MKT_Arte - Redes sociais (formato feed ou story do instagram);72
+MKT_Comunicação Interna OnShore;72
+MKT_Criação de Material;48
+MKT_Criação de material;72
+MKT_Dados/Erro de Tracking;96
+MKT_Dados/Teste de botão em LP;96
+MKT_Dados/Teste de informação em LP;96
+MKT_Dados/Testes de informação em formulário;96
+MKT_Design/Ajuste em estático digital;48
+MKT_Design/E-book;240
+MKT_Design/Estático Digital;96
+MKT_Design/Gabarito;96
+MKT_Design/Identidade Visual;480
+MKT_Design/Landing Page;240
+MKT_Design/Materiais impressos;96
+MKT_Design/PPT;240
+MKT_Design/Vídeo;240
+MKT_EPS Duplicado (SPAM);24
+MKT_Envio de email marketing;72
+MKT_Erro em identificação de origem URL;96
+MKT_Inbound/Ajustes no site;48
+MKT_Inbound/Alteração de conteúdo para Blog;48
+MKT_Inbound/Conteúdo para blog;96
+MKT_Inbound/Copy para LP;96
+MKT_Inbound/Disparos Whatsapp;96
+MKT_Inbound/Email mkt;96
+MKT_Inbound/Estratégia Parceiros;240
+MKT_Inbound/Eventos e Campanhas;480
+MKT_Inbound/Informações e fotos Google Meu Negócio;48
+MKT_Inbound/Respostas Avaliações Google;48
+MKT_Materiais/Eventos de bases;72
+MKT_Meta Ads/Google Ads;48
+MKT_Pedido Cartão de visitas;72
+MKT_Redes Sociais/Ajuste Linktree;48
+MKT_Redes Sociais/Aviso de mudanças de regras;48
+MKT_Redes Sociais/Indicação de Influencers;96
+MKT_Redes Sociais/Problemas em redes sociais;48
+MKT_Remanejo de materiais;72
+MKT_Solicitação de materiais padrão de unidade;72
+MKT_Sugestões;72
+MKT_Tráfego Pago | Análise de campanha ativa;48
+MKT_Tráfego Pago | Erros e ajustes em campanhas;48
+MKT_Tráfego Pago | Meta Ads Bases;96
+MKT_Tráfego Pago | Meta Ads Eventos;480
+MKT_Tráfego Pago | Meta Ads Influenciadores;96
+MKT_Tráfego Pago | Meta Ads Institucional;240
+MKT_Tráfego Pago | Meta Ads Lojas;240
+MKT_Tráfego Pago | Meta Ads Top Deal;96
+MKT_Youtube;72
+Manutenção StayWise By Egali - Dublin - 24h;24
+Manutenção StayWise By Egali - Dublin - 48h;48
+Manutenção StayWise By Egali - Dublin - 96h;96
+ONE_AER_CANCELAMENTO DE PASSAGEM;0
+Onshore - Base - Compra de trip AA;0
+Overseas - Chegadas StayWise By Egali;24
+Overseas - Egali House - Reclamações de estrutura/regras;48
+Overseas - Erro de Comissão;24
+Overseas - Pagamento de Escola Gross;48
+Overseas - Produtos - Lançar escolas novas de renovações;48
+Overseas - Reclamação de aluno;24
+Overseas - Solicitação de remessa;0
+Overseas ? Documentação de alunos;24
+Overseas ? Pesquisa de satisfação;24
+PMO - Report White Belt;72
+PROD_ Dúvidas Pendentes Pós Janela - Americas, Africa & Europe (Não Inglês);48
+PROD_AVISO - Exclusão de aba;0
+PROD_Abas compradas avulsas com menos de 30 dias para embarque;24
+PROD_Alteração em Book StayWise By Egali e By Egali;48
+PROD_Alterações no Book - Atualização Diária Automática;48
+PROD_Aluno reativado;72
+PROD_Americas, Africa & Europe (Não Inglês) - Alteração de data;24
+PROD_Americas, Africa & Europe (Não Inglês) - Alteração de data (15D);24
+PROD_Americas, Africa & Europe (Não Inglês) - Anomalia via QA/Onshore;24
+PROD_Americas, Africa & Europe (Não Inglês) - Compra avulsa;48
+PROD_Análise de Oportunidade - Americas, Africa & Europe (Não Inglês);24
+PROD_Análise de Oportunidade - Irlanda, UK, África do Sul e Não-Inglês;24
+PROD_Análise de Oportunidade - Oceania, Ásia, Malta e América do Norte;24
+PROD_Ciência de orçamento da concorrência;24
+PROD_Considerações Farol;48
+PROD_Disponibilidade de Acomodação - Americas, Africa & Europe (Não Inglês);48
+PROD_Disponibilidade de Acomodação - Irlanda, UK, África do Sul e Não-Inglês;48
+PROD_Disponibilidade de Acomodação - Irlanda, UK, África do Sul e Não-Inglês 2;48
+PROD_Disponibilidade de Acomodação - Oceania, Ásia, Malta e América do Norte;48
+PROD_Dúvidas Pendentes Pós Janela - Irlanda, UK, África do Sul e Não-Inglês;48
+PROD_Dúvidas Pendentes Pós Janela - Oceania, Ásia, Malta e América do Norte;48
+PROD_Erro em configuração de pacote;24
+PROD_Erro no GO, wiki, brochures ou G.A - Americas, Africa & Europe (Não Inglês);24
+PROD_Erro no GO, wiki, brochures ou G.A - Irlanda, UK, África do Sul e Não-Inglês;24
+PROD_Erro no GO, wiki, brochures ou G.A - Oceania, Ásia, Malta e América do Norte;24
+PROD_Erro no GO, wiki, brochures ou G.A - Summer e Experience;24
+PROD_Exceção de Matrícula - Americas, Africa & Europe (Não Inglês);24
+PROD_Exceção de Matrícula - Irlanda, UK, África do Sul e Não-Inglês;24
+PROD_Exceção de Matrícula - Oceania, Ásia, Malta e América do Norte;24
+PROD_Exceção de Matrícula - Summer e Experience;24
+PROD_Exceção de curso em escola presente no GO - Americas, Africa & Europe (Não Inglês);24
+PROD_Exceção de curso em escola presente no GO - Irlanda, UK, África do Sul e Não-Inglês;24
+PROD_Exceção de curso em escola presente no GO - Oceania, Ásia, Malta e América do Norte;24
+PROD_IRL e Dubai - Alteração de data;24
+PROD_IRL e Dubai - Alteração de data (15D);24
+PROD_IRL e Dubai - Anomalia via QA/Onshore;24
+PROD_IRL e Dubai - Compra avulsa;48
+PROD_Onshore Irlanda - Exceção de matrícula;48
+PROD_Onshore Oceania - Erros de GO/ Cursos Não Cadastrados;48
+PROD_Reserva de SMARTGROUP - Americas, Africa & Europe (Não Inglês);72
+PROD_Reserva de SMARTGROUP - Irlanda, UK, África do Sul e Não-Inglês;72
+PROD_Reserva de SMARTGROUP - Oceania, Asia, Malta e América do Norte;72
+PROD_Reserva de Teens (Summer e Experience);72
+PROD_Resgate de Group Leader Teens;72
+Produto -  Austrália - Onshore - Antecipação de COE;24
+Produto -  Austrália - Onshore - Solicitação de alteração de OSHC;24
+Produto - Alteração de procedimento no checklist (adiantamentos);36
+Produto - Alteração em Book StayWise By Egali e By Egali;48
+Produto - Alterações no Book - Atualização Diária Automática;72
+Produto - América e África do Sul - Alteração de Data;24
+Produto - América e África do Sul - Alteração de data - Inferior 15 dias para o embarque;24
+Produto - América e África do Sul - Anomalia via QA/Onshore;0
+Produto - América e África do Sul - Compra avulsa;24
+Produto - América e África do Sul - Compra avulsa acomodação;24
+Produto - América e África do Sul - Compra avulsa transfer;24
+Produto - América e África do Sul - Disponibilidade de Acomodação;48
+Produto - América e África do Sul - Disponibilidade de Acomodação Dia Extra;0
+Produto - América e África do Sul - Solicitação de carta para visto - Canadá / EUA;0
+Produto - América e África do Sul - Substituição de arquivos errados, reprovados ou corrompidos;24
+Produto - América e África do Sul - Teste de nivelamento e certificado para CT Canadá;48
+Produto - Análise de Oportunidade;24
+Produto - Atualização de Pricelist ou informações de escola;48
+Produto - Austrália - Onshore -  Alteração de datas;24
+Produto - Bases Austrália - Notificação de alteração em GO por parte da Base;24
+Produto - Comunicação com gestão de produto;24
+Produto - Consulta sobre vouchers não listados na planilha e/ou divergência encontrada nos vouchers;72
+Produto - Dúvida via pauta solicitada na janela de atendimento;24
+Produto - Envio de ficha de cadastro Summer;24
+Produto - Erro no gerador de orçamentos, Wiki, Brochures ou G.A.;24
+Produto - Europa - Alteração de data;24
+Produto - Europa - Alteração de data ? Inferior a 15 dias do embarque;24
+Produto - Europa - Anomalia via QA/Onshore;24
+Produto - Europa - Compra avulsa;24
+Produto - Europa - Compra avulsa acomodação;24
+Produto - Europa - Compra avulsa transfer;24
+Produto - Europa - Disponibilidade de acomodação;48
+Produto - Europa - Disponibilidade de acomodação dia extra;0
+Produto - Europa - Substituição de arquivos errados, reprovados ou corrompidos;24
+Produto - Europa, Irlanda, UK e Dubai - Exceção de curso em escola presente no GO;24
+Produto - Exceção de Matrícula - Todos os destinos;8
+Produto - Farol para o setor;48
+Produto - IRL (Renovação) - Alteração de data;0
+Produto - IRL (Renovação) - Antecipação de documentos para visto;72
+Produto - IRL (Renovação) - Consulta de cancelamento;24
+Produto - IRL (Renovação) - Exceção de matrícula;8
+Produto - IRL e Dubai - Alteração de data;24
+Produto - IRL e Dubai - Alteração de data ? Inferior a 15 dias do embarque;24
+Produto - IRL e Dubai - Anomalia via QA/Onshore;24
+Produto - IRL e Dubai - Compra avulsa;24
+Produto - IRL e Dubai - Compra avulsa acomodação;24
+Produto - IRL e Dubai - Compra avulsa transfer;24
+Produto - IRL e Dubai - Disponibilidade de acomodação;48
+Produto - IRL e Dubai - Disponibilidade de acomodação dia extra;0
+Produto - IRL e Dubai - Substituição de arquivos errados, reprovados ou corrompidos;24
+Produto - Informe de alteração de datas por definição de SA;48
+Produto - Oceania - Alteração de Data;24
+Produto - Oceania - Alteração de data - Inferior 15 dias para o embarque;24
+Produto - Oceania - Anomalia via QA/Onshore;24
+Produto - Oceania - Compra avulsa;24
+Produto - Oceania - Compra avulsa acomodação;24
+Produto - Oceania - Compra avulsa transfer;24
+Produto - Oceania - Disponibilidade de Acomodação;48
+Produto - Oceania - Disponibilidade de Acomodação Dia Extra;0
+Produto - Oceania - Solicitação de Letter/COE/OSHC para visto;48
+Produto - Oceania - Substituição de arquivos errados, reprovados ou corrompidos;24
+Produto - Oceania, Américas e África do Sul - Exceção de curso em escola presente no GO;24
+Produto - Renovação seguro 2º ano;24
+Produto - Reserva de grupo;72
+Produto - Seguro viagem -  Substituição de arquivos errados, reprovados ou corrompidos;24
+Produto - Seguro viagem - Anomalia via QA;24
+Produto - Seguro viagem - Dúvida via pauta solicitada na janela de atendimento;48
+Produto - Seguro viagem - Exceção Comercial;24
+Produto - Seguro viagem - Problemas ao solicitar assistência via aplicativo/site;48
+Produto - Seguro viagem - Solicitação de apólice de seguro viagem via Suporte ao Aluno;48
+Produto - Seguro viagem - Solicitação de apólice para alunos com embarque inferior a 15 dias;48
+Produto - Seguro viagem - Upgrade de Cobertura (Seguro COVID);24
+Produto - Solicitação de Letter/COE/OSHC para visto - NZ;72
+Produto - Solicitação de apólice de seguro viagem;24
+Produto - Solicitação de compra de Cancelamento;24
+Produto - Solicitação de criação de Linha avulsa na Carteira Cambial - (Austrália);24
+Produto - Solicitação de criação de Linha avulsa na Carteira Cambial - (Irlanda);24
+Produto - Solicitação de criação de Linha avulsa na Carteira Cambial - (Nova Zelândia e Resto do Mundo);24
+Produto - Utilização de voucher - COVID;72
+Produto - Verificação Emissão OSHC;0
+Produto ? Solicitação de criação de Linha avulsa na Carteira Cambial - (América do Norte);24
+Produto ? The Last Act - Alteração de data de escola / Cambio de fechas - escuela;72
+Produto- Cotação de grupo;72
+Produto- Diferença de Preço em escola parceira;24
+Produto- Lançamento de Group Leader;24
+Produto- Mundo Espanhol - Traduções;48
+Produto/SA - América e África do Sul - Comunicação entre setores;48
+Produto/SA - Austrália - Comunicação entre setores - DESATIVAR EM 14.10;24
+Produto/SA - Can e US - Comunicação entre setores - DESATIVAR EM 14.10;24
+Produto/SA - Europa - Comunicação entre setores;48
+Produto/SA - IRL - Comunicação entre setores - DESATIVAR EM 14.10;24
+Produto/SA - IRLANDA / DUBAI - Comunicação entre setores;48
+Produto/SA - NZ, Inglaterra e RM - Comunicação entre setores - DESATIVAR EM 14.10;24
+Produto/SA - Oceania - Comunicação entre setores;48
+Produtos - Solicitação de Impressão de Carta de Matrícula Original;72
+RH - Benefícios - Solicitações ou Dúvidas;48
+RH - Crachás (solicitações de vias, cartão Black Card);72
+RH - Solicitação de abertura de seleção;24
+RH_Adesão convênio;48
+RH_Admissão (aviso, documentos e dados);48
+RH_Black Card_Dúvidas ou Solicitação do benefício;72
+RH_Crachás (solicitação segunda via);72
+RH_Dúvidas e erros White Belt;48
+RH_Egali Trail - Closing The White Belt;72
+RH_Exclusão convênios e benefícios;48
+RH_Rescisão;48
+RH_SkillUP_Reembolso;72
+RH_SkillUP_Solicitação;72
+RH_Solicitação de abertura de seleção;72
+SA - Análise de perfil de visto - Troca de destino/cancelamento;0
+SA - CANADÁ - Documento de aluno/teste de nivelamento - BRA;48
+SA - CANADÁ ? Erro em flight details ou arquivos corrompidos - BRA;48
+SA - CANADÁ y EE.UU - Documento del alumno / prueba de nivel  - HISPANO;48
+SA - CANADÁ y EE.UU ? Error en flight details o archivos corrompidos - HISPANO;48
+SA - Cancelamento de aluno com visto negado;0
+SA - Considerações Farol;24
+SA - Divergência de datas do aluno;24
+SA - Divergência no cadastro do passaporte;0
+SA - Docs do aluno / Docs para assinatura / teste de nivelamento - NZ;48
+SA - Documento para assinatura de aluno/teste de nivelamento  - AUS/EUA;24
+SA - Documento para assinatura de aluno/teste de nivelamento  - CAN/NZ;24
+SA - Documento para assinatura de aluno/teste de nivelamento - NÃO VISTOS;24
+SA - EUA - Documento de aluno/teste de nivelamento - BRA;48
+SA - EUA ? Erro em flight details ou arquivos corrompidos - BRA;48
+SA - Erro em Flight details ou arquivos corrompidos, ou finalizados errados (Grupos);48
+SA - Farol para o setor;24
+SA - IRLANDA - Documento de aluno/teste de nivelamento - BRA;48
+SA - IRLANDA - Documento del alumno / prueba de nivel  - HISPANO;48
+SA - IRLANDA ? Erro em flight details ou arquivos corrompidos - BRA;48
+SA - IRLANDA ? Error en flight details o archivos corrompidos - HISPANO;48
+SA - NV (EXC IRL) - Documento de aluno/teste de nivelamento - BRA;48
+SA - NV (EXC IRL) - Documento del alumno / prueba de nivel  - HISPANO;48
+SA - OCEANIA - Documento de aluno/teste de nivelamento - BRA;48
+SA - OCEANIA - Documento del alumno / prueba de nivel  - HISPANO;48
+SA - OCEANIA ? Erro em flight details ou arquivos corrompidos - BRA;48
+SA - OCEANIA ? Error en flight details o archivos corrompidos - HISPANO;48
+SA - Perfil de prospect/tipos de visto - Países sem necessidade de visto;24
+SA - Perfil vetado pela Egali e visto aprovado com a concorrência;0
+SA - Possibilidade de alteração de datas não permitida pelo TM;0
+SA - RENOVAÇÃO AUS - Documento de aluno/teste de nivelamento;48
+SA - Recados Automáticos;0
+SA - Renovação AUS - Antecipação de aplicação de visto;24
+SA - Request information - A.N I;72
+SA - Request information - A.N II;72
+SA - Request information - OCE I;72
+SA - Request information - OCE II;72
+SA - Request information - REN AUS;0
+SA - Reversão de pesquisa pré embarque;24
+SA - Reversão de pesquisa pós embarque;24
+SA - Seleção randômica de EPS;0
+SA - Slots de agendamento criados;0
+SA - Solicitação de abertura de trip;24
+SA - Solicitud de excepción de cambio de destino sin multa (Sin perfil para la visa);48
+SA - Tradução de documentos - Carteira de trabalho;0
+SA - Tradução de documentos - Comprovante de matrícula;0
+SA - Tradução de documentos - Contra-cheque;24
+SA - Tradução de documentos - Contrato Social;0
+SA - Tradução de documentos - Contrato de estágio/contrato de prestação de serviços;0
+SA - Tradução de documentos - Matrículas;72
+SA - Tradução de documentos - RFMI;48
+SA - Tradução de documentos - Renovação;48
+SA ? JUR ? Informe de pauta judicial;72
+SA ? NOVA ZELÂNDIA ? Erro em flight details ou arquivos corrompidos - BRA;48
+SA ? NUEVA ZELANDA ? Error en flight details o archivos corrompidos - HISPANO;48
+SA ? NV (EXC IRL) - Erro em flight details ou arquivos corrompidos - BRA;48
+SA ? NV (EXC IRL) - Error en flight details o archivos corrompidos - HISPANO;48
+SA ? Request Information - Colombia;0
+SA ? Request Information - Mexico;0
+SA/Produto - CANADÁ - Comunicação entre setores - BRA;24
+SA/Produto - CANADÁ y EE.UU - Comunicación entre departamentos - HISPANO;24
+SA/Produto - DUBAI - Comunicação entre setores;48
+SA/Produto - EUA - Comunicação entre setores - BRA;24
+SA/Produto - IRLANDA - Comunicación entre departamentos - HISPANO;24
+SA/Produto - IRLANDA - Comunicação entre setores - BRA;24
+SA/Produto - NV (EXC IRL) - Comunicación entre departamentos - HISPANO;24
+SA/Produto - NV (EXC IRL) - Comunicação entre setores - BRA;24
+SA/Produto - OCEANIA - Comunicación entre departamentos - HISPANO;24
+SA/Produto - OCEANIA - Comunicação entre setores - BRA;24
+SAC - Chamado no SAC Egali;0
+SA_Acción Austrália - Cambio de fecha/Destino sin multa;48
+SA_Base Austrália - Adiantamento de aplicação de visto;48
+SA_Cancelamento Visto Renovação;24
+SA_Comunicação Onshore;24
+SA_Divergência no cadastro do passaporte;24
+SA_Documento de aluno/teste de nivelamento;48
+SA_Erro em flight details ou arquivos corrompidos;48
+SA_JUR ? Informe de pauta judicial;72
+SA_Renovação AUS - Antecipação de aplicação de visto;24
+SA_Request Information;24
+SA_Seleção randômica de EPS;24
+SA_Solicitação de criação de trip;48
+SA_Tradução de documentos - Divergência de documentação;48
+SA_Tradução de documentos - Matrículas;48
+SA_Tradução de documentos - RFMI;48
+SA_Tradução de documentos - Renovação;48
+TRADE - Documento de comprovação benefício empresas;48
+TRADE_Cadastro, Alteração ou Desativação de Associado;48
+TRADE_Criação e edição de Landing Page;48
+TRADE_Deslocamento e/ou eventos;48
+TRADE_Gestão Smart Promotion (Typeform);48
+TRADE_Reserva de Smart e Exclusive Group;72
+TRADE_Resgate de e-pontos, reserva técnica e Group Leader;72
+Trade - Eventos;24
+Z - desativado ESS - Considerações Farol;24
+Z. DESATIVADA CRC - Termo de Cancelamento;72
+Z. DESATIVADO Produto - Aluno sem booking em Book - venda mais de 5 dias;24
+Z. Desativada FIN - COLÔMBIA Renegociação de pagamento;72
+Z. Desativada FIN - COLÔMBIA Termo de Cancelamento / Redução de programa;48
+Z. Desativada FIN - IRLANDA Erro em recibo já bloqueado (mais de 1 semana);72
+Z. Desativada FIN - IRLANDA Renegociação de pagamento;72
+Z. Desativada FIN - MALTA Erro em recibo já bloqueado (mais de 1 semana);72
+Z. Desativada FIN - MALTA Renegociação de pagamento;72
+Z. Desativada FIN - MÉXICO Reclamação/Atraso Reembolso de Cancelamento ao Aluno;24
+Z. Desativada Financeiro - Parcelamento em 12x no Cartão;24
+Z. Desativado - FIN - MÉXICO Renegociação de pagamento;72
+Z. Desativado Auditoria - Financeiro/Aéreo;24
+Z. Desativado Auditoria - Financeiro/Essenciais;24
+Z. Desativado Auditoria - Financeiro/Produto;0
+Z. Desativado Auditoria - Financeiro/Suporte ao Aluno;24
+Z. Desativado Auditorias - Trip Sem Aba Comprada;48
+Z. Desativado BASE AUS - FIN/DP - Farol para a unidade;24
+Z. Desativado Comunicação - Financeiro Hispânico / Suporte ao Aluno;72
+Z. Desativado Comunicação Financeiro - Auditorias - CR Pré Vendas (interno);0
+Z. Desativado Comunicação Financeiro /Hostel Malta (interno);48
+Z. Desativado Comunicação Financeiro /TI (interno);24
+Z. Desativado Comunicação Financeiro/Auditorias (Interno);0
+Z. Desativado Comunicação Financeiro/Produtos OSHC;0
+Z. Desativado FIN - ARGENTINA Erro em recibo já bloqueado (mais de 1 semana);72
+Z. Desativado FIN - ARGENTINA Solicitud de nota de debito;0
+Z. Desativado FIN - ARGENTINA Termo de Cancelamento / Redução de programa;48
+Z. Desativado FIN - ARGENTINA renegociação de pagamentos;0
+Z. Desativado FIN - AUSTRÁLIA Renegociação de pagamento;72
+Z. Desativado FIN - Argentina Devolución de Pagos Indebidos;48
+Z. Desativado FIN - CANADÁ Erro em recibo já bloqueado (mais de 1 semana);72
+Z. Desativado FIN - CANADÁ Renegociação de pagamento;72
+Z. Desativado FIN - CANADÁ Termo de Cancelamento / Redução de programa;48
+Z. Desativado FIN - CHILE Termo de Cancelamento / Redução de programa;48
+Z. Desativado FIN - COLOMBIA - Solicitud de facturas;168
+Z. Desativado FIN - COLOMBIA Devolución de Pagos Indebidos;48
+Z. Desativado FIN - COLÔMBIA Reclamação/Atraso Reembolso de Cancelamento ao Aluno;24
+Z. Desativado FIN - Cartão Reprovado;0
+Z. Desativado FIN - Casos de Licitação;0
+Z. Desativado FIN - Comissão Agência;24
+Z. Desativado FIN - Compra de Material AC;24
+Z. Desativado FIN - Criação de Fundos;24
+Z. Desativado FIN - Diferença OBZ Previsto x Real;48
+Z. Desativado FIN - Diferença entre valores no pagamento de boleto;0
+Z. Desativado FIN - Divergência de juros de boleto;0
+Z. Desativado FIN - Dúvidas de lançamento de Reembolso no TM para Funcionário;24
+Z. Desativado FIN - EQUADOR - Solicitud de facturas;168
+Z. Desativado FIN - EQUADOR Caixa (Notas, Extra, Dudas);24
+Z. Desativado FIN - EQUADOR Devolución de Pagos Indebidos;48
+Z. Desativado FIN - EQUADOR Erro em recibo já bloqueado (mais de 1 semana);72
+Z. Desativado FIN - EQUADOR Renegociação de pagamento;24
+Z. Desativado FIN - EQUADOR Termo de Cancelamento / Redução de programa;48
+Z. Desativado FIN - ESPANHA Renegociação de pagamento;72
+Z. Desativado FIN - ESPANHA Termo de Cancelamento / Redução de programa;48
+Z. Desativado FIN - Erro identificado no setor DIRETOR;48
+Z. Desativado FIN - Erro identificado no setor GERENTE;48
+Z. Desativado FIN - Estorno de Cancelamento Passagem/Problemas Cancelamento;24
+Z. Desativado FIN - Exclusão de Aba;24
+Z. Desativado FIN - INGLATERRA Renegociação de pagamento;72
+Z. Desativado FIN - INGLATERRA Termo de Cancelamento / Redução de programa;48
+Z. Desativado FIN - IRLANDA Pagamento E-CAMBIO;72
+Z. Desativado FIN - IRLANDA Termo de Cancelamento / Redução de programa;48
+Z. Desativado FIN - LIBERTY Solicitação de Pagamento/Comprovante;48
+Z. Desativado FIN - MALTA Termo de Cancelamento / Redução de programa;48
+Z. Desativado FIN - MH Ajuste en recibo;48
+Z. Desativado FIN - Manutenção PABX;0
+Z. Desativado FIN - Memorial descritivo de correspondencia/malote;48
+Z. Desativado FIN - MÉXICO Devolución de Pagos Indebidos;48
+Z. Desativado FIN - MÉXICO Solicitaciones Facturas Clientes;48
+Z. Desativado FIN - MÉXICO Termo de Cancelamento / Redução de programa;48
+Z. Desativado FIN - NOVA ZELÂNDIA Erro em recibo já bloqueado (mais de 1 semana);72
+Z. Desativado FIN - NOVA ZELÂNDIA Renegociação de pagamento;72
+Z. Desativado FIN - NOVA ZELÂNDIA Termo de Cancelamento / Redução de programa;48
+Z. Desativado FIN - ONE Comissão Agência Parceira;24
+Z. Desativado FIN - ONE Solicitação de Pagamento/Comprovante;48
+Z. Desativado FIN - Onshore Comunicação;24
+Z. Desativado FIN - Orçamento (Compra e Reforma) Hostel;24
+Z. Desativado FIN - Pagamento de Reserva Técnica;24
+Z. Desativado FIN - Prazo de Cancelamento;0
+Z. Desativado FIN - TI - Informações e Solicitações de TI/E-mail - Comercial;24
+Z. Desativado FIN ? AUSTRÁLIA ? Orçamentos - Gerais;72
+Z. Desativado FIN ? CANADÁ Termo de Cancelamento / Redução de programa;48
+Z. Desativado FIN/DP ? Pauta com a Direção Financeira;48
+Z. Desativado OVERSEAS - Orçamento novas compras e reformas;72
+Z. Desativado Overseas - Pagamento de Exceção Canadá;48
+Z. Desativado Overseas - Pagamento de Exceção Inglaterra;48
+Z. Desativado Overseas - Pagamento de Exceção Irlanda;48
+Z. Desativado REC - Chamado de Técnico de Informática;0
+Z. Desativado REC ? Envio de Documentos da AC;24
+Z. Desativado |  RI - Dúvidas sobre escola CT;24
+Z. Desativado | AER/COM - Passagem Não emitida;24
+Z. Desativado | CPV - Erro ou Sugestão na WIKI;48
+Z. Desativado | Comercial - Termo de Cancelamento;24
+Z. Desativado | Comunicação Financeiro Hispânico/Produtos (interno);0
+Z. Desativado | Comunicação Financeiro/Produtos Essenciais (interno);0
+Z. Desativado | Comunicação Interna - Processos judiciais;24
+Z. Desativado | DP - Falta Injustificada (Formalização);48
+Z. Desativado | DP - Formalização de Fake Points;48
+Z. Desativado | FIN - ARGENTINA Caixa;72
+Z. Desativado | FIN - COLÔMBIA Orçamento novas compras e reformas;72
+Z. Desativado | FIN - MÉXICO Caixa (Nota, Extra, Dudas);24
+Z. Desativado | FIN - Solicitação de 2º via de fatura (internet/telefone);24
+Z. Desativado | FREE - Alteração data Free;24
+Z. Desativado | GOPE - Pauta com o Gerente Operacional;24
+Z. Desativado | GP - Alterar fornecedor;24
+Z. Desativado | Manutenção Egali House - Malta - 24h;24
+Z. Desativado | OVERSEAS - Recados Automáticos;0
+Z. Desativado | PE - Alteração de datas;24
+Z. Desativado | Produto - NEG Automática noturna (MAT) de vários procedimentos - Flight Details, Kit, Transfer...;0
+Z. Desativado | Produtos/Suporte - Alteração de dados do aluno - (América do Norte);0
+Z. Desativado | Produtos/Suporte - Alteração de dados do aluno - (Austrália);0
+Z. Desativado | Produtos/Suporte - Alteração de dados do aluno - (Irlanda);0
+Z. Desativado | Produtos/Suporte - Alteração de dados do aluno - (Nova Zelândia e Resto do Mundo);0
+Z. Desativado | RI - Dúvidas sobre escolas CL;24
+Z. Desativado | SA - Renovação AUS - Comunicação Bases / S.A;24
+Z. Desativado | TI - Comunicação Interna;24
+Z. Desativado | TRADE - Pagamento de Comissão Agência;24
+Z. Desativo FIN - Comunicação Financeiro (interno);24
+Z.DESATIVADA DP - Resultado de banco de horas;48
+Z.Desativado OVERSEAS - Caixa (Notas, Extra e dúvidas);24
+Z_DESATIVADA;72
+desativada - AER/SA - Alteração em voo de aluno - EUA;24
+z - SA - Dúvida sobre vistos e ESS /  Dudas sobre visas y ESS;24
+z - desabilitado - SA - Documentação de aluno - Dúvidas;24
+z- desativada - SA - Perfil de prospect/tipos de visto - CAN/NZ;48
+z. (DESATIVADA) - ESS - Solicitação de material do kit de seguro;24
+z. (DESATIVADA) CPV - Quebra de contrato (aluno);48
+z. (Desativada) AER - Atraso de reembolso - Passagem Integral;48
+z. (Desativada) AER - Atraso de reembolso - Taxas de embarque de retorno;48
+z. (desativar) Alteração de voo - Necessidade de avisar aluno e escola/acomodação;24
+z. Desativado FIN - Alteração de datas / Renegociação;24
+z. Desativado FIN - BRASIL CAPEX;72
+z. Desativado FIN - BRASIL Erro em recibo já bloqueado (mais de 1 semana);72
+z. Desativado Produto- Nova Zelândia e Resto do Mundo + EUA - Dúvida via pauta solicitada na janela de atendimento;24
+z. Desativado SA - Não em pesquisa pré ou pós;0
+z. FIN - COLÔMBIA Caixa (Nota, Extra, Dudas);24
+z. FIN - EQUADOR Orçamento novas compras e reformas;24
+z. FIN - ESPANHA Orçamento novas compras e reformas;72
+z. FIN - INGLATERRA Orçamento novas compras e reformas;72
+z. FIN - IRLANDA Orçamento novas compras e reformas;72
+z. Manutenção Egali House - Malta - 48h;48
+z. Produto - Alteração de Data - Alunos EM ABERTO;24
+z. SEL - Dúvidas (convenção, incentivos, seleção);24
+z. desativada  TI - Informações e Solicitações de TI/E-mail - AC;24
+z. desativada TI - Compra de Computadores - Comercial;720
+z. desativada TI - Compra de acessórios, periféricos e equipamentos de informática AC/Comercial;48
+z. desativada TI - Farol para o Setor;24
+z. desativada TI - Problema de Internet AC;24
+z. desativada TI - Problemas com e-mail LOCAWEB;8
+z. desativada TI - Solicitudes y Problemas - Colombia/México/Ecuador/Overseas;24
+z. desativado AER ? Cotação de bloqueio;168
+z. desativado DP - ARGENTINA Admissão (aviso, documentos e dados);24
+z. desativado DP - ARGENTINA Dúvidas/Problemas Folha de Pagamento;24
+z. desativado DP - ARGENTINA Pedido de Férias;24
+z. desativado DP - ARGENTINA Rescisão;24
+z. desativado DP - AUSTRÁLIA Admissão (aviso, documentos e dados);24
+z. desativado DP - AUSTRÁLIA Dúvidas/Problemas Folha de Pagamento;24
+z. desativado DP - AUSTRÁLIA Pedido de férias;48
+z. desativado DP - AUSTRÁLIA Rescisão;48
+z. desativado DP - CHILE Admissão (aviso, documentos e dados);24
+z. desativado DP - CHILE Dúvidas/Problemas Folha de Pagamento;24
+z. desativado DP - CHILE Pedido de férias;48
+z. desativado DP - CHILE Rescisão;48
+z. desativado DP - EQUADOR Admissão (aviso, documentos e dados);24
+z. desativado DP - EQUADOR Duvidas/Problemas Folha de Pagamento/Afiliações;24
+z. desativado DP - EQUADOR Pedido de Férias;72
+z. desativado DP - EQUADOR Rescisão;24
+z. desativado DP - ESPANHA Admissão (aviso, documentos e dados);24
+z. desativado DP - ESPANHA Dúvidas/Problemas Folha de Pagamento;24
+z. desativado DP - ESPANHA Pedido de férias;24
+z. desativado DP - ESPANHA Rescisão;24
+z. desativado DP - INGLATERRA Admissão (aviso, documentos e dados);24
+z. desativado DP - INGLATERRA Dúvidas/Problemas Folha de Pagamento;24
+z. desativado DP - INGLATERRA Pedido de férias;48
+z. desativado DP - INGLATERRA Rescisão;48
+z. desativado DP - IRLANDA Admissão (aviso, documentos e dados);24
+z. desativado DP - IRLANDA Dúvidas/Problemas Folha de Pagamento;24
+z. desativado DP - IRLANDA Pedido de férias;48
+z. desativado DP - IRLANDA Rescisão;48
+z. desativado DP - MALTA Admissão (aviso, documentos e dados);24
+z. desativado DP - MALTA Dúvidas/Problemas Folha de Pagamento;24
+z. desativado DP - MALTA Pedido de férias;48
+z. desativado DP - MALTA Rescisão;48
+z. desativado DP - MÉXICO Admissão (aviso, documentos e dados);24
+z. desativado DP - MÉXICO Dúvidas/Problemas Folha de Pagamento;24
+z. desativado DP - MÉXICO Rescisão;48
+z. desativado FIN - MÉXICO Orçamento novas compras e reformas;72
+z. desativado Produto - Reserva de grupo (América do Norte);72
+z. desativado Produto - Reserva de grupo (Australia);72
+z. desativado Produto - Reserva de grupo (Irlanda);72
+z. desativado Produto - Reserva de grupo (Nova Zelândia e Resto do Mundo);72
+z. desativadoDP - MÉXICO Pedido de férias;48
+z.CPV - Erro/Sugestão no White Belt (treinamento online);72
+z.DELETAR (aba Pontue);48
+z.DELETAR_1;48
+z.DELETAR_2;48
+z.Manutenção Egali House - Malta - 96h;96
+z.desativado DP - Resultado Absenteísmo;48

@@ -1,7 +1,7 @@
 """Leitor, parser e sincronizador de Pautas de Comunicação Interna (TM Egali).
 
 Lê arquivos .csv (pautaList-*.csv) ou .mhtml exportados do sistema corporativo,
-associa categorias a SLAs (pautaCatListCsv.csv), cruza setores via ColaboradorSetor
+associa categorias a SLAs (app/dados/pautas_sla.csv), cruza setores via ColaboradorSetor
 e usuários da unidade, e executa Upsert declarativo seguro no banco de dados.
 """
 
@@ -21,16 +21,22 @@ from app.models.pautas import ColaboradorSetor, Pauta
 
 NOME_UNIDADE_PADRAO = "AN e Dubai"
 
-MEMBROS_PADRAO = [
-    "Vitor Bühler Rau",
-    "Camila Panciera Grazziotin",
-    "Maria Eduarda Oliveira Dall Áqua",
-    "Maria Eduarda de Azevedo Brum",
-    "Nicole Kistt",
-    "Ramon Soares",
-]
+# Tabela de prazos (SLA) por categoria: só "categoria;horas", tirada da lista de categorias do TM.
+# Para atualizar sem mexer no código, ponha um pautas_sla.csv no mesmo formato na pasta de dados.
+SLA_PADRAO = os.path.join(os.path.dirname(__file__), "..", "dados", "pautas_sla.csv")
 
 _CACHE_SLA_CATEGORIAS: dict[str, int] | None = None
+
+
+def membros_padrao() -> list[str]:
+    """Nomes da unidade quando ainda não há usuários cadastrados: vêm da configuração
+    (PAUTAS_MEMBROS_UNIDADE no config.py), nunca do código, que é versionado."""
+    try:
+        from flask import current_app
+
+        return list(current_app.config.get("PAUTAS_MEMBROS_UNIDADE") or [])
+    except RuntimeError:
+        return []
 
 
 def normalizar_nome(txt: str | None) -> str:
@@ -59,47 +65,40 @@ def obter_membros_unidade() -> dict[str, Usuario | None]:
         pass
 
     if not resultado:
-        for m in MEMBROS_PADRAO:
+        for m in membros_padrao():
             resultado[normalizar_nome(m)] = None
 
     return resultado
 
 
+def _caminho_sla() -> str:
+    try:
+        from flask import current_app
+
+        personalizado = os.path.join(current_app.instance_path, "pautas_sla.csv")
+        if os.path.exists(personalizado):
+            return personalizado
+    except RuntimeError:
+        pass
+    return SLA_PADRAO
+
+
 def carregar_sla_categorias() -> dict[str, int]:
-    """Carrega os tempos de resposta em horas para cada categoria a partir de pautaCatListCsv.csv."""
+    """Tempo de resposta em horas de cada categoria (arquivo "categoria;horas")."""
     global _CACHE_SLA_CATEGORIAS
     if _CACHE_SLA_CATEGORIAS is not None:
         return _CACHE_SLA_CATEGORIAS
 
     mapa: dict[str, int] = {}
-    caminhos = [
-        os.path.join(os.path.dirname(__file__), "..", "..", "pautaCatListCsv.csv"),
-        os.path.abspath("pautaCatListCsv.csv"),
-    ]
-    caminho_csv = next((c for c in caminhos if os.path.exists(c)), None)
-    if not caminho_csv:
-        _CACHE_SLA_CATEGORIAS = {}
-        return {}
-
-    try:
-        with open(caminho_csv, "r", encoding="latin1", errors="ignore") as f:
-            lines = f.readlines()
-        # Encontra linha de cabeçalho
-        idx_cabecalho = 0
-        for i, l in enumerate(lines[:10]):
-            if '"id";"nome"' in l or 'id;nome' in l:
-                idx_cabecalho = i
-                break
-        reader = csv.DictReader(lines[idx_cabecalho:], delimiter=";")
-        for row in reader:
-            nome = row.get("nome", "").strip()
-            tempo_str = row.get("Tempo de resposta (horas)", "").strip()
-            if nome and tempo_str and tempo_str.isdigit():
-                nome_limpo = re.sub(r"\s*-\s*$", "", nome).strip()
-                mapa[normalizar_nome(nome_limpo)] = int(tempo_str)
-                mapa[normalizar_nome(nome)] = int(tempo_str)
-    except Exception:
-        pass
+    caminho_csv = _caminho_sla()
+    if os.path.exists(caminho_csv):
+        with open(caminho_csv, "r", encoding="utf-8") as f:
+            for row in csv.DictReader(f, delimiter=";"):
+                nome = (row.get("categoria") or "").strip()
+                horas = (row.get("horas") or "").strip()
+                if nome and horas.isdigit():
+                    mapa[normalizar_nome(nome)] = int(horas)
+                    mapa[normalizar_nome(limpar_categoria(nome))] = int(horas)
 
     _CACHE_SLA_CATEGORIAS = mapa
     return mapa

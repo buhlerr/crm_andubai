@@ -26,6 +26,19 @@ instance/*
 *.db-wal
 *.db-shm
 
+# Planilhas, exportações e páginas salvas do TM/SharePoint: têm dados reais de alunos e colaboradores.
+# Amostras para testes ficam em tests/amostras/ e precisam ser fictícias.
+*.csv
+*.xlsx
+*.xls
+*.xlsb
+*.xlsm
+*.mhtml
+*.mht
+!tests/amostras/*
+!app/dados/pautas_sla.csv
+secret_key
+
 # =======================================================
 # 3. PYTHON / CACHES / COMPILAÇÃO
 # =======================================================
