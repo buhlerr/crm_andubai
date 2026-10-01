@@ -5,27 +5,13 @@ from app.models import Papel, Usuario
 from app.web.auth import _TENTATIVAS_FALHAS
 
 
-@pytest.fixture
-def app():
-    _TENTATIVAS_FALHAS.clear()
-    app = create_app({
-        "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-        "CSRF_DESLIGADO": True,
-        "LOGIN_PROVISORIO": True,
-        "SENHA_PROVISORIA": "senha-equipe-forte-2026",
-    })
-    with app.app_context():
-        db.create_all()
-        yield app
-        db.session.remove()
-        db.drop_all()
-    _TENTATIVAS_FALHAS.clear()
+@pytest.fixture(autouse=True)
+def _desligar_csrf_para_auth(app):
+    app.config["CSRF_DESLIGADO"] = True
+    yield
+    app.config["CSRF_DESLIGADO"] = False
 
 
-@pytest.fixture
-def client(app):
-    return app.test_client()
 
 
 def test_usuario_definir_e_verificar_senha(app):

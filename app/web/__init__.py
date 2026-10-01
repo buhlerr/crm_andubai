@@ -23,7 +23,7 @@ def registrar_web(app: Flask) -> None:
     @app.before_request
     def verificar_csrf():
         if request.method == "POST" and not app.config.get("CSRF_DESLIGADO"):
-            enviado = request.form.get("csrf", "")
+            enviado = request.form.get("csrf", "") or (request.is_json and (request.get_json(silent=True) or {}).get("csrf", ""))
             if not enviado or not secrets.compare_digest(enviado, session.get("csrf", "")):
                 abort(400, "O formulário expirou. Volte, recarregue a página e tente de novo.")
 

@@ -9,19 +9,6 @@ from app.models import Papel, Usuario
 CAMINHO_MHTML = os.path.join(os.path.dirname(__file__), "amostras", "pautas_amostra.mhtml")
 
 
-@pytest.fixture
-def app():
-    app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:", "CSRF_DESLIGADO": True})
-    with app.app_context():
-        db.create_all()
-        yield app
-        db.session.remove()
-        db.drop_all()
-
-
-@pytest.fixture
-def client(app):
-    return app.test_client()
 
 
 def test_carregar_pautas_mhtml_existente():
@@ -106,6 +93,7 @@ def test_salvar_observacao_ajax_e_upsert(app, client):
 
     with client.session_transaction() as sess:
         sess["usuario_id"] = u.id
+        sess["csrf"] = "token-teste-pautas"
 
     # Garante que pautas foram carregadas no banco
     client.get("/pautas/")
@@ -118,7 +106,7 @@ def test_salvar_observacao_ajax_e_upsert(app, client):
     # Salva observação via endpoint AJAX
     res = client.post(
         f"/pautas/{pauta_id}/observacao",
-        json={"observacao": "Aguardando confirmação de voo com aluno."},
+        json={"observacao": "Aguardando confirmação de voo com aluno.", "csrf": "token-teste-pautas"},
     )
     assert res.status_code == 200
     data = res.get_json()
@@ -149,6 +137,7 @@ def test_cadastros_pautas_setores(app, client):
 
     with client.session_transaction() as sess:
         sess["usuario_id"] = admin.id
+        sess["csrf"] = "token-teste-pautas"
 
     # 1. Acessa a tela de configurações de pautas
     res = client.get("/cadastros/pautas")
@@ -162,6 +151,7 @@ def test_cadastros_pautas_setores(app, client):
             "acao": "adicionar",
             "nome": "Marcia Bocorny Allgayer",
             "setor": "Acomodação",
+            "csrf": "token-teste-pautas",
         },
         follow_redirects=True,
     )
@@ -180,6 +170,7 @@ def test_cadastros_pautas_setores(app, client):
             "acao": "adicionar",
             "nome": "Marcia Bocorny Allgayer",
             "setor": "Aéreo / Reembolsos",
+            "csrf": "token-teste-pautas",
         },
         follow_redirects=True,
     )
@@ -193,6 +184,7 @@ def test_cadastros_pautas_setores(app, client):
         data={
             "acao": "remover",
             "id": colab.id,
+            "csrf": "token-teste-pautas",
         },
         follow_redirects=True,
     )
