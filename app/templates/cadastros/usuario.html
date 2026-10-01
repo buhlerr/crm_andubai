@@ -15,7 +15,7 @@
   </div>
   <div class="campo">
     <label for="nova_senha">Redefinir senha (opcional)</label>
-    <input id="nova_senha" type="password" name="nova_senha" placeholder="Deixe em branco para manter a senha atual">
+    <input id="nova_senha" type="password" name="nova_senha" placeholder="Mínimo 10 caracteres ou deixe em branco para manter a atual">
     <div class="pequeno suave" style="margin-top:4px">
       Status da senha atual: {% if usuario.senha_hash %}<span class="selo concluida">Cadastrada</span>{% else %}<span class="selo aviso">Não cadastrada</span>{% endif %}
     </div>

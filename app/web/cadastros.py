@@ -57,8 +57,8 @@ def usuarios():
         senha = request.form.get("senha", "").strip()
         if not nome or "@" not in email or papel not in {p.value for p in Papel}:
             flash("Preencha nome, e-mail e papel.", "erro")
-        elif senha and len(senha) < 6:
-            flash("A senha deve ter no mínimo 6 caracteres.", "erro")
+        elif senha and len(senha) < 10:
+            flash("A senha deve ter no mínimo 10 caracteres.", "erro")
         else:
             novo_usuario = Usuario(nome=nome, email=email, papel=Papel(papel))
             if senha:
@@ -89,8 +89,8 @@ def editar_usuario(usuario_id):
             flash("Preencha nome, e-mail e papel.", "erro")
         elif usuario.id == g.usuario.id and (not ativo or papel != Papel.ADMIN.value):
             flash("Você não pode tirar o seu próprio acesso de administrador.", "erro")
-        elif nova_senha and len(nova_senha) < 6:
-            flash("A nova senha deve ter no mínimo 6 caracteres.", "erro")
+        elif nova_senha and len(nova_senha) < 10:
+            flash("A nova senha deve ter no mínimo 10 caracteres.", "erro")
         else:
             usuario.nome, usuario.email, usuario.papel, usuario.ativo = nome, email, Papel(papel), ativo
             if nova_senha:

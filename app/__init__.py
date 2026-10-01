@@ -45,7 +45,7 @@ def create_app(config: dict | None = None) -> Flask:
 
     caminho_banco = os.path.join(app.instance_path, "checklist.db")
     app.config.from_mapping(
-        SECRET_KEY=os.environ.get("SECRET_KEY", CHAVE_PADRAO),
+        SECRET_KEY=os.environ.get("SECRET_KEY") or None,
         SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL", f"sqlite:///{caminho_banco}"),
         # Login sem senha, só até o login com Microsoft 365 ficar pronto. Desligar com LOGIN_PROVISORIO=0.
         LOGIN_PROVISORIO=os.environ.get("LOGIN_PROVISORIO", "1") == "1",
@@ -66,11 +66,65 @@ def create_app(config: dict | None = None) -> Flask:
     if app.config["ATRAS_DE_PROXY"]:
         from werkzeug.middleware.proxy_fix import ProxyFix
 
-        # O IIS avisa por cabeçalho que a conexão original era HTTPS e qual o endereço público.
+        # O IIS/proxy avisa por cabeçalho que a conexão original era HTTPS e qual o endereço público.
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
         app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+    em_teste = app.config.get("TESTING") or bool(os.environ.get("PYTEST_CURRENT_TEST"))
+    if em_teste:
+        if not app.config.get("SECRET_KEY"):
+            app.config["SECRET_KEY"] = "teste-chave-secreta-ambiente-de-testes"
+    else:
+        chave_atual = app.config.get("SECRET_KEY")
+        if chave_atual == CHAVE_PADRAO:
+            raise RuntimeError(
+                "A SECRET_KEY não pode ser a chave de desenvolvimento padrão ('dev-troque-em-producao'). "
+                "Defina uma chave aleatória e segura."
+            )
+
+        if not chave_atual:
+            arquivo_chave = os.path.join(app.instance_path, "secret_key")
+            if os.path.exists(arquivo_chave):
+                try:
+                    with open(arquivo_chave, "r", encoding="utf-8") as f:
+                        chave = f.read().strip()
+                    if chave:
+                        app.config["SECRET_KEY"] = chave
+                except Exception:
+                    pass
+            if not app.config.get("SECRET_KEY"):
+                import secrets
+                chave = secrets.token_hex(32)
+                try:
+                    with open(arquivo_chave, "w", encoding="utf-8") as f:
+                        f.write(chave)
+                    try:
+                        os.chmod(arquivo_chave, 0o600)
+                    except Exception:
+                        pass
+                    app.config["SECRET_KEY"] = chave
+                except Exception:
+                    pass
+
+        if not app.config.get("SECRET_KEY") or app.config.get("SECRET_KEY") == CHAVE_PADRAO:
+            raise RuntimeError(
+                "SECRET_KEY inválida ou não configurada. Defina a variável SECRET_KEY ou configure em config.py."
+            )
+
+        if app.config.get("LOGIN_PROVISORIO") and not app.config.get("SENHA_PROVISORIA"):
+            raise RuntimeError(
+                "LOGIN_PROVISORIO está ativo mas SENHA_PROVISORIA não foi definida no ambiente nem no config.py."
+            )
+
+    @app.after_request
+    def _adicionar_cabecalhos_seguranca(resposta):
+        resposta.headers["X-Frame-Options"] = "DENY"
+        resposta.headers["X-Content-Type-Options"] = "nosniff"
+        if app.config.get("ATRAS_DE_PROXY"):
+            resposta.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return resposta
 
     db.init_app(app)
     migrate.init_app(app, db, directory=os.path.join(PASTA_PROJETO, "migrations"), render_as_batch=True)
