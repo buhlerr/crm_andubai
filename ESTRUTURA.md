@@ -16,6 +16,10 @@ crm_andubai/
 │   ├── painel_veg.py              # Métricas e agregações da fila
 │   ├── publico_teen.py            # Regras e detecção de público teen
 │   ├── texto.py                   # Utilitários de normalização de strings e texto
+│   ├── vistos.py                  # Tipo de visto ("Visto - Canadá - eTA") a partir do Visto normalizado
+│   ├── andamento.py               # % de andamento do aluno até o embarque
+│   ├── consultas.py               # Filas, Organizar por, Concluídas, Para lançar na Egali
+│   ├── dados/pautas_sla.csv       # Prazo (horas) por categoria de pauta: só categoria;horas, sem dados pessoais
 │   ├── importacao/                # Pipeline de importação e processamento de planilhas
 │   │   ├── __init__.py            # Exceções de importação e contratos
 │   │   ├── base_alunos.py         # Leitura da planilha semanal de alunos (aba Base)
@@ -29,11 +33,11 @@ crm_andubai/
 │   ├── models/                    # Modelos ORM (SQLAlchemy)
 │   │   ├── __init__.py            # Exportação centralizada dos modelos
 │   │   ├── base.py                # Modelo base com helpers comuns
-│   │   ├── cadastro.py            # Usuário, Papel (Enum), ApelidoConsultor
+│   │   ├── cadastro.py            # Usuario (senha, preferências), Papel, ApelidoConsultor, Aluno, Programa, Compra, ServicoEgali
 │   │   ├── catalogo.py            # Trilha, Etapa, Servico, ApelidoProcedimento
 │   │   ├── importacoes.py         # Importacao, OcorrenciaImportacao, Gravidade
 │   │   ├── pautas.py              # Pauta, PautaAnotacao, ColaboradorSetor
-│   │   └── tarefas.py             # Aluno, Tarefa, HistoricoTarefa, StatusTarefa
+│   │   └── tarefas.py             # Tarefa, Anotacao, HistoricoTarefa, StatusTarefa (com a marcação "lançada na Egali")
 │   ├── static/                    # Arquivos estáticos (CSS puro, imagens, logos)
 │   │   ├── estilo.css             # Folha de estilos completa com tema dark/light
 │   │   └── logo-victoria.png      # Identidade visual
@@ -66,10 +70,11 @@ crm_andubai/
 ├── migrations/                    # Scripts de migração Alembic (Flask-Migrate)
 ├── scripts/                       # Scripts auxiliares para inicialização e automação
 ├── tests/                         # Testes automatizados (pytest)
-│   ├── test_andamento.py          # Testes de cálculo de progresso do aluno
-│   ├── test_auth.py               # Testes de autenticação, hashing de senhas e primeiro acesso
-│   └── test_leitor_excel.py       # Testes do leitor Calamine/Excel com offsets e tipos
-├── .env.example                   # Exemplo de variáveis de ambiente
+│   ├── amostras/                  # Amostras FICTÍCIAS (pautas_exemplo.csv/.html, geradas por gerar_amostras.py)
+│   ├── test_auth.py, test_instalacao.py   # login, senha, transição, chave das sessões, cabeçalhos
+│   ├── test_pautas.py             # leitor de pautas, login obrigatório, envio só admin, CSRF no fetch
+│   ├── test_migracoes.py          # todas as migrações num banco com dados
+│   └── ...                        # importações, filas, visualizações, andamento, painel VEG (271 testes)
 ├── .gitignore                     # Proteção contra vazamento de bancos, chaves e caches
 ├── config.py.exemplo              # Arquivo de configuração de exemplo para produção
 ├── Dockerfile                     # Construção da imagem Docker baseada em Python Slim

@@ -5,12 +5,6 @@ $ErrorActionPreference = "Continue"
 $Host.UI.RawUI.WindowTitle = "Checklist Pós-Venda (desenvolvimento)"
 Set-Location (Split-Path -Parent $PSScriptRoot)
 
-# Com o modo equipe preparado, o banco de verdade é o de C:\ChecklistEgali\dados: abre por lá, para não haver dois bancos.
-if ((Test-Path "C:\ChecklistEgali\dados\config.py") -and -not $env:CHECKLIST_DADOS) {
-    & (Join-Path $PSScriptRoot "iniciar_equipe.ps1")
-    exit $LASTEXITCODE
-}
-
 $porta = if ($env:PORTA) { [int]$env:PORTA } else { 5000 }
 $endereco = "http://localhost:$porta"
 $env:FLASK_APP = "wsgi"

@@ -45,12 +45,14 @@ Sistema de gestão e acompanhamento de tarefas pós-venda para consultores e equ
    cd crm_andubai
    ```
 
-2. Suba o container com Docker Compose:
+2. Crie um arquivo `.env` ao lado do `docker-compose.yml` (fora do git) só se for usar a transição de senha: `LOGIN_PROVISORIO=1` e `SENHA_PROVISORIA=<senha nova>`. A `SECRET_KEY` é gerada sozinha no volume `/dados`.
+
+3. Suba o container com Docker Compose:
    ```bash
    docker compose up -d --build
    ```
 
-3. Acesse em `http://localhost:8080`.
+4. Acesse em `http://localhost:8080`. Se `flask db upgrade` falhar, o container não sobe (veja `docker logs crm_andubai`).
 
 Para criar ou promover o primeiro administrador via CLI no Docker:
 ```bash
@@ -63,7 +65,7 @@ docker exec -it crm_andubai flask criar-admin
 
 1. Certifique-se de ter o **Python 3.12+** instalado.
 2. Dê dois cliques no arquivo `iniciar.cmd` (ou execute via terminal).
-3. Na primeira execução, ele criará o ambiente virtual `.venv`, instalará as dependências e abrirá o navegador em `http://127.0.0.1:8080`.
+3. Na primeira execução, ele instala as dependências no Python da máquina, atualiza o banco e abre o navegador em `http://localhost:5000`.
 
 ---
 
@@ -83,13 +85,15 @@ Copie o arquivo `config.py.exemplo` para `instance/config.py` ou configure as va
 
 | Variável | Padrão | Descrição |
 | :--- | :--- | :--- |
-| `SECRET_KEY` | *(gerada aleatória)* | Chave de assinatura criptográfica das sessões Flask |
+| `SECRET_KEY` | *(gerada na 1ª subida e guardada em `<CHECKLIST_DADOS>/secret_key`)* | Chave das sessões. Se definir, use uma nova: o sistema recusa as que já foram publicadas no repositório |
 | `CHECKLIST_DADOS` | `instance` | Diretório onde o banco `checklist.db` e backups são salvos |
 | `SERVIDOR_HOST` | `0.0.0.0` | IP de escuta do servidor Waitress |
 | `SERVIDOR_PORTA` | `8080` | Porta HTTP do servidor |
 | `SERVIDOR_THREADS` | `8` | Quantidade de threads de atendimento simultâneas |
 | `ATRAS_DE_PROXY` | `1` | Ativa suporte a cabeçalhos `X-Forwarded-For` / `X-Forwarded-Proto` |
-| `LOGIN_PROVISORIO` | `0` | Se ativo (`1`), permite login simplificado por seleção de nome |
+| `LOGIN_PROVISORIO` | `0` | Transição: com `1`, quem ainda não tem senha individual entra uma vez com `SENHA_PROVISORIA` e cria a sua. Nunca vale para admin. Desligue quando todos tiverem senha |
+| `SENHA_PROVISORIA` | *(nenhuma)* | Senha da equipe para a transição. Obrigatória se `LOGIN_PROVISORIO=1`; sem valor padrão |
+| `PAUTAS_MEMBROS_UNIDADE` | *(vazio)* | Só no `config.py`: nomes da unidade usados nas Pautas enquanto não há usuários cadastrados |
 
 ---
 
