@@ -5,11 +5,15 @@ import secrets
 
 # Chave secreta da sessão (obrigatório gerar uma única para produção)
 # Gere no terminal com: python -c "import secrets; print(secrets.token_hex(32))"
-SECRET_KEY = "substitua_por_uma_chave_aleatoria_longa"
+# SECRET_KEY = "<gere uma com o comando acima>"   # opcional: sem ela, o sistema gera e guarda em <pasta de dados>/secret_key
 
-# Login provisório (sem senha individual, apenas senha compartilhada da equipe)
-LOGIN_PROVISORIO = True
-SENHA_PROVISORIA = "senha_da_equipe_aqui"
+# Transição para senha individual: quem ainda não tem senha entra uma vez com a senha da equipe e cria a sua.
+# Deixe desligado quando todos tiverem senha. Nunca vale para administradores.
+LOGIN_PROVISORIO = False
+# SENHA_PROVISORIA = "<defina uma senha nova; o sistema recusa as que já foram publicadas>"
+
+# Nomes da unidade usados nas Pautas enquanto não houver usuários cadastrados (opcional).
+# PAUTAS_MEMBROS_UNIDADE = ["Nome Sobrenome", "Outro Nome"]
 
 # Configuração de rede
 SERVIDOR_HOST = "0.0.0.0"

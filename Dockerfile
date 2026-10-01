@@ -26,5 +26,6 @@ RUN mkdir -p /dados/logs /dados/backups
 
 EXPOSE 8080
 
-# Inicializa migrações e sobe com gunicorn (ou waitress)
-CMD ["sh", "-c", "python -m flask db upgrade && python -m flask catalogo carregar 2>/dev/null || true && gunicorn -w 4 -b 0.0.0.0:8080 --timeout 300 wsgi:app"]
+# Atualiza o banco e sobe com gunicorn. Se a migração falhar, o container NÃO sobe (melhor parado do que
+# rodando com o banco errado). Só a carga do catálogo pode falhar sem impedir a subida.
+CMD ["sh", "-c", "set -e; python -m flask db upgrade; python -m flask catalogo carregar || echo 'AVISO: catalogo carregar falhou'; exec gunicorn -w 4 -b 0.0.0.0:8080 --timeout 300 wsgi:app"]

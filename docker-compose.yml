@@ -5,17 +5,20 @@ services:
     restart: unless-stopped
     ports:
       - "${PORTA:-8080}:8080"
+    # Valores secretos vêm de um arquivo .env ao lado deste (fora do git), nunca daqui.
     environment:
       - CHECKLIST_DADOS=/dados
       - SERVIDOR_HOST=0.0.0.0
       - SERVIDOR_PORTA=8080
       - SERVIDOR_THREADS=8
       - ATRAS_DE_PROXY=${ATRAS_DE_PROXY:-1}
-      - SECRET_KEY=${SECRET_KEY:-4798000f03ade8ce180f7cd2874373429f351b79c11728baef8421cd92e53d6c}
-      - LOGIN_PROVISORIO=1
-      - SENHA_PROVISORIA=${SENHA_PROVISORIA:-egali2026}
+      # Opcional: sem SECRET_KEY, o sistema gera uma na primeira subida e guarda em /dados/secret_key.
+      - SECRET_KEY=${SECRET_KEY:-}
+      # Transição para senha individual. Ligue (1) só enquanto houver gente sem senha; aí SENHA_PROVISORIA é obrigatória.
+      - LOGIN_PROVISORIO=${LOGIN_PROVISORIO:-0}
+      - SENHA_PROVISORIA=${SENHA_PROVISORIA:-}
     volumes:
-      # O volume persistente guarda o banco de dados checklist.db, logs e backups
+      # O volume persistente guarda o banco de dados checklist.db, a chave das sessões, logs e backups
       - crm_dados:/dados
 
 volumes:
