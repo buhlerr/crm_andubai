@@ -6,6 +6,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [2.1.1] - 2026-10-02
+
+### Corrigido
+- **Docker Compose:** Ajustado o fallback de `LOGIN_PROVISORIO` de `1` para `0` em `docker-compose.yml`, evitando a exceção `ConfiguracaoInsegura` na inicialização do container quando a variável `SENHA_PROVISORIA` não for informada.
+
+---
+
 ## [2.1.0] - 2026-10-01
 
 ### Adicionado

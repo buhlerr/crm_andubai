@@ -12,7 +12,7 @@ services:
       - SERVIDOR_THREADS=8
       - ATRAS_DE_PROXY=${ATRAS_DE_PROXY:-1}
       - SECRET_KEY=${SECRET_KEY}
-      - LOGIN_PROVISORIO=${LOGIN_PROVISORIO:-1}
+      - LOGIN_PROVISORIO=${LOGIN_PROVISORIO:-0}
       - SENHA_PROVISORIA=${SENHA_PROVISORIA}
     volumes:
       # O volume persistente guarda o banco de dados checklist.db, logs e backups
