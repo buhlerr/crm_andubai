@@ -198,6 +198,7 @@ class _Sincronizacao:
         self.tarefas = {t.item_checklist_egali: t for t in db.session.execute(db.select(Tarefa)).scalars()}
         self.abertas_antes = sum(1 for t in self.tarefas.values() if t.encerrada_egali_em is None)
         self.resolvedor = ResolvedorConsultor()
+        self.consultores_antes = {p.id: p.consultor_texto for p in programas}
 
         # Problemas agrupados, para não gerar uma ocorrência por linha.
         self.sem_programa: dict[tuple, dict] = {}  # (tipo, compra) -> dados
@@ -339,15 +340,22 @@ class _Sincronizacao:
 
     def atualizar_so_visto(self, programa: Programa, linha: LinhaChecklist):
         """Programas só de visto não estão na planilha: o cadastro vem do checklist."""
-        consultor_id, _ = self.resolvedor.resolver(linha.consultor)
-        programa.consultor_texto = linha.consultor
-        programa.consultor_id = consultor_id
+        self.atualizar_consultor(programa, linha)
         programa.pais = linha.pais
         programa.data_embarque = linha.embarque
         if linha.nome and programa.aluno.nome != linha.nome and not any(
             p.tipo == TipoPrograma.NORMAL for p in programa.aluno.programas
         ):
             programa.aluno.nome = linha.nome
+
+    def atualizar_consultor(self, programa: Programa, linha: LinhaChecklist):
+        """O consultor informado pelo checklist prevalece quando estiver preenchido."""
+        if not linha.consultor:
+            return
+        consultor_id, _ = self.resolvedor.resolver(linha.consultor)
+        programa.consultor_texto = linha.consultor
+        programa.consultor_id = consultor_id
+        programa.consultor_do_checklist = True
 
     # -- tarefa
 
@@ -419,9 +427,10 @@ class _Sincronizacao:
         if (
             programa.tipo == TipoPrograma.NORMAL
             and linha.consultor
-            and normalizar_texto(linha.consultor) != normalizar_texto(programa.consultor_texto)
+            and normalizar_texto(linha.consultor) != normalizar_texto(self.consultores_antes.get(programa.id))
         ):
-            self.consultor_divergente[(linha.consultor, programa.consultor_texto or "(vazio)")] += 1
+            consultor_anterior = self.consultores_antes.get(programa.id) or "(vazio)"
+            self.consultor_divergente[(linha.consultor, consultor_anterior)] += 1
         if etapa.trilha.codigo == "VIP" and programa.pontuacao is not None and programa.pontuacao < PONTUACAO_VIP:
             self.vip_abaixo[id(programa)] = programa
 
@@ -489,7 +498,7 @@ class _Sincronizacao:
             self.coletor.aviso(
                 TipoOcorrencia.CONSULTOR_DIVERGENTE,
                 f"O checklist mostra \"{csv}\" em {itens} item(ns) de programas em que a planilha diz \"{planilha}\". "
-                "Vale o da planilha.",
+                "O consultor informado pelo checklist foi preservado.",
                 chave=csv,
             )
         for programa in self.vip_abaixo.values():
@@ -511,10 +520,11 @@ def _sincronizar(linhas, coletor, importacao_id, periodo_inicio=None, periodo_fi
         if resultado is None:
             continue
         programa, compra = resultado
+        s.conferir(linha, programa, etapa)
+        s.atualizar_consultor(programa, linha)
         if programa.tipo == TipoPrograma.SO_VISTO:
             s.atualizar_so_visto(programa, linha)
         s.gravar_tarefa(linha, programa, compra, etapa)
-        s.conferir(linha, programa, etapa)
 
     # Item que está no arquivo mas não pôde ser importado (ex.: compra órfã) não é encerrado.
     s.encerrar_ausentes({linha.item for linha in linhas})

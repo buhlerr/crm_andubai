@@ -392,7 +392,17 @@ def test_consultor_diferente_da_planilha_gera_um_aviso_agrupado(db, cenario):
     ])
     avisos = ocorrencias(importacao, TipoOcorrencia.CONSULTOR_DIVERGENTE)
     assert len(avisos) == 1 and "2 item(ns)" in avisos[0].mensagem
-    assert tarefa(db, "7101").responsavel is cenario["um"]  # vale o da planilha
+    assert tarefa(db, "7101").responsavel is cenario["dois"]  # prevalece o do checklist
+
+
+def test_consultor_do_checklist_e_preservado_contra_nova_base(db, cenario):
+    importar([item(2, "7103", "100", "500", consultor="Consultor Dois")])
+    programa = db.session.execute(db.select(Programa).filter_by(programa_id_egali="1000")).scalar_one()
+    assert programa.consultor is cenario["dois"]
+
+    base([linha_base(2, "1000", "500", "100, 101", consultor="Consultora Um")])
+    db.session.refresh(programa)
+    assert programa.consultor is cenario["dois"]
 
 
 def test_vip_abaixo_de_85_e_sinalizado(db, cenario):

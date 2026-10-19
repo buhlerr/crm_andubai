@@ -125,6 +125,7 @@ class Programa(ComDatas, db.Model):
     # Consultor como veio da planilha (ou do CSV, nos programas só de visto) e o usuário resolvido.
     consultor_texto: Mapped[str | None] = mapped_column(String(200))
     consultor_id: Mapped[int | None] = mapped_column(ForeignKey("usuario.id"), index=True)
+    consultor_do_checklist: Mapped[bool] = mapped_column(Boolean, default=False, server_default=db.false())
 
     mes_embarque: Mapped[date | None] = mapped_column(Date)
     data_embarque: Mapped[date | None] = mapped_column(Date)

@@ -43,11 +43,22 @@ Para o detalhamento exaustivo de cada entidade, importações e regras de negóc
 
 ---
 
-## 🧪 Como Rodar os Testes
-```bash
-pytest
-```
-Todos os **271 testes automatizados** em `tests/` devem passar com 100% de sucesso a cada modificação no código.
+## 🧪 Política de Testes
+
+A suíte possui **273 casos de teste** em `tests/`. A quantidade é uma referência de cobertura, não uma exigência para executar a suíte completa em toda alteração. Testes podem ser removidos quando ficarem obsoletos, desde que o comportamento continue coberto ou seja substituído por uma verificação equivalente.
+
+Use a validação proporcional ao risco da mudança:
+
+| Alteração | Validação mínima antes de concluir |
+| :--- | :--- |
+| Documentação, CSS ou template sem lógica | `git diff --check` e testes diretamente relacionados, se existirem |
+| Pautas, importações ou filtros | Testes do módulo alterado e das importações relacionadas |
+| Login, permissões ou segurança | `tests/test_auth.py`, `tests/test_web.py` e `tests/test_instalacao.py` |
+| Modelos ou regras de negócio | Testes do módulo alterado e `tests/test_modelos.py` |
+| Migrações de banco | `tests/test_migracoes.py` e testes dos modelos afetados |
+| Alterações amplas, dependências ou preparação para publicação | `pytest` completo |
+
+Execute `pytest` completo antes de merge ou publicação, mesmo quando a validação local tiver sido direcionada. Uma falha deve ser corrigida ou registrada com clareza; nunca desative testes apenas para fazer o portão passar.
 
 ---
 
@@ -62,5 +73,5 @@ Para garantir que múltiplos desenvolvedores e agentes autônomos de IA (Antigra
    - Toda migração deve ser batch (`render_as_batch=True`), usar `server_default=sa.false()` para booleanos e inspecionar tabelas/colunas existentes com `inspect(op.get_bind())` para garantir idempotência sem falhar em bancos já atualizados.
 3. **Módulo de Pautas TM é Intocável:** O módulo de Pautas TM (`app/models/pautas.py`, `app/web/pautas.py`, `app/dados/pautas_sla.csv`) e seus links na barra de navegação são exclusivos da unidade AN e Dubai. Nenhum agente tem permissão para remover, desativar ou ocultar rotas de pautas.
 4. **Zero Nomes Hardcoded no Código (LGPD):** Nunca insira nomes reais de colaboradores ou alunos em arquivos de código, scripts ou commits. Use a variável de ambiente `PAUTAS_MEMBROS_UNIDADE` ou cadastros no banco. Em testes, use exclusivamente nomes fictícios em `tests/amostras/`.
-5. **Portão de Testes Não Negociável:** A contagem de testes só pode aumentar ou permanecer estável (mínimo de **271 testes**). É proibido deletar ou desativar testes para mascarar falhas.
+5. **Cobertura de Testes:** Mudanças devem ter validação proporcional ao risco conforme a política acima. Não é permitido remover ou desativar testes para mascarar falhas; testes obsoletos podem ser substituídos quando a cobertura equivalente for preservada.
 6. **Registro no CHANGELOG.md:** Qualquer alteração funcional, de tela, banco ou segurança deve ser documentada no [`CHANGELOG.md`](file:///d:/dev/crm_andubai/CHANGELOG.md).

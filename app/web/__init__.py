@@ -1,11 +1,23 @@
 import secrets
 from datetime import date, timedelta
+from importlib import import_module
 
 from flask import Flask, abort, render_template, request, session
 
 from app.models import ROTULOS_STATUS, StatusTarefa
 from app.models.base import hora_local
 from app.texto import separar_neg
+
+MODULOS_WEB = (
+    "auth",
+    "filas",
+    "tarefas",
+    "programas",
+    "importacoes",
+    "painel",
+    "cadastros",
+    "pautas",
+)
 
 
 def token_csrf() -> str:
@@ -14,10 +26,12 @@ def token_csrf() -> str:
     return session["csrf"]
 
 
-def registrar_web(app: Flask) -> None:
-    from app.web import auth, cadastros, filas, importacoes, painel, pautas, programas, tarefas
+def _carregar_modulos_web():
+    return [import_module(f"app.web.{nome}") for nome in MODULOS_WEB]
 
-    for modulo in (auth, filas, tarefas, programas, importacoes, painel, cadastros, pautas):
+
+def registrar_web(app: Flask) -> None:
+    for modulo in _carregar_modulos_web():
         app.register_blueprint(modulo.bp)
 
     @app.before_request

@@ -25,6 +25,12 @@ Historicamente, o acompanhamento das pautas dependia da inspeção manual págin
 
 ---
 
+### Escopo atual de identificação
+
+Neste momento, a configuração operacional obrigatória cobre somente a unidade **AN e Dubai**. O CRM identifica automaticamente como **AN e Dubai** qualquer nome do TM que corresponda a um usuário ativo do sistema ou a um nome informado em `PAUTAS_MEMBROS_UNIDADE`. Não é necessário cadastrar novamente esses nomes em `ColaboradorSetor`.
+
+Para pessoas de outros setores, o sistema só consegue exibir o setor correto depois que o nome for relacionado ao departamento no cadastro administrativo de pautas. Enquanto não houver esse relacionamento, a pessoa é classificada como **Outro Setor**. A identificação detalhada de setores externos é opcional neste momento.
+
 ## 2. O Princípio Operacional do TM: "Salvar = Atualizar"
 
 Uma particularidade essencial do sistema TM Egali é a mecânica de atualização:
@@ -47,22 +53,31 @@ O CRM analisa o par (`Atualizado por`, `Responsável`):
 ## 3. Mapeamento de Unidades e Setores
 
 ### Substituição da Planilha `Auxiliar!A:B`
-No formato de planilha manual, existia uma aba auxiliar mapeando cada colaborador ao seu respectivo setor. No CRM Andubai, esse mecanismo foi incorporado à arquitetura:
-1. **Consultores da Unidade:** São os registros da tabela `Usuario` com `ativo = True`. Quando o nome de quem criou, atualizou ou é responsável bate com um usuário do CRM, o sistema atribui o rótulo **`AN e Dubai`**.
-2. **Colaboradores Externos:** Ficam registrados na tabela `ColaboradorSetor`, gerenciável pelo painel administrativo em `/cadastros/pautas`. Exemplo:
-   - *Nome Sobrenome (colaboradora do setor)* ➔ `Acomodação`
-   - *Renata Ferreira* ➔ `Aéreo / Reembolsos`
-   - *Fernanda Santos* ➔ `Vistos`
+No formato de planilha manual, existia uma aba auxiliar mapeando cada colaborador ao seu respectivo setor. No CRM Andubai, a identificação usa os nomes que vêm no arquivo do TM:
+1. **Unidade AN e Dubai:** São os registros da tabela `Usuario` com `ativo = True`; se ainda não houver usuários cadastrados, são usados os nomes de `PAUTAS_MEMBROS_UNIDADE`. Quando o nome de quem abriu, atualizou ou é responsável bate com essa lista, o sistema atribui **`AN e Dubai`**.
+2. **Setores externos:** Podem ser registrados na tabela `ColaboradorSetor`, gerenciável em `/cadastros/pautas`. O cadastro deve usar o nome como aparece no TM e o setor correspondente. Sem esse cadastro, o resultado é **`Outro Setor`**.
 
-### Os 4 Pilares de Identificação
-A partir do mapeamento, cada pauta tem 4 metadados computados:
+### Qual setor abriu e qual setor é responsável?
+
+Sim. A importação preserva separadamente os nomes e calcula o setor de cada papel. A origem é o próprio arquivo exportado pelo TM:
 
 | Campo Calculado | O que Representa | Como é Determinado |
 | :--- | :--- | :--- |
-| **`UN Atualizou`** | Quem realizou o último salvamento no TM | Se `Atualizado por` está em `Usuario.ativo` ➔ `'AN e Dubai'`. Caso contrário, busca em `ColaboradorSetor`. |
-| **`UN Responsável`** | Quem tem o encargo formal de resolver a pauta | Se `Responsável` está em `Usuario.ativo` ➔ `'AN e Dubai'`. Caso contrário, busca o setor em `ColaboradorSetor`. |
-| **`UN Criou`** | Setor que deu origem à solicitação | Se `Criada por` está em `Usuario.ativo` ➔ `'AN e Dubai'`. Caso contrário, setor externo. |
-| **`UN Final`** | Síntese operacional de localização | Se `UN Atualizou` for da unidade ➔ `'AN e Dubai'`. Caso contrário, reflete o setor externo responsável. |
+| **`UN Atualizou`** | Setor de quem realizou o último salvamento no TM | Lê `Atualizado por` e procura primeiro na unidade AN e Dubai; depois em `ColaboradorSetor`; se não encontrar, usa `Outro Setor`. |
+| **`UN Responsável`** | Setor da pessoa que tem o encargo formal de resolver a pauta | Lê `Responsável` e aplica a mesma identificação. Este é o campo usado para decidir de quem é a ação e onde ocorre a quebra de 72h. |
+| **`UN Criou`** | Setor de quem abriu/criou a pauta | Lê `Criada por` e aplica a mesma identificação. Assim é possível saber se a solicitação teve origem na AN e Dubai ou em outro setor. |
+| **`UN Final`** | Resumo da responsabilidade e da origem | Combina `UN Responsável` e `UN Criou` quando forem diferentes; caso contrário, mostra apenas o setor identificado. |
+
+Os nomes originais continuam disponíveis em `Responsável`, `Criada por` e `Atualizado por`. Portanto, “setor que abriu” não é inferido pelo título da pauta ou pelo nome do aluno: é calculado exclusivamente a partir de `Criada por`. Da mesma forma, o setor responsável vem exclusivamente de `Responsável`.
+
+### Configuração necessária agora: AN e Dubai
+
+1. Cadastre em **Cadastros > Usuários** todos os membros atuais da unidade e mantenha-os ativos. O nome deve corresponder ao nome exibido pelo TM; a comparação ignora maiúsculas, minúsculas e acentos.
+2. Caso a unidade ainda não tenha usuários cadastrados, informe os nomes em `PAUTAS_MEMBROS_UNIDADE` na configuração do ambiente. Essa é uma alternativa de identificação, não uma lista de setores externos.
+3. Faça a importação do CSV ou MHTML do TM. A cada importação, o sistema recalcula `UN Criou`, `UN Responsável` e `UN Atualizou`.
+4. Cadastre em `/cadastros/pautas` somente os colaboradores externos que precisarem ser distinguidos por setor. Esse passo não é necessário para reconhecer AN e Dubai.
+
+Uma alteração de usuário, da variável de configuração ou do mapeamento externo passa a valer na próxima importação. Pautas já existentes recebem os novos indicadores sem perder observações, anotações ou atribuições internas.
 
 ---
 

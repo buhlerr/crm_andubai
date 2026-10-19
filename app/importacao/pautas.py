@@ -308,6 +308,14 @@ def processar_linhas_para_pautas(linhas_brutas: list[dict], data_referencia: dat
         un_criou = _determinar_setor(cria_por)
         un_atualizou = _determinar_setor(atual_por)
 
+        tem_relacao_unidade = (
+            un_responsavel == NOME_UNIDADE_PADRAO
+            or un_criou == NOME_UNIDADE_PADRAO
+            or un_atualizou == NOME_UNIDADE_PADRAO
+        )
+        if not tem_relacao_unidade:
+            continue
+
         # UN Final: =IF(UN_Resp<>UN_Criou, UN_Resp & " - " & UN_Criou, UN_Resp)
         if un_responsavel and un_criou and un_responsavel != un_criou:
             un_final = f"{un_responsavel} - {un_criou}"

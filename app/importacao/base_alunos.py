@@ -224,7 +224,9 @@ def _sincronizar(linhas: list[LinhaBase], coletor: Coletor, importacao_id: int |
             problemas_consultor[(linha.consultor_texto, problema)].append(linha.programa_id)
         if consultor_id is None:
             cont["programas_sem_consultor"] += 1
-        if programa.consultor_texto != linha.consultor_texto or programa.consultor_id != consultor_id:
+        if not programa.consultor_do_checklist and (
+            programa.consultor_texto != linha.consultor_texto or programa.consultor_id != consultor_id
+        ):
             mudou.append("consultor")
             programa.consultor_texto = linha.consultor_texto
             programa.consultor_id = consultor_id
