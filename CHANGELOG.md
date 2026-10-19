@@ -6,6 +6,23 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [Não lançado]
+
+### Documentação
+- **Regras de Pautas TM:** Esclarecida a configuração atual da unidade AN e Dubai e documentada a identificação do setor que abriu, que é responsável e que realizou a última atualização da pauta.
+- **Política de testes:** Substituída a exigência de executar todos os testes em toda alteração por validação proporcional ao risco, mantendo a suíte completa para merge, publicação e mudanças amplas.
+- **Cobertura de testes:** A suíte passou a contar com 273 casos após as validações de pautas e da precedência do consultor do checklist.
+
+### Modificado
+- **Consultor do checklist:** O consultor informado no relatório de checklist passa a prevalecer sobre a Base semanal e é preservado em importações posteriores da Base. Divergências continuam sendo registradas para conferência.
+- **Estrutura web:** Centralizado o carregamento dos blueprints em `app/web/__init__.py`, padronizando a inicialização da aplicação e reduzindo acoplamento na montagem das rotas.
+- **Importação de Pautas TM:** Pautas sem vínculo com AN e Dubai em responsável, criador ou última atualização deixam de ser importadas para o painel.
+
+### Corrigido
+- **Exportação JSON de Pautas TM:** Corrigido erro `Internal Server Error` (HTTP 500) que ocorria ao tentar exportar o JSON de pautas que possuíam anotações ou observações salvas. O campo `Observacao em` agora é formatado como string (`dd/mm/aaaa HH:MM`) e a serialização conta com `default=str` para prevenir falhas de serialização de objetos datetime.
+
+---
+
 ## [2.1.1] - 2026-10-02
 
 ### Corrigido

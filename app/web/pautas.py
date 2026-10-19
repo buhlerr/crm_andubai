@@ -85,7 +85,7 @@ def _obter_pautas_gerais(data_ref: date | None = None) -> list[dict]:
                 "Quebra UN": p.quebra_72h_unidade,
                 "Quebra Outro": p.quebra_72h_outro,
                 "Observacao": p.observacao or "",
-                "Observacao em": p.observacao_atualizada_em,
+                "Observacao em": p.observacao_atualizada_em.strftime("%d/%m/%Y %H:%M") if p.observacao_atualizada_em else "",
                 "Subestado": p.subestado_aguardando,
                 "Ativa": p.ativa,
                 "_consultor": p.consultor.nome if p.consultor else "Outros",
@@ -345,7 +345,7 @@ def exportar_json():
         limpo = {k: v for k, v in p.items() if not k.startswith("_")}
         pautas_limpas.append(limpo)
 
-    json_str = json.dumps(pautas_limpas, indent=2, ensure_ascii=False)
+    json_str = json.dumps(pautas_limpas, indent=2, ensure_ascii=False, default=str)
     nome_arquivo = f"pautas_{normalizar_nome(consultor) if consultor else 'todas'}.json"
 
     return Response(

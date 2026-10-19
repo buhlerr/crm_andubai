@@ -8,7 +8,7 @@ import pytest
 
 from app import create_app
 from app.extensions import db
-from app.importacao.pautas import carregar_pautas
+from app.importacao.pautas import carregar_pautas, processar_linhas_para_pautas
 from app.models import Papel, Usuario
 
 AMOSTRAS = os.path.join(os.path.dirname(__file__), "amostras")
@@ -112,6 +112,22 @@ def test_membros_da_unidade_vem_da_configuracao(app):
     assert membros_padrao() == ["Nome Sobrenome"]
 
 
+def test_importacao_descarta_pauta_sem_relacao_com_unidade(app):
+    with app.app_context():
+        pautas = processar_linhas_para_pautas([{
+            "#": "9000099",
+            "Categoria": "Categoria Externa",
+            "Pauta": "Pauta sem relação com a unidade",
+            "Status": "Em aberto",
+            "Consultor": "Responsavel Externo",
+            "Criado por": "Criador Externo",
+            "Atualizado por": "Atualizador Externo",
+            "Atualizado": "02:00:00",
+        }])
+
+    assert pautas == []
+
+
 def test_cadastros_pautas_setores(app, client):
     entrar(client, "admin@exemplo.test")
     res = client.get("/cadastros/pautas")
@@ -132,3 +148,24 @@ def test_cadastros_pautas_setores(app, client):
 
     res_del = client.post("/cadastros/pautas", data={"csrf": TOKEN, "acao": "remover", "id": colab.id}, follow_redirects=True)
     assert res_del.status_code == 200 and db.session.get(ColaboradorSetor, colab.id) is None
+
+
+def test_exportar_json_com_observacao(app, client):
+    entrar(client, "admin@exemplo.test")
+    enviar(client, CSV)
+
+    resp_obs = client.post(
+        "/pautas/9000001/observacao",
+        json={"observacao": "Aguardando resposta do estudante"},
+        headers={"X-CSRF-Token": TOKEN},
+    )
+    assert resp_obs.status_code == 200
+
+    res = client.get("/pautas/exportar-json")
+    assert res.status_code == 200
+    assert res.headers["Content-Type"].startswith("application/json")
+    dados = res.get_json()
+    assert isinstance(dados, list)
+    pauta_1 = next(p for p in dados if p["ID"] == "9000001")
+    assert pauta_1["Observacao"] == "Aguardando resposta do estudante"
+    assert pauta_1["Observacao em"] != ""
