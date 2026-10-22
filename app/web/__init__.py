@@ -17,6 +17,7 @@ MODULOS_WEB = (
     "painel",
     "cadastros",
     "pautas",
+    "rsa",
 )
 
 

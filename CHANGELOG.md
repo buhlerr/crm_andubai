@@ -8,6 +8,14 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não lançado]
 
+### Adicionado
+- **RSA - Checklist do Suporte:** o app `APP_Checklist_Suporte_ao_Aluno.html` (modelo base VEG) aparece dentro do CRM, em `/rsa/<pagina>`, no toggle "RSA - Checklist do Suporte" (Visão Geral, Procedimentos, Executores e Consultores, Programas e Vistos, Prazos e Atrasos). O grupo Sistema do app (Credenciais, Envio de Arquivos, Manual, Melhorias, Testes) fica no toggle "Sistema do RSA", só para administradores. O administrador envia o HTML pela própria tela; ele fica em `instance/rsa/`, fora do Git, porque traz nomes de colaboradores. O original não é alterado: na hora de mostrar, o CRM pula o login do app, esconde o cabeçalho e o menu dele e abre a página escolhida (`app/rsa.py`).
+- **Pautas TM:** filtro "Quebrou na nossa UN" (`pendencia=quebra_un`), com as pautas em que a quebra de 72h é da AN e Dubai.
+
+### Modificado
+- **Barra lateral:** pode ser recolhida, deixando só os ícones (a escolha fica no navegador). Recolhida, o grupo abre ao lado do ícone. Ordem: Buscar aluno, Filas de trabalho, Pautas TM (Total de pautas, Ação pendente da UN, Quebrou na nossa UN), RSA - Checklist do Suporte, Sistema do RSA (admin) e Administração (admin; junta os antigos grupos Dados e Administração).
+- **Menu do nome:** "Trocar senha", "Para lançar na Egali" (com o contador) e "Quando usar NEG" saíram da lateral e ficam no menu que abre ao clicar no nome.
+
 ### Documentação
 - **Regras de Pautas TM:** Esclarecida a configuração atual da unidade AN e Dubai e documentada a identificação do setor que abriu, que é responsável e que realizou a última atualização da pauta.
 - **Política de testes:** Substituída a exigência de executar todos os testes em toda alteração por validação proporcional ao risco, mantendo a suíte completa para merge, publicação e mudanças amplas.
