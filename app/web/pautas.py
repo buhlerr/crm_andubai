@@ -122,7 +122,7 @@ def lista():
     # Filtros da URL
     visao = request.args.get("visao", "etapas")  # etapas | tabela
     consultor_selecionado = request.args.get("consultor", "")
-    pendencia = request.args.get("pendencia", "todas")  # todas | aguardando_un | respondidas_un
+    pendencia = request.args.get("pendencia", "todas")  # todas | aguardando_un | respondidas_un | quebra_un
     status_filtro = request.args.get("status", "")
     busca = request.args.get("busca", "").strip().lower()
 
@@ -154,6 +154,8 @@ def lista():
         if pendencia == "aguardando_un" and p.get("Atualizada?") != "FALSE":
             continue
         if pendencia == "respondidas_un" and p.get("Atualizada?") != "TRUE":
+            continue
+        if pendencia == "quebra_un" and not p.get("Quebra UN"):
             continue
         if status_filtro and p.get("Status") != status_filtro:
             continue
