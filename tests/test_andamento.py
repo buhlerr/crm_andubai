@@ -76,7 +76,8 @@ def test_quebec_sem_tarefa_de_visto_ainda_mostra_o_caq(db, programas):
     novo = db.session.execute(db.select(Programa).filter_by(programa_id_egali="3")).scalar_one()
     a = andamento.calcular(novo)
     assert any("CAQ" in n for n in nomes(a, Situacao.PENDENTE))
-    assert a.porcentagem == 0
+    assert a.total == 0 and a.porcentagem == 0
+    assert not a.estimado
 
 
 def test_quem_ja_embarcou_sem_nada_aberto_fica_completo(db, programas):
@@ -126,12 +127,32 @@ def test_canada_leap_so_para_quem_comprou_e_nivelamento_so_quando_criado(db, pro
 
 def test_concluir_aumenta_o_andamento(db, programas):
     antes = andamento.calcular(programas["1"])
+    assert VOO.split(" - ")[-1] in nomes(antes, Situacao.EM_ABERTO)
     voo = db.session.execute(db.select(Tarefa).filter_by(item_checklist_egali="901")).scalar_one()
     voo.status = StatusTarefa.CONCLUIDA
     db.session.commit()
     depois = andamento.calcular(programas["1"])
     assert depois.feitos == antes.feitos + 1
+    assert depois.porcentagem > antes.porcentagem
     assert VOO.split(" - ")[-1] in nomes(depois, Situacao.FINALIZADO)
+
+
+def test_pendente_fica_fora_do_percentual(programas):
+    a = andamento.calcular(programas["1"])
+    pendentes = [p for p in a.passos if p.situacao == Situacao.PENDENTE]
+    assert pendentes  # continua visível para informar o que ainda não foi criado pela Egali
+    assert a.total == len([p for p in a.passos if p.situacao != Situacao.PENDENTE])
+    assert a.porcentagem == round(100 * a.feitos / a.total)
+
+
+def test_nao_se_aplica_conta_como_feito(db, programas):
+    antes = andamento.calcular(programas["1"])
+    voo = db.session.execute(db.select(Tarefa).filter_by(item_checklist_egali="901")).scalar_one()
+    voo.status = StatusTarefa.NAO_SE_APLICA
+    db.session.commit()
+    depois = andamento.calcular(programas["1"])
+    assert depois.feitos == antes.feitos + 1
+    assert VOO.split(" - ")[-1] in nomes(depois, Situacao.NAO_SE_APLICA)
 
 
 def test_pagina_do_aluno_mostra_o_andamento(db, app, programas):

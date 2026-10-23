@@ -11,7 +11,7 @@ estimativa que usa o catálogo como roteiro:
 - Procedimento com tarefa aberta: em aberto. Com tarefa concluída ou "não se aplica": finalizado.
 - Procedimento sem tarefa: se vem antes do primeiro procedimento em aberto da trilha, já
   passou (finalizado na Egali antes de chegar aqui; marcado como estimado). Se vem
-  depois, ainda não foi criado pela Egali: conta como pendente.
+  depois, ainda não foi criado pela Egali: fica pendente como informação (fora do percentual).
 - Trilha sem nada em aberto: finalizado até o último procedimento concluído; o resto, pendente.
   Se o aluno já embarcou, o que não está em aberto conta como finalizado.
 - Procedimentos que só valem para parte dos alunos (SO_PARA_ALGUNS: CAQ só para visto
@@ -94,7 +94,7 @@ class Andamento:
 
     @property
     def total(self) -> int:
-        return len(self.passos)
+        return sum(p.situacao != Situacao.PENDENTE for p in self.passos)
 
     @property
     def feitos(self) -> int:
@@ -106,7 +106,7 @@ class Andamento:
 
     @property
     def estimado(self) -> bool:
-        return any(p.situacao in (Situacao.FINALIZADO_ESTIMADO, Situacao.PENDENTE) for p in self.passos)
+        return any(p.situacao == Situacao.FINALIZADO_ESTIMADO for p in self.passos)
 
 
 def _situacao_da_tarefa(tarefas: list[Tarefa]) -> tuple[Situacao, Tarefa]:
