@@ -3,12 +3,17 @@
 
 {# -------------------------------- MACRO PARA RENDERIZAR CARD DA PAUTA NO PIPELINE -------------------------------- #}
 {% macro render_card_pauta(p) %}
-<div class="card-pauta" style="background: white; border: 1px solid var(--borda); border-left: 4px solid {{ 'var(--perigo)' if p.get('Quebra UN') else ('#f59e0b' if p.get('TAG') else '#10b981') }}; border-radius: 6px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+<div class="card-pauta" draggable="true" data-pauta-id="{{ p.get('ID') }}" data-estado="{{ p.get('Estado interno', 'acao') }}"
+     data-url-estado="{{ url_for('pautas.mudar_estado', pauta_id=p.get('ID')) }}"
+     style="background: white; border: 1px solid var(--borda); border-left: 4px solid {{ 'var(--perigo)' if p.get('Quebra UN') else ('#f59e0b' if p.get('TAG') else '#10b981') }}; border-radius: 6px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
   
   {# Linha Topo: ID, Tag SLA e Tempo #}
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-    <span style="font-size: 12px; font-weight: 700; color: var(--navy-800);">#{{ p.get('ID') }}</span>
+    <a href="{{ url_for('pautas.detalhe', pauta_id=p.get('ID')) }}" draggable="false" style="font-size: 12px; font-weight: 700; color: var(--navy-800);">#{{ p.get('ID') }}</a>
     <div>
+      <span class="selo {{ 'erro' if p.get('Atualizada?') == 'FALSE' else 'ok' }}" style="font-size: 10px; font-weight: 700;">
+        {{ 'Ação necessária' if p.get('Atualizada?') == 'FALSE' else 'Atualizada pela unidade' }}
+      </span>
       {% if p.get('Quebra UN') %}
         <span class="selo erro" style="font-size: 10px; font-weight: 700;">💥 72h+ NA UN</span>
       {% elif p.get('Quebra Outro') %}
@@ -35,9 +40,21 @@
     <span style="max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ p.get('Categoria') }}">
       🏷️ {{ p.get('Categoria') }}
     </span>
-    <span style="font-weight: 500;">
-      Resp: {{ p.get('Responsável') | truncate(15) }}
+    <span style="font-weight: 500; max-width: 190px; overflow-wrap: anywhere;" title="{{ p.get('Responsável') or 'Sem responsável' }}">
+      Resp: {{ p.get('Responsável') or 'Sem responsável' }}
     </span>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 7px;">
+    <span class="selo neutro" style="font-size: 10px;">{{ p.get('Estado interno rótulo') }}</span>
+    <span class="selo neutro" style="font-size: 10px;" title="Status oficial no TM">
+      TM: {{ p.get('Status') or 'sem status' }}
+    </span>
+    <span class="selo neutro" style="font-size: 10px;" title="Última atualização no TM">
+      TM: {{ p.get('Atualizado há') or 'sem data' }}
+    </span>
+  </div>
+  <div class="suave" style="font-size: 11px; margin-bottom: 6px; overflow-wrap: anywhere;">
+    Consultor: <b>{{ p.get('_consultor') or 'Outros' }}</b>
   </div>
 
   {# Campo de Observações do Consultor #}
@@ -230,7 +247,7 @@
   <div class="pipeline-colunas" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start; margin-top: 10px;">
     
     {# Coluna 1: Ação Pendente Nossa #}
-    <div class="coluna-etapa" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
+    <div class="coluna-etapa" data-estado="acao" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid var(--perigo); padding-bottom: 6px;">
         <strong style="color: var(--perigo); font-size: 14px;">🚨 Ação Pendente Nossa</strong>
         <span class="selo erro" style="font-size: 11px;">{{ etapas['nossa_acao'] | length }}</span>
@@ -245,7 +262,7 @@
     </div>
 
     {# Coluna 2: Aguardando Nosso Aluno #}
-    <div class="coluna-etapa" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
+    <div class="coluna-etapa" data-estado="aguardando" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid var(--alerta); padding-bottom: 6px;">
         <strong style="color: #b45309; font-size: 14px;">⏳ Aguardando Nosso Aluno</strong>
         <span class="selo aviso" style="font-size: 11px;">{{ etapas['nosso_aluno'] | length }}</span>
@@ -260,7 +277,7 @@
     </div>
 
     {# Coluna 3: Aguardando Outro Setor / Matriz #}
-    <div class="coluna-etapa" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
+    <div class="coluna-etapa" data-estado="acompanhamento" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #2563eb; padding-bottom: 6px;">
         <strong style="color: #1d4ed8; font-size: 14px;">🏢 Com Outro Setor / Matriz</strong>
         <span class="selo neutro" style="font-size: 11px;">{{ etapas['outro_setor'] | length }}</span>
@@ -275,7 +292,7 @@
     </div>
 
     {# Coluna 4: Aguardando Finalização #}
-    <div class="coluna-etapa" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
+    <div class="coluna-etapa" data-estado="acompanhamento" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #059669; padding-bottom: 6px;">
         <strong style="color: #047857; font-size: 14px;">🏁 Aguardando Finalização</strong>
         <span class="selo ok" style="font-size: 11px;">{{ etapas['aguardando_finalizacao'] | length }}</span>
@@ -291,7 +308,7 @@
 
     {# Coluna 5: Finalizadas / Histórico (oculto por padrão se vazio) #}
     {% if etapas['finalizadas'] %}
-    <div class="coluna-etapa" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
+    <div class="coluna-etapa" data-estado="finalizada" style="background: #fafbfc; border: 1px solid var(--borda); border-radius: 6px; padding: 12px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #6b7280; padding-bottom: 6px;">
         <strong style="color: #4b5563; font-size: 14px;">✅ Finalizadas / Histórico</strong>
         <span class="selo neutro" style="font-size: 11px;">{{ etapas['finalizadas'] | length }}</span>
@@ -344,7 +361,7 @@
                 <span class="selo ok">No Prazo</span>
               {% endif %}
               <div class="suave" style="font-size: 11px; margin-top: 2px;">
-                {{ p.get('Tempo Inativo') or (p.get('Dias') ~ 'd') }} sem movimentação
+                {{ p.get('Atualizado há') or 'sem data' }} desde a última atualização no TM
               </div>
             </td>
             <td>
@@ -356,6 +373,9 @@
               <b>{{ p.get('Responsável') }}</b>
               <div class="suave" style="font-size: 11px;">
                 UN: {{ p.get('UN Responsável') or 'Outro Setor' }}
+              </div>
+              <div class="suave" style="font-size: 11px; overflow-wrap: anywhere;">
+                Consultor: {{ p.get('_consultor') or 'Outros' }}
               </div>
             </td>
             <td style="min-width: 200px;">
@@ -379,7 +399,7 @@
             </td>
             <td style="font-size: 12px; white-space: nowrap;">
               {{ p.get('Atualizado por') or '—' }}
-              <div class="suave" style="font-size: 10px;">{{ p.get('Atualizado em') }}</div>
+              <div class="suave" style="font-size: 10px;">{{ p.get('Atualizado em') }} · {{ p.get('Atualizado há') }}</div>
             </td>
             <td style="font-size: 12px; white-space: nowrap;">
               {{ p.get('Criada por') or '—' }}
@@ -395,6 +415,52 @@
 
 
 <script>
+(() => {
+  const colunas = document.querySelectorAll('.coluna-etapa[data-estado]');
+  let arrastado = null;
+  document.querySelectorAll('.card-pauta[draggable="true"]').forEach((card) => {
+    card.addEventListener('dragstart', (event) => {
+      arrastado = card;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', card.dataset.pautaId);
+      card.style.opacity = '.55';
+    });
+    card.addEventListener('dragend', () => {
+      card.style.opacity = '';
+      arrastado = null;
+      colunas.forEach((c) => c.classList.remove('alvo'));
+    });
+  });
+  colunas.forEach((coluna) => {
+    coluna.addEventListener('dragover', (event) => {
+      if (!arrastado) return;
+      event.preventDefault();
+      coluna.classList.add('alvo');
+    });
+    coluna.addEventListener('dragleave', () => coluna.classList.remove('alvo'));
+    coluna.addEventListener('drop', async (event) => {
+      event.preventDefault();
+      coluna.classList.remove('alvo');
+      if (!arrastado || arrastado.dataset.estado === coluna.dataset.estado) return;
+      const estadoAnterior = arrastado.dataset.estado;
+      const lista = coluna.querySelector('div[style*="flex-direction"]');
+      if (lista) lista.prepend(arrastado);
+      try {
+        const resposta = await fetch(arrastado.dataset.urlEstado, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'X-CSRF-Token': '{{ token_csrf() }}', 'X-Requested-With': 'fetch'},
+          body: JSON.stringify({estado: coluna.dataset.estado})
+        });
+        if (!resposta.ok) throw new Error();
+        arrastado.dataset.estado = coluna.dataset.estado;
+      } catch {
+        alert('Não foi possível movimentar a pauta. Recarregue a página e tente novamente.');
+        window.location.reload();
+      }
+    });
+  });
+})();
+
 function abrirEdicaoObs(pautaId, isTab) {
   const sufixo = isTab ? 'tab' : 'card';
   const textoDiv = document.getElementById(`texto-obs-${sufixo}-${pautaId}`);

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}Pauta #{{ pauta.id }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div>
+    <div class="sobretitulo">Pauta de Comunicação Interna · TM</div>
+    <h1>#{{ pauta.id }} · {{ pauta.pauta_titulo }}</h1>
+    <div class="suave">{{ pauta.categoria }}{% if pauta.aluno %} · {{ pauta.aluno }}{% endif %}</div>
+  </div>
+  <a class="botao secundario" href="{{ url_for('pautas.lista') }}">← Voltar às pautas</a>
+</div>
+
+<div class="cartao" style="margin-bottom: 16px;">
+  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+    <span class="selo {{ 'erro' if not pauta.atualizada_un else 'ok' }}">
+      {{ 'Ação necessária' if not pauta.atualizada_un else 'Atualizada pela unidade' }}
+    </span>
+    <span class="selo neutro">Status TM: {{ pauta.status_tm }}</span>
+    <span class="selo neutro">Painel: {{ pauta.estado_interno_rotulo }}</span>
+    {% if pauta.tag %}<span class="selo aviso">{{ pauta.tag }}</span>{% endif %}
+  </div>
+  <div class="linha-campos">
+    <div class="campo"><b>Responsável no TM</b><br>{{ pauta.responsavel_tm or '—' }}</div>
+    <div class="campo"><b>Consultor responsável</b><br>{{ pauta.consultor.nome if pauta.consultor else 'Outros' }}</div>
+    <div class="campo"><b>Última atualização no TM</b><br>{{ pauta.atualizado_em_tm | data_hora if pauta.atualizado_em_tm else '—' }}</div>
+    <div class="campo"><b>Tempo sem atualização</b><br>{{ pauta.tempo_inativo_texto or '—' }}</div>
+  </div>
+</div>
+
+<div class="cartao" style="margin-bottom: 16px;">
+  <h2 style="margin-top:0">Movimentação interna</h2>
+  <p class="suave pequeno">Este estado pertence apenas ao painel e não altera o status oficial do TM.</p>
+  <form method="post" action="{{ url_for('pautas.mudar_estado', pauta_id=pauta.id) }}" class="linha-campos">
+    {{ m.csrf() }}
+    <div class="campo">
+      <label for="estado">Estado do painel</label>
+      <select id="estado" name="estado">
+        {% for valor, rotulo in estados.items() %}
+          <option value="{{ valor }}" {{ 'selected' if pauta.estado_interno == valor }}>{{ rotulo }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="acoes" style="align-self:end"><button class="botao">Salvar estado</button></div>
+  </form>
+</div>
+
+<div class="cartao" style="margin-bottom: 16px;">
+  <h2 style="margin-top:0">Observação interna</h2>
+  <form method="post" action="{{ url_for('pautas.salvar_observacao', pauta_id=pauta.id) }}">
+    {{ m.csrf() }}
+    <textarea name="observacao" style="width:100%; min-height:100px;">{{ pauta.observacao or '' }}</textarea>
+    <div class="acoes" style="margin-top:8px"><button class="botao">Salvar observação</button></div>
+  </form>
+</div>
+
+<div class="cartao">
+  <h2 style="margin-top:0">Histórico de movimentações</h2>
+  {% for item, usuario in historico %}
+    <div style="padding:8px 0; border-bottom:1px solid var(--borda-2);">
+      <b>{{ estados.get(item.estado_novo, item.estado_novo) }}</b>
+      <span class="suave"> · {{ usuario.nome if usuario else 'Sistema' }} · {{ item.criado_em | data_hora }}</span>
+      {% if item.estado_anterior %}<div class="pequeno suave">Anterior: {{ estados.get(item.estado_anterior, item.estado_anterior) }}</div>{% endif %}
+    </div>
+  {% else %}
+    <p class="suave">Nenhuma movimentação interna registrada.</p>
+  {% endfor %}
+</div>
+{% endblock %}

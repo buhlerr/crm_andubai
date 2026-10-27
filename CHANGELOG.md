@@ -66,3 +66,6 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Remoção e bloqueio via `.gitignore` de planilhas e exportações reais de alunos e colaboradores.
 - Nomes reais de colaboradores substituídos por configuração dinâmica (`PAUTAS_MEMBROS_UNIDADE`).
 - Adição de fixtures higienizadas e fictícias em `tests/amostras/`.
+## Próxima versão
+
+- Painel de pautas: estados internos independentes do TM, histórico de movimentações, detalhe da pauta e movimentação dos cards por arrastar e soltar.
