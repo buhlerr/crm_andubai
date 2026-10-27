@@ -23,7 +23,7 @@ from app.models.importacoes import (
     TipoImportacao,
     TipoOcorrencia,
 )
-from app.models.pautas import ColaboradorSetor, Pauta, PautaAnotacao
+from app.models.pautas import ColaboradorSetor, Pauta, PautaAnotacao, PautaHistorico
 from app.models.tarefas import (
     ROTULOS_STATUS,
     STATUS_ABERTOS,
@@ -38,7 +38,7 @@ __all__ = [
     "PONTUACAO_VIP", "ROTULOS_STATUS", "STATUS_ABERTOS",
     "Aluno", "Anotacao", "ApelidoConsultor", "ApelidoEtapa", "CategoriaServico", "ColaboradorSetor", "Compra", "ConsultorTeen",
     "EtapaModelo", "Gravidade", "HistoricoTarefa", "Importacao", "MotivoEncerramento",
-    "OcorrenciaImportacao", "OrigemCompra", "Papel", "Pauta", "PautaAnotacao", "Programa", "ServicoEgali",
+    "OcorrenciaImportacao", "OrigemCompra", "Papel", "Pauta", "PautaAnotacao", "PautaHistorico", "Programa", "ServicoEgali",
     "SituacaoImportacao", "SituacaoPrograma", "StatusTarefa", "Tarefa", "TipoImportacao",
     "TipoOcorrencia", "TipoPrograma", "Trilha", "Usuario", "VisaoFila",
 ]

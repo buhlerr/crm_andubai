@@ -62,6 +62,15 @@ class Pauta(ComDatas, db.Model):
     encerrada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # --- CAMPOS INTERNOS DO CRM (Preservados perpetuamente entre importações) ---
+    ESTADOS_INTERNOS = {
+        "acao": "Ação necessária",
+        "aguardando": "Aguardando retorno",
+        "acompanhamento": "Em acompanhamento",
+        "finalizada": "Finalizada",
+    }
+    estado_interno: Mapped[str] = mapped_column(String(30), default="acao", index=True)
+    estado_interno_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora, nullable=False)
+    estado_interno_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuario.id"))
     consultor_id: Mapped[int | None] = mapped_column(ForeignKey("usuario.id"), index=True)
     observacao: Mapped[str | None] = mapped_column(Text)
     observacao_atualizada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -70,10 +79,15 @@ class Pauta(ComDatas, db.Model):
     importacao_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
 
     # Relacionamentos
-    consultor: Mapped["Usuario | None"] = relationship()  # noqa: F821
+    consultor: Mapped["Usuario | None"] = relationship(foreign_keys=[consultor_id])  # noqa: F821
+    estado_interno_por: Mapped["Usuario | None"] = relationship(foreign_keys=[estado_interno_por_id])  # noqa: F821
     anotacoes: Mapped[list["PautaAnotacao"]] = relationship(
         back_populates="pauta", cascade="all, delete-orphan", order_by="PautaAnotacao.criado_em.desc()"
     )
+
+    @property
+    def estado_interno_rotulo(self) -> str:
+        return self.ESTADOS_INTERNOS.get(self.estado_interno, self.ESTADOS_INTERNOS["acao"])
 
     @property
     def eh_responsabilidade_nossa(self) -> bool:
@@ -120,6 +134,22 @@ class PautaAnotacao(db.Model):
 
     pauta: Mapped["Pauta"] = relationship(back_populates="anotacoes")
     autor: Mapped["Usuario | None"] = relationship()  # noqa: F821
+
+
+class PautaHistorico(db.Model):
+    """Histórico das movimentações internas do painel, independente do TM."""
+
+    __tablename__ = "pauta_historico"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    pauta_id: Mapped[int] = mapped_column(ForeignKey("pauta.id", ondelete="CASCADE"), index=True)
+    estado_anterior: Mapped[str | None] = mapped_column(String(30))
+    estado_novo: Mapped[str] = mapped_column(String(30))
+    usuario_id: Mapped[int | None] = mapped_column(ForeignKey("usuario.id"))
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=agora)
+
+    pauta: Mapped["Pauta"] = relationship()
+    usuario: Mapped["Usuario | None"] = relationship()
 
 
 class ColaboradorSetor(db.Model):

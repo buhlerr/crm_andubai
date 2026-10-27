@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import date
+from datetime import date, datetime, timezone
 from flask import (
     Blueprint,
     Response,
@@ -26,10 +26,25 @@ from app.importacao.pautas import (
 )
 from app.models.base import agora
 from app.models.cadastro import Usuario
-from app.models.pautas import Pauta, PautaAnotacao
+from app.models.pautas import Pauta, PautaAnotacao, PautaHistorico
 from app.web.auth import admin_obrigatorio, login_obrigatorio
 
 bp = Blueprint("pautas", __name__, url_prefix="/pautas")
+
+
+def _tempo_desde(momento: datetime | None) -> str:
+    if not momento:
+        return "sem data"
+    if momento.tzinfo is None:
+        momento = momento.replace(tzinfo=timezone.utc)
+    total_minutos = max(0, int((datetime.now(timezone.utc) - momento).total_seconds() // 60))
+    dias, resto = divmod(total_minutos, 1440)
+    horas, minutos = divmod(resto, 60)
+    if dias:
+        return f"há {dias}d {horas}h"
+    if horas:
+        return f"há {horas}h {minutos}min"
+    return f"há {minutos}min"
 
 
 def _caminho_arquivo_pautas() -> str:
@@ -72,6 +87,7 @@ def _obter_pautas_gerais(data_ref: date | None = None) -> list[dict]:
                 "Criada em": p.criado_em_tm.strftime("%d/%m/%Y") if p.criado_em_tm else "",
                 "Atualizado por": p.atualizado_por_tm,
                 "Atualizado em": p.atualizado_em_tm.strftime("%d/%m/%Y") if p.atualizado_em_tm else "",
+                "Atualizado há": _tempo_desde(p.atualizado_em_tm),
                 "TAG": p.tag or "",
                 "Tempo Inativo": p.tempo_inativo_texto or "",
                 "Horas Inativo": p.tempo_inativo_horas or 0,
@@ -90,6 +106,9 @@ def _obter_pautas_gerais(data_ref: date | None = None) -> list[dict]:
                 "Ativa": p.ativa,
                 "_consultor": p.consultor.nome if p.consultor else "Outros",
                 "_consultor_id": p.consultor_id,
+                "Estado interno": p.estado_interno,
+                "Estado interno rótulo": p.estado_interno_rotulo,
+                "Estado interno em": p.estado_interno_em.strftime("%d/%m/%Y %H:%M") if p.estado_interno_em else "",
                 "_objeto": p,
             }
             resultado.append(item)
@@ -187,17 +206,17 @@ def lista():
         status_l = (p.get("Status") or "").lower()
         ativa = p.get("Ativa", True)
 
-        if not ativa or "finalizad" in status_l or "cancelad" in status_l:
+        estado = p.get("Estado interno", "acao")
+        if not ativa or estado == "finalizada":
             etapas["finalizadas"].append(p)
+        elif estado == "aguardando":
+            etapas["nosso_aluno"].append(p)
+        elif estado == "acompanhamento":
+            etapas["outro_setor"].append(p)
         elif "finaliza" in status_l:
             etapas["aguardando_finalizacao"].append(p)
-        elif p.get("UN Responsável") == "AN e Dubai":
-            if p.get("Atualizada?") == "FALSE":
-                etapas["nossa_acao"].append(p)
-            else:
-                etapas["nosso_aluno"].append(p)
         else:
-            etapas["outro_setor"].append(p)
+            etapas["nossa_acao"].append(p)
 
     # Contagem de pautas por membro para badges nas abas
     contagem_membros = {}
@@ -237,6 +256,59 @@ def lista():
         data_arquivo=data_arquivo,
         tem_arquivo=bool(arquivo_atual) or (len(todas_pautas) > 0),
     )
+
+
+@bp.route("/<int:pauta_id>")
+@login_obrigatorio
+def detalhe(pauta_id):
+    pauta = db.session.get(Pauta, pauta_id)
+    if not pauta:
+        return render_template("erro.html", mensagem="Pauta não encontrada."), 404
+    historico = db.session.execute(
+        db.select(PautaHistorico, Usuario)
+        .outerjoin(Usuario, Usuario.id == PautaHistorico.usuario_id)
+        .where(PautaHistorico.pauta_id == pauta.id)
+        .order_by(PautaHistorico.criado_em.desc())
+    ).all()
+    return render_template(
+        "pauta.html",
+        pauta=pauta,
+        historico=historico,
+        estados=Pauta.ESTADOS_INTERNOS,
+    )
+
+
+@bp.route("/<int:pauta_id>/estado", methods=["POST"])
+@login_obrigatorio
+def mudar_estado(pauta_id):
+    pauta = db.session.get(Pauta, pauta_id)
+    if not pauta:
+        if request.is_json:
+            return {"ok": False, "erro": "Pauta não encontrada."}, 404
+        flash("Pauta não encontrada.", "erro")
+        return redirect(url_for("pautas.lista"))
+
+    estado = (request.get_json() or {}).get("estado") if request.is_json else request.form.get("estado")
+    if estado not in Pauta.ESTADOS_INTERNOS:
+        if request.is_json:
+            return {"ok": False, "erro": "Estado inválido."}, 400
+        flash("Estado interno inválido.", "erro")
+        return redirect(request.referrer or url_for("pautas.lista"))
+
+    anterior = pauta.estado_interno
+    if anterior != estado:
+        pauta.estado_interno = estado
+        pauta.estado_interno_em = agora()
+        pauta.estado_interno_por_id = g.usuario.id
+        db.session.add(PautaHistorico(
+            pauta_id=pauta.id, estado_anterior=anterior, estado_novo=estado, usuario_id=g.usuario.id,
+        ))
+        db.session.commit()
+
+    if request.is_json:
+        return {"ok": True, "estado": estado, "rotulo": Pauta.ESTADOS_INTERNOS[estado]}
+    flash(f"Pauta #{pauta.id}: estado interno alterado para “{Pauta.ESTADOS_INTERNOS[estado]}”.", "ok")
+    return redirect(request.referrer or url_for("pautas.detalhe", pauta_id=pauta.id))
 
 
 @bp.route("/<int:pauta_id>/observacao", methods=["POST"])
