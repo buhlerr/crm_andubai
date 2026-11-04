@@ -93,7 +93,7 @@
   {% set pendencia_pauta = request.args.get('pendencia', 'todas') %}
   {% set pagina_rsa = (request.view_args or {}).get('pagina') %}
   {% set e_admin = g.usuario.papel == Papel.ADMIN %}
-  {% set telas_filas = ('filas.minha_fila', 'filas.fila_equipe', 'filas.por_consultor', 'filas.concluidas') %}
+  {% set telas_filas = ('filas.minha_fila', 'filas.fila_equipe', 'filas.por_consultor', 'filas.concluidas', 'filas.andamento_vistos') %}
   <nav class="sidebar" id="menu-lateral" aria-label="Menu">
     <button class="lateral-recolher" type="button" onclick="alternarLateral()" title="Recolher ou abrir o menu" aria-label="Recolher ou abrir o menu">
       <span class="seta-recolher" aria-hidden="true">«</span><span class="rotulo">Recolher menu</span>
@@ -109,6 +109,7 @@
       {{ item(url_for('filas.fila_equipe'), 'Fila da equipe', tela == 'filas.fila_equipe') }}
       {{ item(url_for('filas.por_consultor'), 'Por consultor', tela == 'filas.por_consultor') }}
       {{ item(url_for('filas.concluidas'), 'Concluídas', tela == 'filas.concluidas') }}
+      {{ item(url_for('filas.andamento_vistos'), 'Andamento dos vistos', tela == 'filas.andamento_vistos') }}
     {% endcall %}
 
     {% set em_pautas = tela == 'pautas.lista' %}

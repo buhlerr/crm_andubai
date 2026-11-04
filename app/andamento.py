@@ -169,3 +169,126 @@ def calcular(programa: Programa, hoje: date | None = None) -> Andamento:
             else:
                 andamento.passos.append(Passo(etapa, Situacao.PENDENTE))
     return andamento
+
+
+# ---------------------------------------------------------------- andamento do processo de visto
+# O processo de visto termina no procedimento "Documentação OK" (envio para a embaixada/consulado):
+# finalizado ele, o andamento é 100%. O que vem depois (biometria, status, cópia do visto) fica fora.
+TRILHAS_DE_VISTO = ("VISTOS",)  # Canadá e demais países
+# Vistos que ficam fora da tela (decisão da equipe, 04/11/2026): todos os dos EUA e o eTA do Canadá.
+PAISES_FORA = {"eua", "estados unidos"}
+TIPOS_FORA = {"eta"}
+DOCUMENTACAO_OK = "documentacao ok"
+
+
+@dataclass
+class AndamentoVisto:
+    programa: Programa
+    trilha: Trilha
+    passos: list[Passo] = field(default_factory=list)
+
+    @property
+    def total(self) -> int:
+        # Aqui o fim do processo é conhecido, então o que a Egali ainda não criou também entra no total.
+        return len(self.passos)
+
+    @property
+    def feitos(self) -> int:
+        return sum(p.feito for p in self.passos)
+
+    @property
+    def concluido(self) -> bool:
+        """O "Documentação OK" (último passo) foi finalizado."""
+        return bool(self.passos) and self.passos[-1].feito
+
+    @property
+    def porcentagem(self) -> int:
+        if self.concluido:
+            return 100
+        # Sem o Documentação OK finalizado, nunca mostra 100%.
+        return min(round(100 * self.feitos / self.total), 99) if self.total else 0
+
+    @property
+    def atual(self) -> Passo | None:
+        """Procedimento em que o processo está: o primeiro em aberto; sem nenhum, o próximo ainda não criado."""
+        if self.concluido:
+            return self.passos[-1]
+        return (next((p for p in self.passos if p.situacao == Situacao.EM_ABERTO), None)
+                or next((p for p in self.passos if p.situacao == Situacao.PENDENTE), None))
+
+    @property
+    def neg(self) -> str | None:
+        """NEG (observação da Egali) do procedimento atual."""
+        passo = self.atual
+        if passo and passo.tarefa and passo.tarefa.tem_justificativa:
+            return passo.tarefa.obs_egali.strip()
+        return None
+
+    @property
+    def estimado(self) -> bool:
+        return any(p.situacao == Situacao.FINALIZADO_ESTIMADO for p in self.passos)
+
+
+def visto_considerado(rotulo: str) -> bool:
+    """"Visto - Canadá - Estudante" entra; "Visto - EUA - Turista" e "Visto - Canadá - eTA" ficam fora."""
+    partes = {parte.strip() for parte in _simples(rotulo).split("-")}
+    return not (partes & PAISES_FORA or partes & TIPOS_FORA)
+
+
+def _trilhas_de_visto_do_programa(programa: Programa, trilhas: dict[str, Trilha]) -> list[Trilha]:
+    """Pelo tipo de visto: entra se tiver algum visto considerado (nem EUA, nem eTA Canadá).
+    Sem tipo de visto informado, entra se tiver tarefa na trilha de vistos."""
+    from app.vistos import tipos_de_visto
+
+    rotulos = tipos_de_visto(programa)
+    if rotulos:
+        entra = any(visto_considerado(r) for r in rotulos)
+    else:
+        entra = any(t.etapa.trilha.codigo in TRILHAS_DE_VISTO for t in programa.tarefas)
+    return [trilhas[c] for c in TRILHAS_DE_VISTO if entra and c in trilhas]
+
+
+def calcular_visto(programa: Programa, trilha: Trilha, hoje: date | None = None) -> AndamentoVisto:
+    """Andamento do processo de visto do programa em uma trilha de visto, até o "Documentação OK"."""
+    hoje = hoje or date.today()
+    ja_embarcou = programa.data_embarque is not None and programa.data_embarque < hoje
+    tarefas_por_etapa: dict[int, list[Tarefa]] = {}
+    for t in programa.tarefas:
+        tarefas_por_etapa.setdefault(t.etapa_id, []).append(t)
+
+    etapas = [e for e in trilha.etapas if e.id in tarefas_por_etapa or (e.ativa and _vale_para(e, programa))]
+    fim = next((i for i, e in enumerate(etapas) if DOCUMENTACAO_OK in _simples(e.nome)), None)
+    if fim is not None:
+        etapas = etapas[:fim + 1]
+
+    conhecidas = {e.id: _situacao_da_tarefa(tarefas_por_etapa[e.id]) for e in etapas if e.id in tarefas_por_etapa}
+    abertas = [i for i, e in enumerate(etapas) if e.id in conhecidas and conhecidas[e.id][0] == Situacao.EM_ABERTO]
+    feitas = [i for i, e in enumerate(etapas) if e.id in conhecidas and conhecidas[e.id][0] in FEITOS]
+    if abertas:
+        limite = abertas[0]
+    elif ja_embarcou:
+        limite = len(etapas)
+    else:
+        limite = feitas[-1] + 1 if feitas else 0
+
+    andamento = AndamentoVisto(programa, trilha)
+    for i, etapa in enumerate(etapas):
+        if etapa.id in conhecidas:
+            situacao, tarefa = conhecidas[etapa.id]
+            andamento.passos.append(Passo(etapa, situacao, tarefa))
+        elif i < limite:
+            andamento.passos.append(Passo(etapa, Situacao.FINALIZADO_ESTIMADO))
+        else:
+            andamento.passos.append(Passo(etapa, Situacao.PENDENTE))
+    return andamento
+
+
+def andamentos_de_visto(programas: list[Programa], hoje: date | None = None) -> list[AndamentoVisto]:
+    """Uma linha por programa com processo de visto considerado."""
+    trilhas = {t.codigo: t for t in db.session.execute(
+        db.select(Trilha).where(Trilha.codigo.in_(TRILHAS_DE_VISTO))).scalars()}
+    linhas = []
+    for programa in programas:
+        for trilha in _trilhas_de_visto_do_programa(programa, trilhas):
+            linhas.append(calcular_visto(programa, trilha, hoje))
+    return linhas
