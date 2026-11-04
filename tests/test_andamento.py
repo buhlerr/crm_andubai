@@ -164,3 +164,74 @@ def test_pagina_do_aluno_mostra_o_andamento(db, app, programas):
     assert "Andamento até o embarque" in pagina and f"{a.porcentagem}%" in pagina
     assert f"{a.feitos} de {a.total} procedimentos" in pagina
     assert "Ainda não criado pela Egali" in pagina and "Estimativa" in pagina
+
+
+# ---------------------------------------------------------------- andamento do processo de visto
+CARTA = "SA - VISTOS - Ter a primeira versão da carta de intenções/GS form e formulário de visto preenchido"
+ENTREGA = "SA - VISTOS - Entrega da 1a documentação e envio de chamado com pendências de documentação/Solicitar LOA (CAD)"
+DOC_OK = "SA - VISTOS - Documentação OK ? Envio para embaixada/consulado"
+
+
+def _visto(db, linhas):
+    """Programa "2" (Estudante - Canadá) com as tarefas de visto informadas: (número, procedimento, neg)."""
+    checklist.confirmar(checklist.criar_previa([
+        {"linha": i + 2, "valores": {**item(i + 2, numero, "201", "20", procedimento)["valores"], "neg": neg}}
+        for i, (numero, procedimento, neg) in enumerate(linhas)
+    ]))
+    programa = db.session.execute(db.select(Programa).filter_by(programa_id_egali="2")).scalar_one()
+    db.session.refresh(programa)
+    return [l for l in andamento.andamentos_de_visto([programa]) if l.trilha.codigo == "VISTOS"][0]
+
+
+def test_visto_termina_no_documentacao_ok(db, programas):
+    a = _visto(db, [("910", ENTREGA, "17/09 - aguardando passaporte")])
+    assert "Documentação OK" in a.passos[-1].etapa.nome  # biometria, status e cópia do visto ficam fora
+    assert not any("biometria" in p.etapa.nome for p in a.passos)
+    assert a.atual.etapa.nome in ENTREGA and a.neg == "17/09 - aguardando passaporte"
+    assert 0 < a.porcentagem < 100 and not a.concluido
+
+
+def test_visto_100_quando_documentacao_ok_finalizado(db, programas):
+    a = _visto(db, [("911", DOC_OK, "")])
+    tarefa = a.passos[-1].tarefa
+    tarefa.status = StatusTarefa.CONCLUIDA
+    db.session.commit()
+    a = andamento.calcular_visto(a.programa, a.trilha)
+    assert a.concluido and a.porcentagem == 100
+
+
+def test_visto_sem_documentacao_ok_nunca_chega_a_100(db, programas):
+    a = _visto(db, [("912", DOC_OK, "Documentos com tradução")])
+    assert a.porcentagem < 100 and a.neg == "Documentos com tradução"
+
+
+@pytest.mark.parametrize("visto", ["Estudante - EUA", "Turista - EUA", "eTA - Canadá", "Turista - EUA,eTA - Canadá"])
+def test_vistos_eua_e_eta_canada_ficam_fora(db, programas, visto):
+    base_alunos.confirmar(base_alunos.criar_previa([
+        {"linha": 2, "valores": {"programa_id": "5", "aluno_id": "50", "aluno_name": "Aluno Fora", "compra_id": "500",
+                                 "consultor": "Consultora Ana", "visto normalizado": visto}},
+    ]))
+    novo = db.session.execute(db.select(Programa).filter_by(programa_id_egali="5")).scalar_one()
+    assert andamento.andamentos_de_visto([novo]) == []
+
+
+def test_eta_junto_com_visto_de_estudante_entra(db, programas):
+    base_alunos.confirmar(base_alunos.criar_previa([
+        {"linha": 2, "valores": {"programa_id": "6", "aluno_id": "60", "aluno_name": "Aluno Misto", "compra_id": "600",
+                                 "consultor": "Consultora Ana", "visto normalizado": "Turista - EUA,Estudante - Canadá"}},
+    ]))
+    novo = db.session.execute(db.select(Programa).filter_by(programa_id_egali="6")).scalar_one()
+    [a] = andamento.andamentos_de_visto([novo])
+    assert a.trilha.codigo == "VISTOS" and a.porcentagem == 0
+
+
+def test_tela_andamento_dos_vistos(app, db, programas):
+    cliente = app.test_client()
+    ana = db.session.execute(db.select(Usuario)).scalars().first()
+    with cliente.session_transaction() as sessao:
+        sessao["usuario_id"] = ana.id
+    resposta = cliente.get("/andamento-vistos")
+    html = resposta.get_data(as_text=True)
+    assert resposta.status_code == 200
+    assert "Aluno Quebec" in html and "Aluno Toronto" in html and "Consultora Ana" in html
+    assert "NEG do procedimento" in html and "Andamento dos vistos" in html
