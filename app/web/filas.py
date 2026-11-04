@@ -8,8 +8,9 @@ fica guardada no cadastro da pessoa.
 from datetime import date, timedelta
 
 from flask import Blueprint, g, redirect, render_template, request, url_for
+from sqlalchemy.orm import joinedload, selectinload
 
-from app import consultas
+from app import andamento, consultas
 from app.consultas import (
     NINGUEM,
     ORGANIZAR_QUADRO,
@@ -24,7 +25,8 @@ from app.consultas import (
 )
 from app.extensions import db
 from app.importacao.valores import para_data
-from app.models import STATUS_ABERTOS, StatusTarefa, Trilha, Usuario, VisaoFila
+from app.models import STATUS_ABERTOS, Aluno, Programa, SituacaoPrograma, StatusTarefa, Tarefa, Trilha, Usuario, VisaoFila
+from app.texto import normalizar_texto
 from app.web.auth import login_obrigatorio
 
 bp = Blueprint("filas", __name__)
@@ -236,4 +238,43 @@ def por_consultor():
     return render_template(
         "consultores.html", linhas=consultas.resumo_por_consultor(date.today(), publico), NINGUEM=NINGUEM,
         publico=publico, ROTULOS_PUBLICO=ROTULOS_PUBLICO,
+    )
+
+
+@bp.route("/andamento-vistos")
+@login_obrigatorio
+def andamento_vistos():
+    """Aluno, consultor e % do processo de visto (100% = "Documentação OK" finalizado), com a NEG do procedimento atual."""
+    consultor = _id_ou_ninguem(request.args.get("consultor"))
+    situacao = request.args.get("situacao", "")
+    busca = normalizar_texto(request.args.get("busca", ""))
+
+    consulta = (
+        db.select(Programa).join(Programa.aluno)
+        .where(Programa.situacao == SituacaoPrograma.ATIVO)
+        .options(
+            joinedload(Programa.aluno), joinedload(Programa.consultor), selectinload(Programa.compras),
+            selectinload(Programa.tarefas).joinedload(Tarefa.etapa),
+        )
+        .order_by(Aluno.nome)
+    )
+    if consultor == NINGUEM:
+        consulta = consulta.where(Programa.consultor_id.is_(None))
+    elif consultor:
+        consulta = consulta.where(Programa.consultor_id == consultor)
+    programas = db.session.execute(consulta).unique().scalars().all()
+    if busca:
+        programas = [p for p in programas if busca in normalizar_texto(p.aluno.nome)
+                     or busca in (p.aluno.aluno_id_egali or "") or busca in (p.programa_id_egali or "")]
+
+    linhas = andamento.andamentos_de_visto(programas)
+    if situacao == "concluido":
+        linhas = [l for l in linhas if l.concluido]
+    elif situacao == "andamento":
+        linhas = [l for l in linhas if not l.concluido]
+    linhas.sort(key=lambda l: (l.porcentagem, normalizar_texto(l.programa.aluno.nome)))
+    return render_template(
+        "andamento_vistos.html", linhas=linhas, consultor=consultor, situacao=situacao,
+        busca=request.args.get("busca", ""), NINGUEM=NINGUEM, Situacao=andamento.Situacao,
+        usuarios=db.session.execute(db.select(Usuario).filter_by(ativo=True).order_by(Usuario.nome)).scalars().all(),
     )
