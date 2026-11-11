@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block titulo %}Por consultor{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div>
+    <div class="sobretitulo">Checklist pós-venda</div>
+    <h1>Por consultor</h1>
+    <div class="suave">Programas ativos e tarefas abertas de cada consultor (o consultor do programa, que vem do checklist).</div>
+  </div>
+  <nav class="seletor-visao" aria-label="Público">
+    {% for valor, rotulo in ROTULOS_PUBLICO.items() %}
+      <a href="{{ url_for('filas.por_consultor', publico=valor.value) if valor.value else url_for('filas.por_consultor') }}"
+         class="{{ 'ativo' if publico == valor }}">{{ rotulo }}</a>
+    {% endfor %}
+  </nav>
+</div>
+
+<div class="tabela-rolagem">
+  <table>
+    <thead>
+      <tr>
+        <th>Consultor</th>
+        <th class="numero">Programas ativos</th>
+        <th class="numero">Tarefas abertas</th>
+        <th class="numero">Atrasadas</th>
+        <th class="numero" title="Atrasadas ÷ tarefas abertas">% atrasadas</th>
+        <th class="numero">Atrasadas sem justificativa</th>
+      </tr>
+    </thead>
+    {% macro pct(parte, total) %}{{ ('%.0f' % (100 * parte / total)) ~ '%' if total else '—' }}{% endmacro %}
+    <tbody>
+    {% for l in linhas %}
+      {% set chave = l.usuario.id if l.usuario else NINGUEM %}
+      <tr>
+        <td>
+          <a href="{{ url_for('filas.fila_equipe', consultor=chave) }}">{{ l.usuario.nome if l.usuario else 'Sem consultor' }}</a>
+        </td>
+        <td class="numero">{{ l.programas }}</td>
+        <td class="numero"><a href="{{ url_for('filas.fila_equipe', consultor=chave) }}">{{ l.abertas }}</a></td>
+        <td class="numero">
+          {% if l.atrasadas %}<a href="{{ url_for('filas.fila_equipe', consultor=chave, atraso='atrasadas') }}">{{ l.atrasadas }}</a>{% else %}0{% endif %}
+        </td>
+        <td class="numero">{{ pct(l.atrasadas, l.abertas) }}</td>
+        <td class="numero">
+          {% if l.sem_justificativa %}<a class="prazo atrasado" href="{{ url_for('filas.fila_equipe', consultor=chave, atraso='sem_justificativa') }}">{{ l.sem_justificativa }}</a>{% else %}0{% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="vazio">Ainda não há programas. Importe o relatório de checklist em Importações.</td></tr>
+    {% endfor %}
+    </tbody>
+    {% if linhas %}
+    <tfoot>
+      <tr>
+        <th>Total</th>
+        <th class="numero">{{ linhas | sum(attribute='programas') }}</th>
+        <th class="numero">{{ linhas | sum(attribute='abertas') }}</th>
+        <th class="numero">{{ linhas | sum(attribute='atrasadas') }}</th>
+        <th class="numero">{{ pct(linhas | sum(attribute='atrasadas'), linhas | sum(attribute='abertas')) }}</th>
+        <th class="numero">{{ linhas | sum(attribute='sem_justificativa') }}</th>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</div>
+{% endblock %}
