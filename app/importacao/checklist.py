@@ -250,9 +250,12 @@ class _Sincronizacao:
         self.servicos = {s.nome_normalizado: s for s in db.session.execute(db.select(ServicoEgali)).scalars()}
         self.alunos = {a.aluno_id_egali: a for a in db.session.execute(db.select(Aluno)).scalars()}
         programas = db.session.execute(db.select(Programa)).scalars().all()
-        # Programa de cada aluno (um por aluno): o normal mais recente; sem normal, o só de visto.
+        # Programa de cada aluno (um por aluno): o ativo antes do cancelado; entre eles, o normal mais recente;
+        # sem normal, o só de visto. Assim uma compra nova não revive um programa cancelado se há um ativo.
         self.programa_do_aluno: dict[str, Programa] = {}
-        for p in sorted(programas, key=lambda p: (p.tipo == TipoPrograma.NORMAL, p.id)):
+        self.programas_novos: set[int] = set()  # id() dos criados nesta importação (não contam como "atualizados")
+        ordem = lambda p: (p.situacao != SituacaoPrograma.CANCELADO, p.tipo == TipoPrograma.NORMAL, p.id)  # noqa: E731
+        for p in sorted(programas, key=ordem):
             if p.situacao != SituacaoPrograma.INCORPORADO:
                 self.programa_do_aluno[p.aluno.aluno_id_egali] = p
         self.linhas_do_programa: dict[int, list[LinhaChecklist]] = defaultdict(list)
@@ -325,12 +328,22 @@ class _Sincronizacao:
         )
         dados["itens"] += 1
 
+    def _reativar(self, programa: Programa):
+        if programa.situacao == SituacaoPrograma.CANCELADO:
+            programa.situacao = SituacaoPrograma.ATIVO  # item em aberto ou finalizado no checklist: o aluno voltou
+            programa.reativado_em = self.momento
+
+    def _ajustar_tipo(self, programa: Programa, categoria: CategoriaServico):
+        # Mesma regra da criação, para não depender da ordem das linhas: só visto é quem só tem visto.
+        if programa.tipo == TipoPrograma.SO_VISTO and categoria not in (CategoriaServico.VISTO, CategoriaServico.IGNORADO):
+            programa.tipo = TipoPrograma.NORMAL
+            self.cont["programas_viraram_normais"] += 1
+
     def _programa_do_aluno(self, linha: LinhaChecklist, categoria: CategoriaServico) -> Programa:
         """O programa do aluno (um por aluno). Sem nenhum, cria: só de visto se a compra for de visto."""
         programa = self.programa_do_aluno.get(linha.aluno_id)
-        if programa is not None and programa.situacao == SituacaoPrograma.CANCELADO:
-            programa.situacao = SituacaoPrograma.ATIVO  # item novo no checklist: o aluno voltou
-            programa.reativado_em = self.momento
+        if programa is not None:
+            self._reativar(programa)
         if programa is None:
             aluno = self.alunos.get(linha.aluno_id)
             if aluno is None:
@@ -343,12 +356,11 @@ class _Sincronizacao:
             db.session.add(programa)
             db.session.flush()
             self.programa_do_aluno[linha.aluno_id] = programa
+            self.programas_novos.add(id(programa))
             self.cont["programas_so_visto_criados" if so_visto else "programas_criados"] += 1
             if so_visto:
                 self.detalhes["programas_so_visto_criados"].append({"aluno_id": linha.aluno_id, "aluno": aluno.nome})
-        if programa.tipo == TipoPrograma.SO_VISTO and categoria == CategoriaServico.CURSO:
-            programa.tipo = TipoPrograma.NORMAL  # o aluno comprou um curso: deixa de ser só de visto
-            self.cont["programas_viraram_normais"] += 1
+        self._ajustar_tipo(programa, categoria)
         return programa
 
     def programa_e_compra(self, linha: LinhaChecklist) -> tuple[Programa, Compra] | None:
@@ -367,9 +379,8 @@ class _Sincronizacao:
                 return None
             if compra.servico != linha.servico and linha.servico:
                 compra.servico = linha.servico
-            if programa.tipo == TipoPrograma.SO_VISTO and categoria == CategoriaServico.CURSO:
-                programa.tipo = TipoPrograma.NORMAL
-                self.cont["programas_viraram_normais"] += 1
+            self._reativar(programa)  # compra antiga que voltou ao checklist
+            self._ajustar_tipo(programa, categoria)
             return programa, compra
 
         if categoria == CategoriaServico.IGNORADO:
@@ -431,7 +442,7 @@ class _Sincronizacao:
             nome = mais_comum(l.nome for l in linhas)
             if nome and programa.aluno.nome != nome:
                 programa.aluno.nome = nome
-            if programa.id is not None and antes != (programa.data_embarque, programa.visto_normalizado, programa.pais,
+            if chave not in self.programas_novos and antes != (programa.data_embarque, programa.visto_normalizado, programa.pais,
                                                      programa.cidade, programa.escola, programa.grupo,
                                                      programa.servicos_egali, programa.vip_egali):
                 self.cont["programas_atualizados"] += 1
@@ -514,6 +525,10 @@ class _Sincronizacao:
                 self.detalhes["tarefas_encerradas"].append({
                     "item": linha.item, "aluno": programa.aluno.nome, "etapa": etapa.texto_egali, "motivo": "finalizado",
                 })
+            elif tarefa.motivo_encerramento != MotivoEncerramento.FINALIZADO:
+                # Já encerrada (ex.: cancelada antes) e agora finalizada na Egali: vale o motivo de agora.
+                self._historico(tarefa, "motivo_encerramento", tarefa.motivo_encerramento, MotivoEncerramento.FINALIZADO.value)
+                tarefa.motivo_encerramento = MotivoEncerramento.FINALIZADO
         elif tarefa.encerrada_egali_em is not None:
             # Tinha sumido do checklist (ou estava finalizada) e voltou em aberto.
             tarefa.encerrada_egali_em = None
@@ -535,6 +550,8 @@ class _Sincronizacao:
 
     def encerrar_ausentes(self, no_arquivo: set[str], cancelados: set[str] = frozenset()):
         abertas_antes = self.abertas_antes
+        # Só as encerradas porque sumiram do arquivo; as finalizadas ou canceladas pelo próprio arquivo não contam.
+        sumiram = 0
         for item, tarefa in self.tarefas.items():
             if item in cancelados and item not in no_arquivo:
                 tarefa.ultima_importacao_id = self.importacao_id
@@ -569,16 +586,16 @@ class _Sincronizacao:
                 tarefa.status = StatusTarefa.CONCLUIDA
                 tarefa.concluida_em = self.momento
             self.cont["tarefas_canceladas" if cancelado else "tarefas_finalizadas"] += 1
+            sumiram += 1
             self.detalhes["tarefas_encerradas"].append({
                 "item": item, "aluno": tarefa.programa.aluno.nome, "etapa": tarefa.etapa.texto_egali,
                 "motivo": tarefa.motivo_encerramento.value,
             })
 
-        encerradas = self.cont["tarefas_finalizadas"] + self.cont["tarefas_canceladas"]
-        if abertas_antes and encerradas >= LIMITE_ENCERRAMENTO_MINIMO and encerradas / abertas_antes > LIMITE_ENCERRAMENTO_FRACAO:
+        if abertas_antes and sumiram >= LIMITE_ENCERRAMENTO_MINIMO and sumiram / abertas_antes > LIMITE_ENCERRAMENTO_FRACAO:
             self.coletor.aviso(
                 TipoOcorrencia.CANCELAMENTO_EM_MASSA,
-                f"Atenção: {encerradas} de {abertas_antes} tarefas ({encerradas / abertas_antes:.0%}) seriam encerradas "
+                f"Atenção: {sumiram} de {abertas_antes} tarefas ({sumiram / abertas_antes:.0%}) seriam encerradas "
                 "porque não estão no arquivo. Confira se é a exportação certa e se o período está correto.",
             )
 
@@ -638,8 +655,9 @@ def _sincronizar(linhas, coletor, importacao_id, periodo_inicio=None, periodo_fi
         tags_por_aluno[linha.aluno_id].update(t.strip() for t in (linha.tags or "").split(",") if t.strip())
     for aluno_id, tags in tags_por_aluno.items():
         aluno = s.alunos.get(aluno_id)
-        if aluno is not None:
-            aluno.tags_egali = ", ".join(sorted(tags))[:500] or None
+        # Campo vazio no arquivo (ou coluna Tags ausente) não apaga o que já estava: sem isso, o aluno perderia a tag summer.
+        if aluno is not None and tags:
+            aluno.tags_egali = ", ".join(sorted(tags))[:500]
     db.session.flush()
     publico_teen.recalcular()
     db.session.flush()
@@ -714,6 +732,21 @@ def encerrar_a_mao(importacao: Importacao, tarefa_ids: set[int], usuario) -> int
 # ---------------------------------------------------------------- fluxo prévia -> confirmação
 
 
+def _cobre(novo: dict, atual: dict) -> bool:
+    """A base nova vai pelo menos do início ao fim da que está no painel?"""
+    def data(texto):
+        try:
+            return datetime.strptime(texto, "%d/%m/%Y").date()
+        except (TypeError, ValueError):
+            return None
+
+    ini_atual, fim_atual = data(atual.get("ini")), data(atual.get("fim"))
+    if ini_atual is None or fim_atual is None:
+        return True
+    ini_novo, fim_novo = data(novo.get("ini")), data(novo.get("fim"))
+    return ini_novo is not None and fim_novo is not None and ini_novo <= ini_atual and fim_novo >= fim_atual
+
+
 def _processar(linhas_brutas, coletor, importacao_id, parametros) -> dict:
     resumo = _sincronizar(
         interpretar(linhas_brutas, coletor), coletor, importacao_id,
@@ -725,6 +758,12 @@ def _processar(linhas_brutas, coletor, importacao_id, parametros) -> dict:
     except ErroImportacao:
         # Exportação sem Status/Data da Finalização (só os em aberto): as tarefas entram, o RSA fica como estava.
         resumo["rsa_nao_atualizado"] = 1
+        return resumo
+    # Arquivo de um período menor que o do painel (ex.: só outubro) não substitui a base do ano:
+    # as tarefas entram, o painel fica como estava. Exportação completa (sem período) sempre substitui.
+    atual = rsa_checklist.base_guardada()
+    if atual and parametros.get("periodo_inicio") is not None and not _cobre(base["meta"], atual.get("meta", {})):
+        resumo["rsa_periodo_menor"] = 1
         return resumo
     resumo.update(rsa_procedimentos=resumo_rsa["linhas_na_base"], rsa_em_aberto=resumo_rsa["em_aberto"],
                   rsa_alunos_teen=resumo_rsa["alunos_teen_excluidos"])

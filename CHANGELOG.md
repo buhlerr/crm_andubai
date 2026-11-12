@@ -35,6 +35,14 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - **VIP pelo checklist:** um arquivo por período que não traz a linha VIP (nem a tag VIP) do aluno deixa de tirar o VIP dele; o VIP é somado ao que já estava, como os serviços.
 - **Painel RSA:** a base do painel só é gravada depois que a importação do checklist é confirmada no banco. Se a confirmação falhar (por exemplo, "os dados do sistema mudaram"), o painel continua com a base anterior.
 - **Mensagens da importação:** os avisos de compra sem programa não mandam mais "atualizar a planilha e importar de novo", já que a planilha semanal não é mais importada.
+- **Painel RSA com arquivo parcial:** um checklist de período menor que o do painel (ex.: só outubro) atualiza as tarefas, mas não substitui mais a base do ano no painel; a prévia avisa. Para trocar, importe o ano todo ou marque "Exportação completa".
+- **Painel RSA com HTML sem a base:** se o HTML guardado não tiver a declaração `const DADOS_CHECKLIST = {...}`, o administrador vê um aviso no envio e no painel, em vez de o painel mostrar em silêncio os dados embutidos no HTML.
+- **Público teen pelo checklist:** exportação sem a coluna Tags (ou com ela vazia para o aluno) não apaga mais a tag summer do aluno.
+- **Programas cancelados:** uma compra antiga que volta ao checklist reativa o programa dela; e uma compra nova vai para o programa ativo do aluno, sem reviver um programa cancelado.
+- **Tipo do programa:** o aluno com visto e serviço avulso passa a ser "normal" qualquer que seja a ordem das linhas no arquivo (antes dependia de qual linha vinha primeiro).
+- **Motivo de encerramento:** tarefa cancelada que depois aparece finalizada na Egali passa a ficar com o motivo "finalizado".
+- **Aviso de arquivo errado:** tarefas finalizadas ou canceladas pelo próprio arquivo não contam mais para o aviso "seriam encerradas porque não estão no arquivo", que disparava num relatório anual normal.
+- **Resumo da prévia:** programas criados na importação não contam mais também como "atualizados".
 - **Leitura do checklist do TM:** a exportação passou a vir com duas linhas antes do cabeçalho (campos ocultos da tela e "Contagem de linhas"). O leitor agora acha o cabeçalho pela coluna "#", o que vale também para a importação de checklist de sempre.
 - **Exportação JSON de Pautas TM:** Corrigido erro `Internal Server Error` (HTTP 500) que ocorria ao tentar exportar o JSON de pautas que possuíam anotações ou observações salvas. O campo `Observacao em` agora é formatado como string (`dd/mm/aaaa HH:MM`) e a serialização conta com `default=str` para prevenir falhas de serialização de objetos datetime.
 

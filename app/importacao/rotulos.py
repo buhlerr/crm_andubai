@@ -44,6 +44,8 @@ RESUMO_CHECKLIST = {
     "rsa_em_aberto": "Painel RSA: em aberto",
     "rsa_alunos_teen": "Painel RSA: alunos do público teen fora da base",
     "rsa_nao_atualizado": "Painel RSA não atualizado (arquivo sem Data da Finalização)",
+    "rsa_periodo_menor": "Painel RSA não atualizado (o arquivo cobre um período menor que o do painel; "
+                         "para trocar, importe o ano todo ou marque \"Exportação completa\")",
     "erros": "Erros",
     "avisos": "Avisos",
 }

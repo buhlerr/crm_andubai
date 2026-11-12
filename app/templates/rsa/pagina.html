@@ -20,6 +20,10 @@
   {% endif %}
 </div>
 
+{% if sem_base and g.usuario.papel == Papel.ADMIN %}
+<div class="mensagem alerta">{{ sem_base }}</div>
+{% endif %}
+
 {% if info is not none %}
 <iframe class="rsa-quadro" src="{{ url_for('rsa.app_html', pagina=pagina) }}" title="{{ rotulo }}"></iframe>
 {% else %}

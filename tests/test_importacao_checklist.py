@@ -487,6 +487,90 @@ def test_painel_rsa_nao_muda_se_a_confirmacao_falha(app, db, cenario, tmp_path, 
     assert rsa_checklist.base_guardada() is None
 
 
+def _finalizado(n, numero, data, **extras):
+    return item(n, numero, "100", "500", FLIGHT, data, status="Finalizado", **{"data da finalização": data}, **extras)
+
+
+def test_arquivo_de_periodo_menor_nao_encolhe_o_painel_rsa(app, db, cenario, tmp_path, monkeypatch):
+    from app.importacao import rsa_checklist
+
+    monkeypatch.setattr(app, "instance_path", str(tmp_path))
+    ano = [_finalizado(2, "7301", "10/01/2026"), _finalizado(3, "7302", "15/06/2026"), _finalizado(4, "7303", "20/10/2026")]
+    importar(ano)
+    assert rsa_checklist.base_guardada()["meta"]["n"] == 3
+    # Só outubro: as tarefas entram, mas o painel continua com o ano todo.
+    previa = checklist.criar_previa([_finalizado(2, "7304", "21/10/2026")])
+    assert previa.resumo["rsa_periodo_menor"] == 1
+    checklist.confirmar(previa)
+    assert rsa_checklist.base_guardada()["meta"]["n"] == 3
+    # Arquivo que cobre o período do painel (ou exportação completa) troca a base.
+    importar([*ano, _finalizado(5, "7304", "21/10/2026")])
+    assert rsa_checklist.base_guardada()["meta"]["n"] == 4
+    importar([_finalizado(2, "7305", "22/10/2026")], periodo_completo=True)
+    assert rsa_checklist.base_guardada()["meta"]["n"] == 1
+
+
+def test_tags_vazias_no_arquivo_nao_tiram_o_publico_teen(db, cenario):
+    importar([item(2, "7401", "999", "910", FLIGHT, nome="Aluna Summer", tags="summer")])
+    aluno = db.session.execute(db.select(Aluno).filter_by(aluno_id_egali="910")).scalar_one()
+    assert aluno.teen
+    # Exportação sem a coluna Tags (ou com ela vazia para esse aluno): a marca teen continua.
+    importar([item(2, "7402", "999", "910", COPIA_VISTO, nome="Aluna Summer")])
+    assert aluno.teen and "summer" in aluno.tags_egali
+    # Com tags no arquivo, elas valem (a Egali pode ter tirado a summer).
+    importar([item(2, "7403", "999", "910", COPIA_VISTO, nome="Aluna Summer", tags="Grupo")])
+    assert not aluno.teen
+
+
+def test_compra_que_volta_reativa_o_programa_cancelado(db, cenario):
+    importar(CHECKLIST)
+    programa = tarefa(db, "7001").programa
+    programa.situacao = SituacaoPrograma.CANCELADO
+    db.session.commit()
+    importar(CHECKLIST)
+    assert programa.situacao == SituacaoPrograma.ATIVO and tarefa(db, "7001").na_fila
+
+
+def test_compra_nova_vai_para_o_programa_ativo_e_nao_revive_o_cancelado(db, cenario):
+    ativo = db.session.execute(db.select(Programa).filter_by(programa_id_egali="1000")).scalar_one()
+    cancelado = Programa(aluno=ativo.aluno, tipo=TipoPrograma.NORMAL, situacao=SituacaoPrograma.CANCELADO)
+    db.session.add(cancelado)
+    db.session.commit()
+    assert cancelado.id > ativo.id
+    importar([item(2, "7501", "150", "500", FLIGHT)])
+    assert tarefa(db, "7501").programa is ativo and cancelado.situacao == SituacaoPrograma.CANCELADO
+
+
+@pytest.mark.parametrize("primeiro,segundo", [("Visto - Canadá - eTA", "Seguro Viagem"), ("Seguro Viagem", "Visto - Canadá - eTA")])
+def test_tipo_do_programa_nao_depende_da_ordem_das_linhas(db, cenario, primeiro, segundo):
+    importar([item(2, "7601", "951", "920", COPIA_VISTO, servico=primeiro, nome="Aluna Ordem"),
+              item(3, "7602", "952", "920", FLIGHT, servico=segundo, nome="Aluna Ordem")])
+    assert tarefa(db, "7601").programa.tipo == TipoPrograma.NORMAL  # tem serviço avulso: não é só de visto
+
+
+def test_finalizado_depois_de_cancelado_fica_com_o_motivo_certo(db, cenario):
+    importar(CHECKLIST)
+    importar([item(2, "7001", "100", "500", FLIGHT, status="Cancelado"), *CHECKLIST[1:]])
+    assert tarefa(db, "7001").motivo_encerramento == MotivoEncerramento.CANCELADO
+    importar([item(2, "7001", "100", "500", FLIGHT, status="Finalizado", **{"data da finalização": "16/10/2026"}),
+              *CHECKLIST[1:]])
+    assert tarefa(db, "7001").motivo_encerramento == MotivoEncerramento.FINALIZADO
+
+
+def test_finalizados_no_proprio_arquivo_nao_disparam_aviso_de_arquivo_errado(db, cenario):
+    abertos = [item(n, f"78{n:02d}", "100", "500", FLIGHT, "15/10/2026") for n in range(2, 32)]
+    importar(abertos)
+    finalizados = [_finalizado(n, f"78{n:02d}", "15/10/2026") for n in range(2, 32)]
+    importacao = importar(finalizados)
+    assert importacao.resumo["tarefas_finalizadas"] == 30
+    assert not ocorrencias(importacao, TipoOcorrencia.CANCELAMENTO_EM_MASSA)
+
+
+def test_programa_novo_nao_conta_como_atualizado(db, cenario):
+    importacao = importar([item(2, "7701", "960", "930", FLIGHT, nome="Aluno Novo")])
+    assert importacao.resumo["programas_criados"] == 1 and importacao.resumo["programas_atualizados"] == 0
+
+
 def test_procedimento_novo_entra_no_catalogo(db, cenario):
     novo = "SA - GERAL - Procedimento que ainda não existia"
     importacao = importar([item(2, "7120", "100", "500", novo)])

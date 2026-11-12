@@ -118,6 +118,23 @@ TEXTOS_COM_EM_ABERTO = {
 }
 
 
+def aceita_base(html: str) -> bool:
+    """O HTML tem a declaração `const DADOS_CHECKLIST = {...}` que o CRM troca pela base importada?"""
+    inicio = html.find(MARCA_BASE)
+    if inicio < 0:
+        return False
+    try:
+        json.JSONDecoder().raw_decode(html[inicio + len(MARCA_BASE):])
+    except ValueError:
+        return False
+    return True
+
+
+AVISO_SEM_BASE = ("O HTML do RSA guardado não tem a base de dados no formato esperado (const DADOS_CHECKLIST = {...}): "
+                  "o painel mostra os dados que vieram dentro do HTML, não os do relatório de checklist importado. "
+                  "Envie o HTML exatamente como foi baixado do app.")
+
+
 def _trocar_base(html: str, base: dict) -> str:
     """Troca o objeto DADOS_CHECKLIST do HTML pela base do relatório importado."""
     inicio = html.find(MARCA_BASE)

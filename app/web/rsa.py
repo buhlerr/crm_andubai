@@ -33,9 +33,12 @@ def inicio():
 @login_obrigatorio
 def pagina(pagina):
     _pagina_permitida(pagina)
+    base = base_guardada()
+    html = rsa.html_guardado() if base else None
     return render_template("rsa/pagina.html", pagina=pagina, rotulo=rsa.PAGINAS[pagina],
                            sistema=pagina in rsa.PAGINAS_SISTEMA, info=rsa.info_guardada(),
-                           base=(base_guardada() or {}).get("meta"))
+                           base=(base or {}).get("meta"),
+                           sem_base=rsa.AVISO_SEM_BASE if html is not None and not rsa.aceita_base(html) else None)
 
 
 @bp.route("/<pagina>/app")
@@ -74,4 +77,7 @@ def enviar():
             flash(str(erro), "erro")
         else:
             flash("HTML do RSA guardado. As páginas já mostram a versão nova.", "ok")
+            html = rsa.html_guardado()
+            if base_guardada() and html is not None and not rsa.aceita_base(html):
+                flash(rsa.AVISO_SEM_BASE, "alerta")
     return redirect(url_for("rsa.pagina", pagina=voltar))
