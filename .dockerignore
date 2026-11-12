@@ -1,0 +1,49 @@
+# O que NÃO entra na imagem do container (Dockerfile: COPY . .).
+# LGPD: dados reais, bancos e segredos nunca podem ir para a imagem nem para o registro.
+# Atenção: padrões sem "**/" só valem para a raiz do projeto.
+
+# Dados locais: banco, HTML do RSA (tem nomes de colaboradores), envios, backups, logs, chave
+instance/
+dados/
+backups/
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.db-wal
+**/*.db-shm
+**/secret_key
+**/config.py
+**/.env
+**/.env.*
+**/*.log
+
+# Planilhas e exportações reais (o CSV de SLA em app/dados/ continua: é do sistema)
+**/*.xlsx
+**/*.xlsb
+**/*.xls
+**/*.mhtml
+
+# Git, CI, ferramentas e ambientes locais
+.git/
+.github/
+.gitignore
+.claude/
+.cursorrules
+.reports/
+.pytest_cache/
+.venv/
+venv/
+env/
+**/__pycache__/
+**/*.pyc
+
+# Não são usados para rodar o sistema
+tests/
+docs/
+crm_github_atualizacao_completa/
+relatorio_produtividade_ia_crm.md
+iniciar.cmd
+scripts/iniciar_local.ps1
+docker-compose.yml
+Dockerfile
+.dockerignore

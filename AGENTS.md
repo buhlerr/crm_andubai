@@ -45,7 +45,7 @@ Para o detalhamento exaustivo de cada entidade, importações e regras de negóc
 
 ## 🧪 Política de Testes
 
-A suíte possui **273 casos de teste** em `tests/`. A quantidade é uma referência de cobertura, não uma exigência para executar a suíte completa em toda alteração. Testes podem ser removidos quando ficarem obsoletos, desde que o comportamento continue coberto ou seja substituído por uma verificação equivalente.
+A suíte possui **mais de 300 casos de teste** em `tests/` (316 em 2026-11-12) e roda sozinha no GitHub Actions em todo PR e push (workflow `Testes e imagem`). A quantidade é uma referência de cobertura, não uma exigência para executar a suíte completa em toda alteração. Testes podem ser removidos quando ficarem obsoletos, desde que o comportamento continue coberto ou seja substituído por uma verificação equivalente.
 
 Use a validação proporcional ao risco da mudança:
 
