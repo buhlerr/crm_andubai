@@ -425,7 +425,9 @@ class _Sincronizacao:
             if servicos:
                 programa.servicos_egali = ", ".join(servicos)
             tags = {normalizar_texto(t) for l in linhas for t in (l.tags or "").split(",")}
-            programa.vip_egali = TAG_VIP in tags or any(codigo_da_trilha(l.procedimento) == "VIP" for l in linhas)
+            # Como os serviços: um arquivo por período sem a linha VIP do aluno não tira o VIP dele.
+            programa.vip_egali = (bool(programa.vip_egali) or TAG_VIP in tags
+                                  or any(codigo_da_trilha(l.procedimento) == "VIP" for l in linhas))
             nome = mais_comum(l.nome for l in linhas)
             if nome and programa.aluno.nome != nome:
                 programa.aluno.nome = nome
@@ -586,14 +588,14 @@ class _Sincronizacao:
         for (tipo, compra_id), d in self.sem_programa.items():
             if tipo == TipoOcorrencia.ALUNO_COM_VARIOS_PROGRAMAS:
                 mensagem = (
-                    f"Compra {compra_id} ({d['servico']}) de {d['aluno']}: o aluno tem mais de um programa na planilha. "
+                    f"Compra {compra_id} ({d['servico']}) de {d['aluno']}: o aluno tem mais de um programa no sistema. "
                     f"Escolha à mão a qual programa ela pertence. {d['itens']} item(ns) não importado(s)."
                 )
             else:
                 mensagem = (
                     f"Compra {compra_id} ({d['servico']}) de {d['aluno']} (ID {d['aluno_id']}) não está em nenhum "
-                    f"programa da planilha: {d['motivo']}. {d['itens']} item(ns) não importado(s). "
-                    "Atualize a planilha e importe de novo (primeiro a planilha, depois o checklist)."
+                    f"programa: {d['motivo']}. {d['itens']} item(ns) não importado(s). "
+                    "Confira o cadastro do aluno na Egali e importe o checklist de novo."
                 )
             self.coletor.erro(tipo, mensagem, d["linha"], compra_id)
             self.detalhes["itens_sem_programa"].append(d)
@@ -726,9 +728,8 @@ def _processar(linhas_brutas, coletor, importacao_id, parametros) -> dict:
         return resumo
     resumo.update(rsa_procedimentos=resumo_rsa["linhas_na_base"], rsa_em_aberto=resumo_rsa["em_aberto"],
                   rsa_alunos_teen=resumo_rsa["alunos_teen_excluidos"])
-    if importacao_id is not None:  # confirmação
-        importacao = db.session.get(Importacao, importacao_id)
-        rsa_checklist.guardar_base(base, importacao_id, importacao.arquivo_nome if importacao else None)
+    if importacao_id is not None:  # confirmação: o arquivo só é gravado depois do commit (ver confirmar)
+        parametros["_base_rsa"] = base
     return resumo
 
 
@@ -755,7 +756,11 @@ def criar_previa(linhas_brutas, periodo_inicio=None, periodo_fim=None, periodo_c
 
 def confirmar(importacao: Importacao) -> Importacao:
     parametros = {"periodo_inicio": importacao.periodo_inicio, "periodo_fim": importacao.periodo_fim}
-    return comum.confirmar(importacao, TipoImportacao.CHECKLIST, _processar, CONTAGENS, parametros)
+    importacao = comum.confirmar(importacao, TipoImportacao.CHECKLIST, _processar, CONTAGENS, parametros)
+    # Base do painel RSA só depois do commit: se a confirmação falhar, o painel fica como estava.
+    if "_base_rsa" in parametros:
+        rsa_checklist.guardar_base(parametros["_base_rsa"], importacao.id, importacao.arquivo_nome)
+    return importacao
 
 
 descartar = comum.descartar

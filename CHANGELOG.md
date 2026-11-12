@@ -32,6 +32,9 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - **Importação de Pautas TM:** Pautas sem vínculo com AN e Dubai em responsável, criador ou última atualização deixam de ser importadas para o painel.
 
 ### Corrigido
+- **VIP pelo checklist:** um arquivo por período que não traz a linha VIP (nem a tag VIP) do aluno deixa de tirar o VIP dele; o VIP é somado ao que já estava, como os serviços.
+- **Painel RSA:** a base do painel só é gravada depois que a importação do checklist é confirmada no banco. Se a confirmação falhar (por exemplo, "os dados do sistema mudaram"), o painel continua com a base anterior.
+- **Mensagens da importação:** os avisos de compra sem programa não mandam mais "atualizar a planilha e importar de novo", já que a planilha semanal não é mais importada.
 - **Leitura do checklist do TM:** a exportação passou a vir com duas linhas antes do cabeçalho (campos ocultos da tela e "Contagem de linhas"). O leitor agora acha o cabeçalho pela coluna "#", o que vale também para a importação de checklist de sempre.
 - **Exportação JSON de Pautas TM:** Corrigido erro `Internal Server Error` (HTTP 500) que ocorria ao tentar exportar o JSON de pautas que possuíam anotações ou observações salvas. O campo `Observacao em` agora é formatado como string (`dd/mm/aaaa HH:MM`) e a serialização conta com `default=str` para prevenir falhas de serialização de objetos datetime.
 

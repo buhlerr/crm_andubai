@@ -410,6 +410,14 @@ def test_vip_pelo_procedimento_vip_ou_pela_tag(db, cenario):
     assert not tarefa(db, "7112").programa.vip
 
 
+def test_vip_continua_quando_o_arquivo_nao_traz_a_linha_vip(db, cenario):
+    importar([item(2, "7120", "999", "908", FLIGHT, nome="Aluna Vip", tags="VIP")])
+    assert tarefa(db, "7120").programa.vip
+    # Exportação por período sem a linha VIP (nem a tag) desse aluno: ele não deixa de ser VIP.
+    importar([item(2, "7121", "999", "908", COPIA_VISTO, nome="Aluna Vip", tags="Grupo")])
+    assert tarefa(db, "7121").programa.vip
+
+
 def test_cadastro_do_programa_vem_do_checklist(db, cenario):
     importar([item(2, "7113", "999", "907", FLIGHT, nome="Aluna Cadastro", embarque="03/09/2027", escola="Escola Fictícia",
                    cidade="Toronto", grupo="Grupo Fictício", **{"tipo de visto": "Canadá (Estudante)"}),
@@ -464,6 +472,19 @@ def test_mesma_importacao_atualiza_o_painel_rsa(app, db, cenario, tmp_path, monk
     # Exportação antiga, sem Data da Finalização: as tarefas entram e o RSA fica como estava.
     assert importar(CHECKLIST).resumo["rsa_nao_atualizado"] == 1
     assert rsa_checklist.base_guardada()["meta"]["n"] == 2
+
+
+def test_painel_rsa_nao_muda_se_a_confirmacao_falha(app, db, cenario, tmp_path, monkeypatch):
+    from app.importacao import rsa_checklist
+
+    monkeypatch.setattr(app, "instance_path", str(tmp_path))
+    previa = checklist.criar_previa([item(2, "7203", "100", "500", FLIGHT, status="Finalizado",
+                                          **{"data da finalização": "16/10/2026"})])
+    # Simula "os dados do sistema mudaram desde a prévia": a confirmação falha depois de processar.
+    previa.resumo = {**previa.resumo, "tarefas_novas": previa.resumo["tarefas_novas"] + 1}
+    with pytest.raises(ErroImportacao, match="mudaram"):
+        checklist.confirmar(previa)
+    assert rsa_checklist.base_guardada() is None
 
 
 def test_procedimento_novo_entra_no_catalogo(db, cenario):
