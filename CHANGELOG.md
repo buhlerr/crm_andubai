@@ -8,6 +8,10 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não lançado]
 
+### Infraestrutura
+- **Imagem no registro do GitHub:** o workflow `Testes e imagem` roda o `pytest` em todo PR e push e, depois de passar, publica a imagem em `ghcr.io/buhlerr/crm_andubai` (tags `latest` e `sha-<commit>` na master; `1.2.3` e `1.2` em tags `v1.2.3`). Em PR, só confere se a imagem é gerada.
+- **`.dockerignore`:** a imagem deixa de levar `instance/` (banco, HTML do RSA com nomes de colaboradores, chave), bancos `.db`, planilhas, `.env`, `config.py`, `.git` e testes.
+
 ### Adicionado
 - **Andamento dos vistos:** nova tela em `/andamento-vistos`, no toggle "Filas de trabalho", com aluno, consultor, % do processo de visto pelos procedimentos finalizados, procedimento atual e, na última coluna, a NEG desse procedimento. O processo vai até o "Documentação OK" (envio para a embaixada/consulado), que leva a 100%; sem ele finalizado, o máximo é 99%. Usa a trilha Vistos / Canadá; vistos dos EUA e o eTA do Canadá ficam fora; filtros por consultor, situação e aluno (`app/andamento.py`, `calcular_visto`).
 - **RSA - Checklist do Suporte:** o app `APP_Checklist_Suporte_ao_Aluno.html` (modelo base VEG) aparece dentro do CRM, em `/rsa/<pagina>`, no toggle "RSA - Checklist do Suporte" (Visão Geral, Procedimentos, Executores e Consultores, Programas e Vistos, Prazos e Atrasos). O grupo Sistema do app (Credenciais, Envio de Arquivos, Manual, Melhorias, Testes) fica no toggle "Sistema do RSA", só para administradores. O administrador envia o HTML pela própria tela; ele fica em `instance/rsa/`, fora do Git, porque traz nomes de colaboradores. O original não é alterado: na hora de mostrar, o CRM pula o login do app, esconde o cabeçalho e o menu dele e abre a página escolhida (`app/rsa.py`).
