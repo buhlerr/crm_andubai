@@ -1,0 +1,25 @@
+# Configuração do PR-Agent para este repositório (lida da branch master).
+# Regras completas: AGENTS.md, docs/REGRAS_CHECKLIST.md e REGRAS_PAUTAS.md.
+
+[config]
+response_language = "pt-BR"
+
+[pr_reviewer]
+extra_instructions = """\
+Responda em português claro. Projeto Flask 3 + SQLAlchemy 2 + SQLite. Confira com atenção:
+- Alunos, compras, programas e itens de checklist são associados só pelos IDs da Egali (aluno_id_egali, compra_id_egali, programa_id_egali, item_checklist_egali), nunca por nome.
+- A importação não pode sobrescrever campos da equipe (status, responsavel_manual_id, data_planejada, anotações); só atualiza os espelhos da Egali (prazo_egali, status_egali, obs_egali, compras).
+- Toda importação gera prévia antes de confirmar e é idempotente.
+- prazo_egali define o atraso; data_planejada não altera o atraso. obs_egali (NEG) é separado das anotações internas.
+- Migrações: batch, server_default=sa.false() em booleanos, idempotentes (inspecionar colunas antes) e sem duas migrações com o mesmo down_revision.
+- Não remover nem ocultar o módulo de Pautas TM, a autenticação local por PBKDF2 ou o leitor Calamine.
+- LGPD: nenhum nome real de colaborador ou aluno em código, testes ou commits; nenhuma planilha real, .env, config.py, secret_key ou banco .db versionado.
+- POST precisa de CSRF; rotas novas precisam de login_obrigatorio ou admin_obrigatorio.
+- Mudança funcional, de tela, banco ou segurança deve ter entrada no CHANGELOG.md.
+"""
+
+[pr_description]
+extra_instructions = "Escreva em português claro, sem jargão, para a equipe de atendimento entender o que muda."
+
+[pr_code_suggestions]
+extra_instructions = "Escreva em português. Siga AGENTS.md: CSS puro (sem Tailwind/Bootstrap) e mensagens de interface em português."
