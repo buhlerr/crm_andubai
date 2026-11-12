@@ -1,0 +1,30 @@
+Codemap scan — 2026-11-12 (refresh after merging crm_github_atualizacao_completa/)
+Branch: merge/atualizacao-checklist-unico
+Previous codemaps: generated earlier today; this refresh changed <30% → updated in place
+
+Files added
+  app/importacao/rsa_checklist.py
+  migrations/versions/e3b9c1d7a520_vip_do_checklist.py
+  tests/test_rsa_checklist.py
+Files modified (34, from the drop): CHANGELOG/ESTRUTURA/README, app/{__init__,cli,rsa}.py,
+  importacao/{checklist,leitor_csv,rotulos}.py, models/{cadastro,importacoes}.py,
+  web/{cadastros,filas,importacoes,rsa}.py, 14 templates, docs/REGRAS_CHECKLIST.md, 4 test files
+Files removed
+  crm_github_atualizacao_completa/ (38 files — now merged)
+
+Architecture changes
+  - TM checklist report is now the ONLY student/task import; weekly xlsx import removed from
+    /importacoes/nova and `flask importar base` (base_alunos.py + calamine reader kept).
+  - Checklist creates Aluno + one Programa per student + Compra + Tarefa; finalized → concluded.
+  - New RSA base built from checklist → <data>/rsa/base.json, injected into /rsa pages.
+  - New column programa.vip_egali (migration e3b9c1d7a520, head).
+  - /andamento-vistos: embarque filter (default "futuro").
+  - MAX_CONTENT_LENGTH 30 MB → 100 MB.
+New dependencies: none.
+
+Verification
+  pytest: 304 passed · flask db heads: e3b9c1d7a520 (single head) · git diff --check: clean
+
+Staleness
+  - AGENTS.md still says "273 test cases" (now 304).
+  - No docs older than 90 days.

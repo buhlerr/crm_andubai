@@ -4,7 +4,6 @@ estes comandos servem para instalar e testar."""
 import click
 from flask import Flask
 
-from app.importacao.rotulos import RESUMO_BASE as ROTULOS_RESUMO
 from app.importacao.rotulos import RESUMO_CHECKLIST as ROTULOS_RESUMO_CHECKLIST
 
 
@@ -192,23 +191,7 @@ def registrar_comandos(app: Flask) -> None:
     def importar():
         pass
 
-    @importar.command("base", help="Importa a planilha semanal de alunos (aba Base).")
-    @click.argument("caminho", type=click.Path(exists=True, dir_okay=False))
-    @click.option("--sim", is_flag=True, help="Confirma sem perguntar.")
-    def importar_base(caminho, sim):
-        from app.importacao import ErroImportacao
-        from app.importacao.base_alunos import confirmar, descartar, importar_arquivo
-
-        click.echo("Lendo a planilha de alunos...")
-        try:
-            importacao = importar_arquivo(caminho)
-        except ErroImportacao as erro:
-            raise click.ClickException(str(erro)) from erro
-
-        _mostrar_previa(importacao, ROTULOS_RESUMO)
-        _confirmar_ou_descartar(importacao, sim, confirmar, descartar)
-
-    @importar.command("checklist", help="Importa o checklist exportado da Egali (CSV). Cria e atualiza as tarefas.")
+    @importar.command("checklist", help="Importa o relatório de checklist do TM (CSV): alunos, programas, tarefas e painel RSA.")
     @click.argument("caminho", type=click.Path(exists=True, dir_okay=False))
     @click.option("--de", "inicio", help="Início do período exportado (dd/mm/aaaa). Padrão: menor prazo do arquivo.")
     @click.option("--ate", "fim", help="Fim do período exportado (dd/mm/aaaa). Padrão: maior prazo do arquivo.")

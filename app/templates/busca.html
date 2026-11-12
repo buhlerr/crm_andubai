@@ -22,7 +22,7 @@
         <td>{{ a.aluno_id_egali }}</td>
         <td>
           {% for p in a.programas %}
-            <a href="{{ url_for('programas.detalhe', programa_id=p.id) }}">{{ 'Programa ' ~ p.programa_id_egali if p.programa_id_egali else 'Só de visto' }}</a>
+            <a href="{{ url_for('programas.detalhe', programa_id=p.id) }}">{{ p.rotulo }}</a>
             <span class="selo {{ p.situacao.value }}">{{ p.situacao.value }}</span>{% if not loop.last %} · {% endif %}
           {% endfor %}
         </td>

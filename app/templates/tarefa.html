@@ -87,7 +87,7 @@
     <h2 style="margin-top:0">Aluno e programa</h2>
     <dl class="dados">
       <dt>Aluno</dt><dd><a href="{{ url_for('programas.detalhe', programa_id=p.id) }}">{{ p.aluno.nome }}</a> <span class="suave pequeno">(ID {{ p.aluno.aluno_id_egali }})</span></dd>
-      <dt>Programa</dt><dd>{{ p.programa_id_egali or 'Só de visto (fora da planilha)' }}</dd>
+      <dt>Programa</dt><dd>{{ p.rotulo }}</dd>
       <dt>Consultor</dt><dd>{{ p.consultor.nome if p.consultor else (p.consultor_texto or 'Sem consultor') }}</dd>
       <dt>Embarque</dt><dd>{{ p.data_embarque | data }}</dd>
       <dt>Destino</dt><dd>{{ [p.pais, p.cidade] | select | join(' · ') or '—' }}</dd>

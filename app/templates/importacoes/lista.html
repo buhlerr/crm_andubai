@@ -4,7 +4,7 @@
 <div class="cabecalho">
   <div>
     <h1>Importações</h1>
-    <div class="suave">Toda semana: primeiro a planilha de alunos, depois o checklist da Egali, exportados no mesmo dia.</div>
+    <div class="suave">Toda semana: o relatório de checklist do TM, com os procedimentos finalizados e em aberto. É a única importação do sistema.</div>
   </div>
   {% if g.usuario.papel == Papel.ADMIN %}<a class="botao" href="{{ url_for('importacoes.nova') }}">Nova importação</a>{% endif %}
 </div>

@@ -5,7 +5,7 @@
   <div>
     <div class="sobretitulo">Checklist pós-venda</div>
     <h1>Por consultor</h1>
-    <div class="suave">Programas ativos e tarefas abertas de cada consultor (o consultor do programa, que vem da planilha).</div>
+    <div class="suave">Programas ativos e tarefas abertas de cada consultor (o consultor do programa, que vem do checklist).</div>
   </div>
   <nav class="seletor-visao" aria-label="Público">
     {% for valor, rotulo in ROTULOS_PUBLICO.items() %}
@@ -46,7 +46,7 @@
         </td>
       </tr>
     {% else %}
-      <tr><td colspan="6" class="vazio">Ainda não há programas. Importe a planilha de alunos em Importações.</td></tr>
+      <tr><td colspan="6" class="vazio">Ainda não há programas. Importe o relatório de checklist em Importações.</td></tr>
     {% endfor %}
     </tbody>
     {% if linhas %}

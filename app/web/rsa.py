@@ -3,6 +3,7 @@ import os
 from flask import Blueprint, abort, flash, g, make_response, redirect, render_template, request, url_for
 
 from app import rsa
+from app.importacao.rsa_checklist import base_guardada
 from app.models import Papel
 from app.web.auth import admin_obrigatorio, login_obrigatorio
 
@@ -33,7 +34,8 @@ def inicio():
 def pagina(pagina):
     _pagina_permitida(pagina)
     return render_template("rsa/pagina.html", pagina=pagina, rotulo=rsa.PAGINAS[pagina],
-                           sistema=pagina in rsa.PAGINAS_SISTEMA, info=rsa.info_guardada())
+                           sistema=pagina in rsa.PAGINAS_SISTEMA, info=rsa.info_guardada(),
+                           base=(base_guardada() or {}).get("meta"))
 
 
 @bp.route("/<pagina>/app")
@@ -44,7 +46,7 @@ def app_html(pagina):
     html = rsa.html_guardado()
     if html is None:
         abort(404, "Ainda não há HTML do RSA guardado.")
-    html = rsa.encaixar(html, pagina, g.usuario.nome, g.usuario.papel == Papel.ADMIN)
+    html = rsa.encaixar(html, pagina, g.usuario.nome, g.usuario.papel == Papel.ADMIN, base=base_guardada())
     resposta = make_response(html)
     resposta.headers["Content-Type"] = "text/html; charset=utf-8"
     resposta.headers["X-Frame-Options"] = "SAMEORIGIN"

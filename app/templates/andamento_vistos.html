@@ -26,6 +26,11 @@
         <option value="andamento" {{ 'selected' if situacao == 'andamento' }}>Em andamento</option>
         <option value="concluido" {{ 'selected' if situacao == 'concluido' }}>Concluído (100%)</option>
       </select></div>
+    <div class="campo" style="flex-basis:190px"><label for="embarque">Embarque</label>
+      <select id="embarque" name="embarque">
+        <option value="futuro" {{ 'selected' if embarque != 'todos' }}>De hoje em diante</option>
+        <option value="todos" {{ 'selected' if embarque == 'todos' }}>Todos (inclui quem já embarcou)</option>
+      </select></div>
     <div class="campo"><label for="busca">Aluno ou ID</label>
       <input id="busca" type="text" name="busca" value="{{ busca }}" placeholder="Nome, aluno_id ou programa_id"></div>
     <div class="acoes" style="flex: 0 0 auto">
@@ -40,7 +45,7 @@
 
 <div class="tabela-rolagem">
   <table>
-    <thead><tr><th>Aluno</th><th>Consultor</th><th>Andamento do visto</th><th>Procedimento atual</th><th>NEG do procedimento</th></tr></thead>
+    <thead><tr><th>Aluno</th><th>Consultor</th><th>Embarque</th><th>Andamento do visto</th><th>Procedimento atual</th><th>NEG do procedimento</th></tr></thead>
     <tbody>
     {% for l in linhas %}
       {% set p = l.programa %}
@@ -49,6 +54,7 @@
         <td><a href="{{ url_for('programas.detalhe', programa_id=p.id) }}">{{ p.aluno.nome }}</a>
           <div>{{ m.selos_visto(p) }}</div></td>
         <td>{{ p.consultor.nome if p.consultor else (p.consultor_texto or 'Sem consultor') }}</td>
+        <td class="prazo">{% if p.data_embarque %}{{ p.data_embarque | data }}{% elif p.mes_embarque %}{{ p.mes_embarque.strftime('%m/%Y') }}{% else %}<span class="suave">—</span>{% endif %}</td>
         <td style="min-width:180px">
           <div style="display:flex; align-items:center; gap:8px">
             <strong>{{ l.porcentagem }}%</strong>
@@ -73,7 +79,7 @@
         </td>
       </tr>
     {% else %}
-      <tr><td colspan="5" class="vazio">Nenhum processo de visto com esses filtros.</td></tr>
+      <tr><td colspan="6" class="vazio">Nenhum processo de visto com esses filtros.</td></tr>
     {% endfor %}
     </tbody>
   </table>

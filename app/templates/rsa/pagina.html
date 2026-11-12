@@ -5,8 +5,17 @@
 {# O título fica dentro do próprio app; aqui só o grupo e, para o admin, de quando é o HTML. #}
 <div class="cabecalho" style="margin-bottom:10px">
   <div class="sobretitulo">{{ 'Sistema do RSA' if sistema else 'RSA - Checklist do Suporte' }}</div>
+  {% if base %}
+  <div class="pequeno suave">Dados: relatório de checklist importado em {{ base.importado_em or '—' }}
+    · {{ base.ini }} a {{ base.fim }} · {{ '{:,}'.format(base.finalizados).replace(',', '.') }} finalizados
+    e {{ '{:,}'.format(base.em_aberto).replace(',', '.') }} em aberto (atraso dos em aberto contado até {{ base.atraso_ate }})
+    {% if g.usuario.papel == Papel.ADMIN %} · <a href="{{ url_for('importacoes.nova') }}">importar relatório novo</a>{% endif %}</div>
+  {% elif g.usuario.papel == Papel.ADMIN %}
+  <div class="pequeno suave">Dados: os que vieram dentro do HTML. Para atualizar pelo relatório de checklist do ano,
+    use <a href="{{ url_for('importacoes.nova') }}">Administração → Importações</a>.</div>
+  {% endif %}
   {% if info and g.usuario.papel == Papel.ADMIN %}
-  <div class="pequeno suave">HTML: {{ info.nome_original or '—' }} · enviado em {{ info.enviado_em or '—' }}
+  <div class="pequeno suave">HTML (layout): {{ info.nome_original or '—' }} · enviado em {{ info.enviado_em or '—' }}
     por {{ info.enviado_por or '—' }}</div>
   {% endif %}
 </div>
@@ -25,8 +34,9 @@
     {{ m.csrf() }}
     <input type="hidden" name="pagina" value="{{ pagina }}">
     <p class="pequeno suave">Use o <code>APP_Checklist_Suporte_ao_Aluno.html</code> baixado do próprio app (botão "Baixar HTML").
-      O arquivo fica só neste servidor, fora do GitHub, porque traz nomes de colaboradores. O original não é alterado:
-      o sistema só pula o login do app e abre a página escolhida no menu.</p>
+      O HTML serve só como layout: os dados vêm do relatório de checklist do ano, importado em
+      <a href="{{ url_for('importacoes.nova') }}">Administração → Importações</a>. Só é preciso trocar o HTML quando o
+      layout do app mudar. O arquivo fica só neste servidor, fora do GitHub, e o original não é alterado.</p>
     <div class="campo">
       <label for="arquivo">Arquivo HTML</label>
       <input id="arquivo" type="file" name="arquivo" required accept=".html,.htm">

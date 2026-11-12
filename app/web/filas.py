@@ -248,6 +248,8 @@ def andamento_vistos():
     consultor = _id_ou_ninguem(request.args.get("consultor"))
     situacao = request.args.get("situacao", "")
     busca = normalizar_texto(request.args.get("busca", ""))
+    # O checklist do ano traz também quem já embarcou: por padrão, só quem embarca de hoje em diante (ou sem data).
+    embarque = request.args.get("embarque", "futuro")
 
     consulta = (
         db.select(Programa).join(Programa.aluno)
@@ -262,6 +264,8 @@ def andamento_vistos():
         consulta = consulta.where(Programa.consultor_id.is_(None))
     elif consultor:
         consulta = consulta.where(Programa.consultor_id == consultor)
+    if embarque != "todos":
+        consulta = consulta.where(db.or_(Programa.data_embarque.is_(None), Programa.data_embarque >= date.today()))
     programas = db.session.execute(consulta).unique().scalars().all()
     if busca:
         programas = [p for p in programas if busca in normalizar_texto(p.aluno.nome)
@@ -274,7 +278,7 @@ def andamento_vistos():
         linhas = [l for l in linhas if not l.concluido]
     linhas.sort(key=lambda l: (l.porcentagem, normalizar_texto(l.programa.aluno.nome)))
     return render_template(
-        "andamento_vistos.html", linhas=linhas, consultor=consultor, situacao=situacao,
+        "andamento_vistos.html", linhas=linhas, consultor=consultor, situacao=situacao, embarque=embarque,
         busca=request.args.get("busca", ""), NINGUEM=NINGUEM, Situacao=andamento.Situacao,
         usuarios=db.session.execute(db.select(Usuario).filter_by(ativo=True).order_by(Usuario.nome)).scalars().all(),
     )

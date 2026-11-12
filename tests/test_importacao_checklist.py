@@ -316,31 +316,28 @@ def test_aluno_so_de_visto_ganha_programa_proprio(db, cenario):
     assert programa.situacao == SituacaoPrograma.INCORPORADO
 
 
-def test_curso_fora_da_planilha_e_erro_agrupado_por_compra(db, cenario):
+def test_aluno_novo_ganha_aluno_e_programa_pelo_checklist(db, cenario):
+    # Sem a planilha: o checklist cria o aluno e um programa para ele, com as duas linhas da mesma compra.
     importacao = importar([
-        item(2, "7030", "555", "901", FLIGHT, servico="Summer Schools", nome="Davi Summer"),
-        item(3, "7031", "555", "901", "SA - GERAL - Cadastrar flight details", servico="Summer Schools", nome="Davi Summer",
-             **{"#": "7031"}),
+        item(2, "7030", "555", "901", FLIGHT, servico="Curso Premium", nome="Davi Novo"),
+        item(3, "7031", "555", "901", COPIA_VISTO, servico="Curso Premium", nome="Davi Novo"),
     ])
-    erros = ocorrencias(importacao, TipoOcorrencia.PROGRAMA_FALTANDO_NA_PLANILHA)
-    assert len(erros) == 1 and "2 item(ns)" in erros[0].mensagem
-    assert erros[0].gravidade == Gravidade.ERRO
-    assert importacao.resumo["itens_sem_programa"] == 2
-    assert db.session.query(Tarefa).count() == 0
+    assert importacao.resumo["alunos_criados"] == 1 and importacao.resumo["programas_criados"] == 1
+    assert importacao.resumo["erros"] == 0
+    programa = tarefa(db, "7030").programa
+    assert programa is tarefa(db, "7031").programa and programa.tipo == TipoPrograma.NORMAL
+    assert programa.aluno.nome == "Davi Novo" and programa.programa_id_egali is None and programa.rotulo == "Programa do aluno"
 
 
-def test_curso_de_aluno_que_esta_na_planilha_explica_o_caso(db, cenario):
-    importacao = importar([item(2, "7032", "556", "500", FLIGHT, servico="Curso Premium", nome="Ana Teste")])
-    erro = ocorrencias(importacao, TipoOcorrencia.PROGRAMA_FALTANDO_NA_PLANILHA)[0]
-    assert "o aluno está na planilha (programa 1000)" in erro.mensagem
-    assert "segundo programa" in erro.mensagem
-    outro = importar([item(2, "7033", "557", "999", FLIGHT, servico="Curso Premium", nome="Fora Da Planilha")])
-    assert "o aluno não está na planilha" in ocorrencias(outro, TipoOcorrencia.PROGRAMA_FALTANDO_NA_PLANILHA)[0].mensagem
+def test_compra_nova_de_aluno_que_ja_tem_programa_entra_nele(db, cenario):
+    importar([item(2, "7032", "556", "500", FLIGHT, servico="Curso Premium", nome="Ana Teste")])
+    assert tarefa(db, "7032").programa.programa_id_egali == "1000"  # um programa por aluno
 
 
-def test_transfer_sem_programa_e_erro(db, cenario):
+def test_transfer_de_aluno_novo_cria_programa(db, cenario):
     importacao = importar([item(2, "7040", "666", "902", FLIGHT, servico="Transfer (chegada e saída)")])
-    assert ocorrencias(importacao, TipoOcorrencia.PROGRAMA_FALTANDO_NA_PLANILHA)
+    assert importacao.resumo["programas_criados"] == 1
+    assert tarefa(db, "7040").programa.tipo == TipoPrograma.NORMAL
 
 
 def test_transfer_de_aluno_com_programa_e_juntado(db, cenario):
@@ -352,11 +349,13 @@ def test_servico_ignorado_e_pulado_sem_aviso(db, cenario):
     importacao = importar([item(2, "7050", "777", "903", FLIGHT, servico="Valores Extras")])
     assert importacao.resumo["itens_ignorados"] == 1
     assert importacao.resumo["erros"] == 0 and importacao.resumo["avisos"] == 0
+    assert db.session.query(Tarefa).count() == 0
 
 
 def test_servico_desconhecido_entra_como_nao_classificado(db, cenario):
     importacao = importar([item(2, "7060", "888", "904", FLIGHT, servico="Serviço Inventado")])
-    assert ocorrencias(importacao, TipoOcorrencia.SERVICO_NAO_CLASSIFICADO)
+    aviso = ocorrencias(importacao, TipoOcorrencia.SERVICO_NAO_CLASSIFICADO)[0]
+    assert aviso.gravidade == Gravidade.AVISO and tarefa(db, "7060")  # entra assim mesmo
     servico = db.session.execute(db.select(ServicoEgali).filter_by(nome="Serviço Inventado")).scalar_one()
     assert servico.categoria == CategoriaServico.NAO_CLASSIFICADO
 
@@ -367,13 +366,13 @@ def test_compra_ja_na_planilha_nao_depende_do_servico(db, cenario):
     assert tarefa(db, "7070").programa.programa_id_egali == "1000"
 
 
-def test_aluno_com_dois_programas_pede_decisao(db, cenario):
+def test_aluno_com_dois_programas_usa_o_mais_recente(db, cenario):
     base([linha_base(2, "1000", "500", "100, 101", nome="Ana Teste"),
           linha_base(3, "2000", "600", "200", consultor="Consultor Dois", nome="Bruno Teste", pt_prog=90.0),
           linha_base(4, "1001", "500", "102", nome="Ana Teste")])
     importacao = importar([item(2, "7080", "999", "500", COPIA_VISTO, servico="Visto - Canadá")])
-    assert ocorrencias(importacao, TipoOcorrencia.ALUNO_COM_VARIOS_PROGRAMAS)
-    assert db.session.query(Tarefa).count() == 0
+    assert importacao.resumo["erros"] == 0
+    assert tarefa(db, "7080").programa.programa_id_egali == "1001"
 
 
 # ---------------------------------------------------------------- conferências
@@ -385,14 +384,13 @@ def test_divergencia_de_aluno_nao_importa(db, cenario):
     assert db.session.query(Tarefa).count() == 0
 
 
-def test_consultor_diferente_da_planilha_gera_um_aviso_agrupado(db, cenario):
+def test_consultor_vem_do_checklist_sem_aviso(db, cenario):
     importacao = importar([
         item(2, "7101", "100", "500", consultor="Consultor Dois"),
         item(3, "7102", "101", "500", COPIA_VISTO, consultor="Consultor Dois"),
     ])
-    avisos = ocorrencias(importacao, TipoOcorrencia.CONSULTOR_DIVERGENTE)
-    assert len(avisos) == 1 and "2 item(ns)" in avisos[0].mensagem
-    assert tarefa(db, "7101").responsavel is cenario["dois"]  # prevalece o do checklist
+    assert not ocorrencias(importacao, TipoOcorrencia.CONSULTOR_DIVERGENTE)
+    assert tarefa(db, "7101").responsavel is cenario["dois"]
 
 
 def test_consultor_do_checklist_e_preservado_contra_nova_base(db, cenario):
@@ -405,11 +403,67 @@ def test_consultor_do_checklist_e_preservado_contra_nova_base(db, cenario):
     assert programa.consultor is cenario["dois"]
 
 
-def test_vip_abaixo_de_85_e_sinalizado(db, cenario):
-    importacao = importar([item(2, "7110", "100", "500", VIP), item(3, "7111", "200", "600", VIP, consultor="Consultor Dois")])
-    avisos = ocorrencias(importacao, TipoOcorrencia.VIP_ABAIXO_DA_PONTUACAO)
-    assert len(avisos) == 1  # só o programa 1000 (71 pontos); o 2000 tem 90
-    assert "1000" in avisos[0].mensagem
+def test_vip_pelo_procedimento_vip_ou_pela_tag(db, cenario):
+    importar([item(2, "7110", "100", "500", VIP), item(3, "7111", "999", "905", FLIGHT, nome="Aluna Tag", tags="Grupo,VIP"),
+              item(4, "7112", "998", "906", FLIGHT, nome="Aluno Comum", tags="Grupo")])
+    assert tarefa(db, "7110").programa.vip and tarefa(db, "7111").programa.vip
+    assert not tarefa(db, "7112").programa.vip
+
+
+def test_cadastro_do_programa_vem_do_checklist(db, cenario):
+    importar([item(2, "7113", "999", "907", FLIGHT, nome="Aluna Cadastro", embarque="03/09/2027", escola="Escola Fictícia",
+                   cidade="Toronto", grupo="Grupo Fictício", **{"tipo de visto": "Canadá (Estudante)"}),
+              item(3, "7114", "999", "907", COPIA_VISTO, nome="Aluna Cadastro", embarque="03/09/2027",
+                   **{"tipo de visto": "Canadá (Estudante)"})])
+    p = tarefa(db, "7113").programa
+    assert p.data_embarque == date(2027, 9, 3) and p.mes_embarque == date(2027, 9, 1)
+    assert (p.escola, p.cidade, p.grupo, p.pais) == ("Escola Fictícia", "Toronto", "Grupo Fictício", "Canadá")
+    assert p.visto_normalizado == "Estudante - Canadá"  # mesmo formato que a planilha usava
+    assert checklist.visto_do_checklist("Canadá (Canadá/Quebec)") == "Canadá/Quebec - Canadá"
+    assert checklist.visto_do_checklist("Sem visto vinculado") is None
+
+
+def test_finalizado_entra_concluido_e_fecha_a_tarefa_aberta(db, cenario):
+    importar(CHECKLIST)
+    importacao = importar([
+        item(2, "7001", "100", "500", FLIGHT, status="Finalizado", **{"data da finalização": "16/10/2026 09:30:00"}),
+        item(3, "7002", "101", "500", COPIA_VISTO, servico="Visto - Canadá - eTA"),
+        item(4, "7003", "200", "600", FLIGHT, consultor="Consultor Dois"),
+        item(5, "7009", "100", "500", COPIA_VISTO, status="Finalizado", **{"data da finalização": "01/09/2026"}),
+    ])
+    assert importacao.resumo["tarefas_finalizadas"] == 1 and importacao.resumo["tarefas_concluidas_novas"] == 1
+    fechada, nova = tarefa(db, "7001"), tarefa(db, "7009")
+    assert fechada.status == StatusTarefa.CONCLUIDA and fechada.motivo_encerramento == MotivoEncerramento.FINALIZADO
+    assert fechada.concluida_em.date() == date(2026, 10, 16)
+    assert nova.status == StatusTarefa.CONCLUIDA and nova.encerrada_egali_em is not None and not nova.na_fila
+    # Finalizado de novo no arquivo seguinte: continua fechado, sem contar de novo.
+    de_novo = importar([item(2, "7001", "100", "500", FLIGHT, status="Finalizado", **{"data da finalização": "16/10/2026"}),
+                        *CHECKLIST[1:]])
+    assert de_novo.resumo["tarefas_finalizadas"] == 0 and de_novo.resumo["tarefas_reabertas"] == 0
+
+
+def test_cancelado_encerra_como_cancelado(db, cenario):
+    importar(CHECKLIST)
+    importacao = importar([item(2, "7001", "100", "500", FLIGHT, status="Cancelado"), *CHECKLIST[1:]])
+    assert importacao.resumo["itens_cancelados"] == 1 and importacao.resumo["tarefas_canceladas"] == 1
+    assert tarefa(db, "7001").motivo_encerramento == MotivoEncerramento.CANCELADO
+    assert importar([item(2, "7999", "100", "500", FLIGHT, status="Cancelado")]).resumo["tarefas_novas"] == 0
+
+
+def test_mesma_importacao_atualiza_o_painel_rsa(app, db, cenario, tmp_path, monkeypatch):
+    from app.importacao import rsa_checklist
+
+    monkeypatch.setattr(app, "instance_path", str(tmp_path))
+    linhas = [item(2, "7201", "100", "500", FLIGHT, status="Finalizado", **{"data da finalização": "16/10/2026"}),
+              item(3, "7202", "200", "600", FLIGHT, consultor="Consultor Dois", **{"data da finalização": ""})]
+    previa = checklist.criar_previa(linhas)
+    assert previa.resumo["rsa_procedimentos"] == 2 and previa.resumo["rsa_em_aberto"] == 1
+    assert rsa_checklist.base_guardada() is None  # a prévia não grava
+    checklist.confirmar(previa)
+    assert rsa_checklist.base_guardada()["meta"]["n"] == 2
+    # Exportação antiga, sem Data da Finalização: as tarefas entram e o RSA fica como estava.
+    assert importar(CHECKLIST).resumo["rsa_nao_atualizado"] == 1
+    assert rsa_checklist.base_guardada()["meta"]["n"] == 2
 
 
 def test_procedimento_novo_entra_no_catalogo(db, cenario):
@@ -430,11 +484,9 @@ def test_procedimento_novo_do_canada_entra_em_vistos(db, cenario):
     assert db.session.execute(db.select(Trilha).filter_by(codigo="CAN")).scalar_one_or_none() is None
 
 
-def test_onboarding_ct_e_longa_conta_como_vip(db, cenario):
-    # Quem tem esse procedimento é VIP: com menos de 85 pontos, a importação avisa para corrigir.
-    importacao = importar([item(2, "7122", "100", "500", "SA - GERAL - Realização de Onboarding com novos alunos (CT e Longa)")])
+def test_onboarding_ct_e_longa_fica_na_trilha_vip(db, cenario):
+    importar([item(2, "7122", "100", "500", "SA - GERAL - Realização de Onboarding com novos alunos (CT e Longa)")])
     assert tarefa(db, "7122").etapa.trilha.codigo == "VIP"
-    assert ocorrencias(importacao, TipoOcorrencia.VIP_ABAIXO_DA_PONTUACAO)
 
 
 def test_procedimento_fora_do_formato_e_erro(db, cenario):
@@ -467,28 +519,11 @@ def test_linhas_com_problema(db, cenario):
     assert tarefa(db, "7152").prazo_egali is None
 
 
-def test_checklist_antes_da_planilha_e_recusado(db):
+def test_checklist_sem_nenhuma_planilha_importada(db):
     carregar_catalogo()
-    with pytest.raises(ErroImportacao, match="Importe primeiro a planilha"):
-        checklist.criar_previa(CHECKLIST)
-    assert db.session.query(Programa).count() == 0
-
-
-def test_aviso_quando_a_planilha_e_antiga(db, cenario):
-    from datetime import datetime, timedelta, timezone
-
-    from app.models import Importacao, TipoImportacao
-
-    ultima_base = db.session.execute(db.select(Importacao).filter_by(tipo=TipoImportacao.BASE_ALUNOS)).scalars().first()
-    ultima_base.concluida_em = datetime.now(timezone.utc) - timedelta(days=12)
-    db.session.commit()
-    importacao = checklist.criar_previa(CHECKLIST)
-    avisos = [o for o in importacao.ocorrencias if "há 12 dias" in o.mensagem]
-    assert len(avisos) == 1 and importacao.resumo["avisos"] >= 1
-
-    ultima_base.concluida_em = datetime.now(timezone.utc) - timedelta(days=2)
-    db.session.commit()
-    assert not [o for o in checklist.criar_previa(CHECKLIST).ocorrencias if "dias" in o.mensagem and "planilha" in o.mensagem]
+    importacao = importar(CHECKLIST)
+    assert importacao.resumo["erros"] == 0 and db.session.query(Tarefa).count() == 3
+    assert db.session.query(Programa).count() == 2  # um por aluno (500 e 600)
 
 
 def test_arquivo_sem_coluna_obrigatoria(db, cenario):

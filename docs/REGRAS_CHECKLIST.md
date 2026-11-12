@@ -50,6 +50,29 @@ Status: A fazer, Em andamento, Aguardando aluno, Concluída, Não se aplica.
 
 ## Fontes de dados (importação periódica)
 
+> **Desde 10/11/2026 o checklist é a única importação.** A planilha semanal deixou de ser importada
+> (as seções sobre ela abaixo ficam como histórico). O relatório de checklist do TM, com os procedimentos
+> finalizados e em aberto, alimenta as filas, as tarefas e o painel RSA ao mesmo tempo.
+>
+> - **Aluno e programa:** o aluno vem do ID Aluno; o programa é **um por aluno**, com todas as compras dele.
+>   Programas que já existiam (da planilha) continuam e recebem as compras novas do aluno (o normal mais
+>   recente, quando há mais de um). Só compras de visto: "só de visto"; chegou compra de curso, vira normal.
+>   Programa criado pelo checklist não tem `programa_id` (o checklist não traz esse número).
+> - **Cadastro do programa:** vem do checklist a cada importação, com o valor que mais aparece nas linhas do
+>   aluno: consultor, embarque (data e mês), tipo de visto (`EUA (Turista)` vira `Turista - EUA`), país,
+>   cidade, escola, grupo. Serviços se acumulam (não some serviço antigo). Campo vazio não apaga o gravado.
+> - **VIP:** procedimento `SA - VIP - ...` ou tag `VIP` (`programa.vip_egali`). A pontuação da planilha
+>   continua valendo para os programas antigos.
+> - **Status:** "Finalizado" ou Data da Finalização preenchida = tarefa concluída na Egali (se não existia,
+>   entra já concluída, fora das filas; a data de conclusão é a da finalização). Status com "cancel" = a tarefa
+>   é encerrada como cancelada (não vira tarefa nova). O resto está em aberto. Item ausente do arquivo
+>   continua sendo encerrado pela regra do período.
+> - **Serviço não classificado:** entra no programa do aluno com aviso (antes não era importado).
+> - **Painel RSA:** a mesma importação monta a base do RSA (`app/importacao/rsa_checklist.py`). Arquivo sem
+>   Data da Finalização (exportação só dos em aberto) atualiza as tarefas e deixa o RSA como estava.
+> - Deixaram de existir: o erro "programa faltando na planilha", o aviso de consultor divergente, o aviso de
+>   VIP abaixo de 85 pontos e a recusa do checklist sem planilha.
+
 ### 1. Base de alunos (Excel, semanal)
 
 A planilha é ajustada toda semana:

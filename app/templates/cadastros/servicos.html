@@ -4,8 +4,8 @@
 {% block conteudo %}
 <h1>Cadastros</h1>
 {% include "cadastros/_menu.html" %}
-<p class="suave">Decide o que fazer com uma compra do checklist que não está na planilha de alunos.
-  Curso precisa estar na planilha (senão é erro). Visto pode vir sozinho: vira um programa "só de visto".
+<p class="suave">Decide como o checklist trata cada serviço comprado pelo aluno.
+  Curso (ou avulso) faz do programa do aluno um programa normal. Só compras de visto: o programa fica "só de visto". Ignorado: os itens não entram.
   Avulso é juntado ao programa do aluno. Ignorado não gera tarefa.</p>
 <form method="post">
   {{ m.csrf() }}

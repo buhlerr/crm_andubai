@@ -6,7 +6,7 @@
 <p class="suave">Nada é gravado agora: primeiro aparece um resumo do que vai mudar, e só depois você confirma.</p>
 
 <form class="cartao" method="post" enctype="multipart/form-data" style="max-width:720px"
-      onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Lendo o arquivo... (a planilha pode levar uns 20 segundos)';">
+      onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Lendo o arquivo... (o relatório do ano pode levar um minuto)';">
   {{ m.csrf() }}
   <div class="campo">
     <label>O que você vai importar?</label>
@@ -15,15 +15,16 @@
         <input type="radio" name="tipo" value="{{ tipo.value }}" {{ 'checked' if form.get('tipo') == tipo.value or (not form.get('tipo') and loop.first) }}
                onchange="document.getElementById('periodo').hidden = this.value !== 'checklist'">
         {{ dados.nome }} <span class="suave pequeno">({{ dados.extensoes | join(', ') }})</span>
+        {% if dados.descricao %}<div class="suave pequeno">{{ dados.descricao }}</div>{% endif %}
       </label>
     {% endfor %}
   </div>
   <div class="campo">
     <label for="arquivo">Arquivo</label>
-    <input id="arquivo" type="file" name="arquivo" required accept=".xlsx,.xlsm,.xls,.csv">
+    <input id="arquivo" type="file" name="arquivo" required accept=".csv">
   </div>
 
-  <fieldset id="periodo" class="cartao" style="background:var(--fundo)" {{ '' if form.get('tipo') == 'checklist' else 'hidden' }}>
+  <fieldset id="periodo" class="cartao" style="background:var(--fundo)" {{ '' if form.get('tipo', 'checklist') == 'checklist' else 'hidden' }}>
     <legend><strong>Período da exportação do checklist</strong></legend>
     <p class="pequeno suave">Itens que sumiram do checklist só são encerrados se o prazo estiver dentro deste período.
       Deixe em branco para usar o menor e o maior prazo do próprio arquivo.</p>

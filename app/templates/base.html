@@ -38,7 +38,6 @@
     </a>
     <span class="spacer"></span>
     <div class="top-meta">
-      Planilha <b>{{ topo_planilha | data_hora if topo_planilha else 'ainda não importada' }}</b><br>
       Checklist <b>{{ topo_checklist | data_hora if topo_checklist else 'ainda não importado' }}</b>
     </div>
     {% set partes_nome = g.usuario.nome.split() %}

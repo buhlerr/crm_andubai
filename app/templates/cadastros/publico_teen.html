@@ -53,13 +53,13 @@
         </tbody>
       </table>
     {% else %}
-      <div class="mensagem alerta">Nenhum consultor cadastrado ainda. Inclua aqui quem é da equipe de Teens, com o nome como aparece na planilha.</div>
+      <div class="mensagem alerta">Nenhum consultor cadastrado ainda. Inclua aqui quem é da equipe de Teens, com o nome como aparece no checklist.</div>
     {% endif %}
     <form method="post" style="margin-top:12px">
       {{ m.csrf() }}<input type="hidden" name="acao" value="adicionar_consultor">
       <label for="nome">Incluir consultor(a)</label>
       <div class="acoes">
-        <input id="nome" type="text" name="nome" list="nomes-planilha" required style="flex:1" placeholder="Nome como aparece na planilha">
+        <input id="nome" type="text" name="nome" list="nomes-planilha" required style="flex:1" placeholder="Nome como aparece no checklist">
         <datalist id="nomes-planilha">{% for n in nomes_programas %}<option value="{{ n }}">{% endfor %}</datalist>
         <button class="botao">Incluir</button>
       </div>
