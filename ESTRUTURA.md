@@ -23,7 +23,8 @@ crm_andubai/
 │   ├── vistos.py                  # Normalização e rotulagem de tipos de vistos de alunos
 │   ├── importacao/                # Pipeline de importação e processamento de planilhas
 │   │   ├── __init__.py            # Exceções de importação e contratos
-│   │   ├── base_alunos.py         # Leitura da planilha semanal de alunos (aba Base)
+│   │   ├── base_alunos.py         # Planilha semanal (não é mais importada; usada só nos testes)
+│   │   ├── rsa_checklist.py       # Base do painel RSA montada a partir do checklist
 │   │   ├── checklist.py           # Leitura do relatório de checklist exportado da Egali (CSV)
 │   │   ├── consultores.py         # Mapeamento e reconciliação de nomes de consultores
 │   │   ├── leitor_csv.py          # Parser e normalizador de arquivos CSV

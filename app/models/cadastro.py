@@ -93,13 +93,13 @@ class Aluno(ComDatas, db.Model):
 
 
 class TipoPrograma(enum.StrEnum):
-    NORMAL = "normal"  # veio da planilha semanal
-    SO_VISTO = "so_visto"  # criado a partir do checklist: aluno que só comprou visto
+    NORMAL = "normal"  # tem curso (ou serviço avulso); antes vinha da planilha semanal, agora do checklist
+    SO_VISTO = "so_visto"  # aluno que só comprou visto
 
 
 class SituacaoPrograma(enum.StrEnum):
     ATIVO = "ativo"
-    CANCELADO = "cancelado"  # sumiu da planilha
+    CANCELADO = "cancelado"  # sumiu da planilha (quando ela era importada)
     INCORPORADO = "incorporado"  # programa só de visto que foi juntado a um programa com curso
 
 
@@ -117,7 +117,8 @@ class Programa(ComDatas, db.Model):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    # Vazio só nos programas "só de visto", que não existem na planilha.
+    # Número do programa na planilha semanal. Vazio nos programas criados pelo checklist
+    # (o checklist não traz esse número: o programa é o do aluno, com todas as compras dele).
     programa_id_egali: Mapped[str | None] = mapped_column(String(20), unique=True)
     aluno_id: Mapped[int] = mapped_column(ForeignKey("aluno.id"), index=True)
     tipo: Mapped[TipoPrograma] = mapped_column(coluna_enum(TipoPrograma), default=TipoPrograma.NORMAL)
@@ -138,6 +139,8 @@ class Programa(ComDatas, db.Model):
     pontuacao: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))  # coluna pt_prog
     servicos_egali: Mapped[str | None] = mapped_column(Text)  # coluna servico_name (lista separada por vírgula)
     tags_egali: Mapped[str | None] = mapped_column(String(500))  # coluna tags
+    # VIP pelo checklist: o aluno tem procedimento "SA - VIP - ..." ou a tag VIP.
+    vip_egali: Mapped[bool] = mapped_column(Boolean, default=False, server_default=db.false())
 
     situacao: Mapped[SituacaoPrograma] = mapped_column(
         coluna_enum(SituacaoPrograma), default=SituacaoPrograma.ATIVO, index=True
@@ -154,7 +157,13 @@ class Programa(ComDatas, db.Model):
 
     @property
     def vip(self) -> bool:
-        return self.pontuacao is not None and self.pontuacao >= PONTUACAO_VIP
+        return self.vip_egali or (self.pontuacao is not None and self.pontuacao >= PONTUACAO_VIP)
+
+    @property
+    def rotulo(self) -> str:
+        if self.programa_id_egali:
+            return f"Programa {self.programa_id_egali}"
+        return "Só de visto" if self.tipo == TipoPrograma.SO_VISTO else "Programa do aluno"
 
     @property
     def ativo(self) -> bool:

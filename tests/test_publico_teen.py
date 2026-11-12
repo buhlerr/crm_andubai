@@ -61,13 +61,18 @@ def test_marca_por_consultor_da_equipe_teen(db, cenario):
 
 
 def test_marca_pelo_checklist_servico_e_tag(db, cenario):
-    checklist.confirmar(checklist.criar_previa([
-        item(2, "901", "100", "10"),
-        item(3, "902", "555", "10", servico="Vancouver Experience"),  # compra fora da planilha: não entra, mas não marca sozinha
-    ], periodo_completo=True))
+    checklist.confirmar(checklist.criar_previa([item(2, "901", "100", "10")], periodo_completo=True))
     assert not aluno(db, "10").teen
     checklist.confirmar(checklist.criar_previa([item(2, "901", "100", "10", tags="summer")], periodo_completo=True))
     assert aluno(db, "10").teen and aluno(db, "10").teen_motivo == "tag summer"
+
+
+def test_compra_teen_nova_no_checklist_marca_o_aluno(db, cenario):
+    # Sem a planilha, a compra nova entra no programa do aluno, e o serviço teen marca o aluno inteiro.
+    checklist.confirmar(checklist.criar_previa([
+        item(2, "901", "100", "10"), item(3, "902", "555", "10", servico="Vancouver Experience"),
+    ], periodo_completo=True))
+    assert aluno(db, "10").teen and "Vancouver Experience" in aluno(db, "10").teen_motivo
 
 
 def test_marca_e_do_aluno_inteiro(db, cenario):

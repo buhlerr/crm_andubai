@@ -4,7 +4,7 @@ import uuid
 from flask import Blueprint, abort, current_app, flash, g, redirect, render_template, request, url_for
 
 from app.extensions import db
-from app.importacao import ErroImportacao, base_alunos, checklist
+from app.importacao import ErroImportacao, checklist, comum
 from app.importacao.rotulos import DETALHES, RESUMO_BASE, RESUMO_CHECKLIST
 from app.importacao.valores import para_data
 from app.models import Gravidade, Importacao, SituacaoImportacao, TipoImportacao
@@ -13,19 +13,21 @@ from app.web.auth import admin_obrigatorio, login_obrigatorio
 bp = Blueprint("importacoes", __name__, url_prefix="/importacoes")
 
 TIPOS = {
-    TipoImportacao.BASE_ALUNOS: {
-        "nome": "Base de alunos (planilha semanal)",
-        "extensoes": (".xlsx", ".xlsm", ".xls"),
-        "modulo": base_alunos,
-        "rotulos": RESUMO_BASE,
-    },
     TipoImportacao.CHECKLIST: {
-        "nome": "Checklist da Egali (CSV)",
+        "nome": "Relatório de checklist do TM (CSV)",
+        "descricao": "Única importação do sistema: procedimentos finalizados e em aberto. Cria e atualiza alunos, "
+                     "programas e tarefas, e atualiza o painel RSA - Checklist do Suporte.",
         "extensoes": (".csv",),
         "modulo": checklist,
         "rotulos": RESUMO_CHECKLIST,
     },
 }
+# Importações antigas da planilha semanal continuam aparecendo no histórico (só para ver ou descartar).
+NOMES_ANTIGOS = {TipoImportacao.BASE_ALUNOS: {"nome": "Base de alunos (planilha semanal, não é mais usada)",
+                                              "rotulos": RESUMO_BASE}}
+
+
+TODOS_OS_TIPOS = {**NOMES_ANTIGOS, **TIPOS}
 
 
 def _importacao(importacao_id: int) -> Importacao:
@@ -36,7 +38,7 @@ def _importacao(importacao_id: int) -> Importacao:
 @login_obrigatorio
 def lista():
     importacoes = db.session.execute(db.select(Importacao).order_by(Importacao.iniciada_em.desc()).limit(50)).scalars().all()
-    return render_template("importacoes/lista.html", importacoes=importacoes, TIPOS=TIPOS)
+    return render_template("importacoes/lista.html", importacoes=importacoes, TIPOS=TODOS_OS_TIPOS)
 
 
 @bp.route("/nova", methods=["GET", "POST"])
@@ -47,7 +49,9 @@ def nova():
 
     form = request.form
     try:
-        tipo = TipoImportacao(form.get("tipo", ""))
+        tipo = TipoImportacao(form.get("tipo") or TipoImportacao.CHECKLIST.value)
+        if tipo not in TIPOS:
+            raise ValueError
     except ValueError:
         flash("Escolha o tipo de arquivo.", "erro")
         return render_template("importacoes/nova.html", TIPOS=TIPOS, form=form), 400
@@ -106,7 +110,7 @@ def detalhe(importacao_id):
     return render_template(
         "importacoes/detalhe.html",
         importacao=importacao,
-        tipo=TIPOS[importacao.tipo],
+        tipo=TODOS_OS_TIPOS[importacao.tipo],
         ocorrencias=ocorrencias,
         fora_do_periodo=fora_do_periodo,
         marcar=marcar,
@@ -138,6 +142,8 @@ def encerrar_fora_do_periodo(importacao_id):
 def confirmar(importacao_id):
     importacao = _importacao(importacao_id)
     try:
+        if importacao.tipo not in TIPOS:
+            raise ErroImportacao("A planilha semanal não é mais importada. Descarte esta prévia e importe o relatório de checklist.")
         TIPOS[importacao.tipo]["modulo"].confirmar(importacao)
     except ErroImportacao as erro:
         flash(str(erro), "erro")
@@ -151,7 +157,7 @@ def confirmar(importacao_id):
 def descartar(importacao_id):
     importacao = _importacao(importacao_id)
     try:
-        TIPOS[importacao.tipo]["modulo"].descartar(importacao)
+        comum.descartar(importacao)
     except ErroImportacao as erro:
         flash(str(erro), "erro")
     else:

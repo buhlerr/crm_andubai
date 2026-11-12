@@ -28,13 +28,15 @@ def decodificar(bruto: bytes) -> str:
 
 def ler_texto_csv(texto: str) -> list[dict]:
     """Devolve [{"linha": n, "valores": {cabeçalho_normalizado: texto}}], sem as linhas vazias."""
-    leitor = csv.reader(io.StringIO(texto, newline=""), delimiter=";")
-    try:
-        cabecalho = [normalizar_texto(c) for c in next(leitor)]
-    except StopIteration:
+    todas = list(csv.reader(io.StringIO(texto, newline=""), delimiter=";"))
+    if not todas:
         return []
+    # A exportação do TM pode vir com linhas antes do cabeçalho (campos ocultos da tela e
+    # "Contagem de linhas: N"). O cabeçalho é a primeira linha com a coluna "#"; sem ela, a primeira.
+    inicio = next((i for i, valores in enumerate(todas) if "#" in (normalizar_texto(v) for v in valores)), 0)
+    cabecalho = [normalizar_texto(c) for c in todas[inicio]]
     linhas = []
-    for numero, valores in enumerate(leitor, start=2):
+    for numero, valores in enumerate(todas[inicio + 1:], start=inicio + 2):
         if not any(v.strip() for v in valores):
             continue
         linhas.append({"linha": numero, "valores": {c: v for c, v in zip(cabecalho, valores) if c}})

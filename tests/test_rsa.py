@@ -52,6 +52,19 @@ def test_encaixe_abre_a_pagina_sem_login():
     assert '"Leitura"' in saida and "</script> Teste" not in saida  # nome não fecha a tag
 
 
+def test_avisa_quando_o_html_nao_aceita_a_base_importada(app, cliente):
+    from app.importacao import rsa_checklist
+
+    assert rsa.aceita_base('<script>const DADOS_CHECKLIST = {"meta":{}};</script>')
+    assert not rsa.aceita_base(RSA_SINTETICO) and not rsa.aceita_base("<script>const DADOS_CHECKLIST = {quebrado</script>")
+    cliente.entrar("admin")
+    with app.app_context():
+        rsa_checklist.guardar_base({"meta": {"n": 1, "finalizados": 1, "em_aberto": 0}, "dic": {}, "col": {}}, 1, "x.csv")
+    aviso = "não tem a base de dados no formato esperado"
+    assert aviso in enviar(cliente, RSA_SINTETICO.encode()).get_data(as_text=True)
+    assert aviso in cliente.get("/rsa/visao").get_data(as_text=True)
+
+
 def test_envio_e_paginas(cliente):
     cliente.entrar("admin")
     assert "Ainda não há o HTML do RSA" in cliente.get("/rsa/visao").get_data(as_text=True)

@@ -481,30 +481,20 @@ def test_importar_checklist_pela_tela(db, cliente, dados):
     assert os.listdir(os.path.join(cliente.application.instance_path, "envios")) == []  # arquivo temporário apagado
 
 
-def test_importar_base_pela_tela(db, cliente, dados, monkeypatch):
-    import app.importacao.leitor_excel as leitor
-
-    def ler_planilha_falsa(caminho, aba, colunas_texto=()):
-        return [{"linha": 2, "valores": {"programa_id": 4.0, "aluno_id": 40.0, "aluno_name": "Aluno Quatro",
-                                          "compra_id": "400", "consultor": "Consultora Bia"}}]
-
-    monkeypatch.setattr(leitor, "ler_planilha", ler_planilha_falsa)
+def test_planilha_semanal_nao_e_mais_importada(db, cliente, dados):
     entrar(cliente, dados["admin"])
+    pagina = texto(cliente.get("/importacoes/nova"))
+    assert "Relatório de checklist do TM" in pagina and "planilha semanal" not in pagina.lower()
     resposta = cliente.post("/importacoes/nova", data={
         "csrf": TOKEN, "tipo": "base_alunos", "arquivo": (io.BytesIO(b"x"), "Carteira por consultor.xlsx"),
     }, content_type="multipart/form-data")
-    pagina = texto(cliente.get(resposta.headers["Location"]))
-    assert "Programas cancelados (sumiram da planilha)" in pagina  # os 3 programas antigos sumiram
-    importacao = db.session.execute(db.select(Importacao).order_by(Importacao.id.desc())).scalars().first()
-    cliente.post(f"/importacoes/{importacao.id}/descartar", data={"csrf": TOKEN})
-    assert importacao.situacao == SituacaoImportacao.DESCARTADA
-    assert db.session.query(Programa).count() == 3
+    assert resposta.status_code == 400 and "Escolha o tipo de arquivo" in texto(resposta)
 
 
 def test_importacao_com_extensao_errada(db, cliente, dados):
     entrar(cliente, dados["admin"])
     resposta = cliente.post("/importacoes/nova", data={
-        "csrf": TOKEN, "tipo": "base_alunos", "arquivo": (io.BytesIO(b"x"), "arquivo.csv"),
+        "csrf": TOKEN, "tipo": "checklist", "arquivo": (io.BytesIO(b"x"), "arquivo.xlsx"),
     }, content_type="multipart/form-data")
     assert resposta.status_code == 400
     assert "precisa ser" in texto(resposta)

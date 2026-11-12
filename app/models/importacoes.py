@@ -9,7 +9,7 @@ from app.models.base import agora, coluna_enum
 
 
 class TipoImportacao(enum.StrEnum):
-    BASE_ALUNOS = "base_alunos"  # planilha semanal
+    BASE_ALUNOS = "base_alunos"  # planilha semanal (não é mais importada; fica para o histórico)
     CHECKLIST = "checklist"  # checklistServicoNew.csv (ou leitura direta, no futuro)
 
 

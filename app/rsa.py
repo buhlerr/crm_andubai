@@ -4,6 +4,11 @@ O app é um HTML de arquivo único feito por outro analista, com os dados embuti
 (inclusive nomes de colaboradores). Por isso ele nunca vai para o repositório: o
 administrador envia o arquivo pela tela e ele fica em instance/rsa/.
 
+Os dados do painel vêm do relatório de checklist do ano, importado em Administração →
+Importações (app/importacao/rsa_checklist.py). Na hora de servir, o CRM troca a base
+embutida no HTML (DADOS_CHECKLIST) pela base gerada desse relatório; sem relatório
+importado, vale a base que veio no HTML. O HTML guardado funciona só como layout.
+
 O CRM mostra o arquivo num iframe, sem mudar o original guardado. Na hora de servir,
 acrescenta no fim um trecho que:
 - pula o login próprio do app (quem chega aqui já entrou no CRM);
@@ -14,6 +19,7 @@ acrescenta no fim um trecho que:
 import json
 import os
 
+from app.importacao.rsa_checklist import EXECUTOR_EM_ABERTO
 from app.models.base import agora, hora_local
 
 # Grupo 1 do app: todos veem. As chaves são as de go(page) no HTML.
@@ -95,13 +101,76 @@ def html_guardado() -> str | None:
         return f.read()
 
 
+MARCA_BASE = "const DADOS_CHECKLIST = "
+
+# Textos do app que falam só de "finalizados": com os em aberto na base, mudam na hora de mostrar.
+TEXTOS_COM_EM_ABERTO = {
+    "['per','Período do relatório']": "['per','Situação (finalizado ou em aberto)']",
+    "['mes','Mês de finalização']": "['mes','Mês (finalização ou prazo)']",
+    "Comparação entre os períodos carregados": "Finalizados e em aberto",
+    "clique em um período para filtrar o painel": "clique em uma situação para filtrar o painel",
+    "<th>Período</th>": "<th>Situação</th>",
+    "'finalizados no período'": "'finalizados e em aberto'",
+    "Cada registro é um procedimento da jornada do aluno\n     finalizado pela equipe de Suporte ao Aluno.":
+        "Cada registro é um procedimento da jornada do aluno\n     do Suporte ao Aluno, finalizado ou em aberto.",
+    "A base traz apenas itens já finalizados,\n     então o que se mede aqui é pontualidade, não backlog.":
+        "Nos procedimentos em aberto, o atraso é contado até a data da importação do relatório (backlog);\n     use o filtro Situação para separar.",
+}
+
+
+def aceita_base(html: str) -> bool:
+    """O HTML tem a declaração `const DADOS_CHECKLIST = {...}` que o CRM troca pela base importada?"""
+    inicio = html.find(MARCA_BASE)
+    if inicio < 0:
+        return False
+    try:
+        json.JSONDecoder().raw_decode(html[inicio + len(MARCA_BASE):])
+    except ValueError:
+        return False
+    return True
+
+
+AVISO_SEM_BASE = ("O HTML do RSA guardado não tem a base de dados no formato esperado (const DADOS_CHECKLIST = {...}): "
+                  "o painel mostra os dados que vieram dentro do HTML, não os do relatório de checklist importado. "
+                  "Envie o HTML exatamente como foi baixado do app.")
+
+
+def _trocar_base(html: str, base: dict) -> str:
+    """Troca o objeto DADOS_CHECKLIST do HTML pela base do relatório importado."""
+    inicio = html.find(MARCA_BASE)
+    if inicio < 0:
+        return html
+    inicio += len(MARCA_BASE)
+    try:
+        _, tamanho = json.JSONDecoder().raw_decode(html[inicio:])
+    except ValueError:
+        return html
+    html = html[:inicio] + _js(base) + html[inicio + tamanho:]
+    for antes, depois in TEXTOS_COM_EM_ABERTO.items():
+        html = html.replace(antes, depois)
+    return html
+
+
 def _js(valor) -> str:
     # JSON dentro de <script>: "</" quebraria a tag.
     return json.dumps(valor, ensure_ascii=False).replace("</", "<\\/")
 
 
-def encaixar(html: str, pagina: str, nome_usuario: str, admin: bool) -> str:
-    """Devolve o HTML pronto para o iframe, abrindo direto na página pedida."""
+def encaixar(html: str, pagina: str, nome_usuario: str, admin: bool, base: dict | None = None) -> str:
+    """Devolve o HTML pronto para o iframe, abrindo direto na página pedida.
+    Com `base` (relatório de checklist importado), os dados do painel passam a ser os dela."""
+    patch_base = ""
+    if base is not None:
+        html = _trocar_base(html, base)
+        # "Quem mais finaliza" e as tabelas de executor não contam os em aberto (ninguém finalizou ainda).
+        patch_base = f"""
+    if (typeof agregaCH === "function") {{
+      const agregaOriginal = agregaCH, semExecutor = {_js(EXECUTOR_EM_ABERTO)};
+      agregaCH = function (dim, rows) {{
+        const g = agregaOriginal(dim, rows);
+        return dim === "exec" ? g.filter(o => o.rot !== semExecutor) : g;
+      }};
+    }}"""
     trecho = f"""
 <!-- >>> CRM · RSA embutido >>> -->
 <style>
@@ -111,7 +180,7 @@ def encaixar(html: str, pagina: str, nome_usuario: str, admin: bool) -> str:
 <script>
 (function () {{
   try {{
-    if (!DB.appNome) {{ DB.appNome = APP_NOME_PADRAO; saveDB(); }}
+    if (!DB.appNome) {{ DB.appNome = APP_NOME_PADRAO; saveDB(); }}{patch_base}
     SESSION = {{nome: {_js(nome_usuario)}, email: "", perfil: {_js("Master" if admin else "Leitura")}, ativo: true}};
     activePage = {_js(pagina)};
     revealApp(SESSION);

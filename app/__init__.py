@@ -102,7 +102,7 @@ def create_app(config: dict | None = None) -> Flask:
         SERVIDOR_PORTA=int(os.environ.get("SERVIDOR_PORTA", "8080")),
         SERVIDOR_THREADS=int(os.environ.get("SERVIDOR_THREADS", "8")),
         BACKUPS_MANTER=30,
-        MAX_CONTENT_LENGTH=30 * 1024 * 1024,  # planilha semanal ~1,3 MB; folga para crescer
+        MAX_CONTENT_LENGTH=100 * 1024 * 1024,  # relatório de checklist do ano: ~35 MB; folga para crescer
     )
     app.config.from_pyfile("config.py", silent=True)
     if config:

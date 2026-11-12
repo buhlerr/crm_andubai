@@ -7,7 +7,7 @@
   <div>
     <h1>{{ p.aluno.nome }}</h1>
     <div class="acoes">
-      <span class="suave">Aluno {{ p.aluno.aluno_id_egali }} · {{ 'Programa ' ~ p.programa_id_egali if p.programa_id_egali else 'Só de visto (fora da planilha)' }}</span>
+      <span class="suave">Aluno {{ p.aluno.aluno_id_egali }} · {{ p.rotulo }}</span>
       <span class="selo {{ p.situacao.value }}">{{ {'ativo': 'Ativo', 'cancelado': 'Cancelado', 'incorporado': 'Juntado a outro programa'}[p.situacao.value] }}</span>
       {% if p.vip %}<span class="selo vip">VIP</span>{% endif %}
       {% if p.aluno.teen %}<span class="selo teen" title="{{ p.aluno.teen_motivo }}">Teen · {{ p.aluno.teen_motivo }}</span>{% endif %}
@@ -45,7 +45,7 @@
 {% endif %}
 
 {% if p.situacao.value == 'cancelado' %}
-  <div class="mensagem erro">Programa cancelado em {{ p.cancelado_em | data_hora }} (sumiu da planilha). As tarefas abertas saíram das filas; o histórico continua aqui.</div>
+  <div class="mensagem erro">Programa cancelado em {{ p.cancelado_em | data_hora }} (cancelado na Egali). As tarefas abertas saíram das filas; o histórico continua aqui.</div>
 {% endif %}
 
 <div class="grade">
@@ -74,7 +74,7 @@
       <h3>Outros programas do aluno</h3>
       <ul>
       {% for o in outros %}
-        <li><a href="{{ url_for('programas.detalhe', programa_id=o.id) }}">{{ 'Programa ' ~ o.programa_id_egali if o.programa_id_egali else 'Só de visto' }}</a> <span class="selo {{ o.situacao.value }}">{{ o.situacao.value }}</span></li>
+        <li><a href="{{ url_for('programas.detalhe', programa_id=o.id) }}">{{ o.rotulo }}</a> <span class="selo {{ o.situacao.value }}">{{ o.situacao.value }}</span></li>
       {% endfor %}
       </ul>
     {% endif %}

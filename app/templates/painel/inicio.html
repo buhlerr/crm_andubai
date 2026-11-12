@@ -20,7 +20,7 @@
   <p><a class="botao" href="{{ url_for('painel.baixar') }}">Baixar HTML com o {{ TITULO_GRUPO }}</a></p>
   <p class="pequeno suave">Painel base: {{ info.nome_original or '—' }} · enviado em {{ info.enviado_em or '—' }}
     por {{ info.enviado_por or '—' }} · {{ info.tamanho_kb or '?' }} KB.
-    Retrato das filas com a planilha de {{ topo_planilha | data_hora }} e o checklist de {{ topo_checklist | data_hora }}.</p>
+    Retrato das filas com o checklist de {{ topo_checklist | data_hora }}.</p>
 </section>
 {% else %}
 <div class="mensagem alerta">Ainda não há painel guardado.

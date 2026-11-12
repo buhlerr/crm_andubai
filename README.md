@@ -1,6 +1,6 @@
 # CRM Checklist Pós-Venda (Andubai)
 
-Sistema de gestão e acompanhamento de tarefas pós-venda para consultores e equipe de atendimento, integrado a fluxos de importação de planilhas semanais e exportações da Egali.
+Sistema de gestão e acompanhamento de tarefas pós-venda para consultores e equipe de atendimento, alimentado por uma única importação: o relatório de checklist do TM (procedimentos finalizados e em aberto).
 
 ---
 
@@ -24,7 +24,7 @@ Sistema de gestão e acompanhamento de tarefas pós-venda para consultores e equ
   - Cálculo de "Andamento até o embarque" em percentual estimado.
   - Registro de observações internas de NEG e histórico de alterações com autoria.
 - **Mecanismo de Importação Inteligente:**
-  - Importação de planilhas Excel (`.xlsx`, `.xlsb`, `.xls`) da Base de Alunos via Calamine (`python-calamine` em Rust, processando milhares de linhas em milissegundos).
+  - Importação única do relatório de checklist do TM (CSV): cria alunos, programas e tarefas e atualiza o painel RSA. O leitor de Excel via Calamine (`python-calamine`) continua no projeto, mas a planilha semanal não é mais importada.
   - Importação de relatórios CSV de checklist exportados da Egali com prévia antes da confirmação.
   - Identificação de tarefas fora do período de corte da exportação.
 

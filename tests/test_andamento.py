@@ -234,4 +234,4 @@ def test_tela_andamento_dos_vistos(app, db, programas):
     html = resposta.get_data(as_text=True)
     assert resposta.status_code == 200
     assert "Aluno Quebec" in html and "Aluno Toronto" in html and "Consultora Ana" in html
-    assert "NEG do procedimento" in html and "Andamento dos vistos" in html
+    assert "NEG do procedimento" in html and "Andamento dos vistos" in html and "Embarque" in html

@@ -27,7 +27,7 @@ bp = Blueprint("cadastros", __name__, url_prefix="/cadastros")
 
 ROTULOS_PAPEL = {Papel.CONSULTOR: "Consultor(a)", Papel.ESTAGIARIO: "Estagiário(a)", Papel.ADMIN: "Administrador(a)"}
 ROTULOS_CATEGORIA = {
-    CategoriaServico.CURSO: "Curso (precisa estar na planilha)",
+    CategoriaServico.CURSO: "Curso",
     CategoriaServico.VISTO: "Visto (pode vir sozinho)",
     CategoriaServico.AVULSO: "Avulso (vai junto de um programa)",
     CategoriaServico.IGNORADO: "Ignorado (a importação pula)",
@@ -126,7 +126,7 @@ def apelidos():
             try:
                 db.session.commit()
                 flash(f"\"{texto}\" agora aponta para {usuario.nome if usuario else 'ninguém (sem consultor)'}. "
-                      "Vale a partir da próxima importação da planilha.", "ok")
+                      "Vale a partir da próxima importação do checklist.", "ok")
                 return redirect(url_for("cadastros.apelidos"))
             except IntegrityError:
                 db.session.rollback()
