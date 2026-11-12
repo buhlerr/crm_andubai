@@ -1,5 +1,9 @@
 services:
   crm-checklist:
+    # Imagem publicada pelo workflow "Testes e imagem" a cada merge na master.
+    # Atualizar: docker compose pull && docker compose up -d   (precisa de: docker login ghcr.io)
+    # Para gerar a imagem nesta máquina em vez de baixar: docker compose up -d --build
+    image: ${CRM_IMAGEM:-ghcr.io/buhlerr/crm_andubai:latest}
     build: .
     container_name: crm_andubai
     restart: unless-stopped

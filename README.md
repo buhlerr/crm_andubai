@@ -51,10 +51,14 @@ Sistema de gestão e acompanhamento de tarefas pós-venda para consultores e equ
    cd crm_andubai
    ```
 
-2. Suba o container com Docker Compose:
+2. Suba o container com a imagem publicada no registro do GitHub (`ghcr.io/buhlerr/crm_andubai`, gerada a cada merge na `master`). O pacote é privado: entre uma vez com um token que tenha a permissão `read:packages`:
    ```bash
-   docker compose up -d --build
+   docker login ghcr.io -u <usuário do GitHub>
+   docker compose pull
+   docker compose up -d
    ```
+   Para atualizar depois de um merge, repita `docker compose pull` e `docker compose up -d`. A migração do banco roda sozinha ao subir. Para fixar uma versão, use `CRM_IMAGEM=ghcr.io/buhlerr/crm_andubai:sha-<commit>`.
+   Sem acesso ao registro, dá para gerar a imagem na própria máquina com `docker compose up -d --build`.
 
 3. Acesse em `http://localhost:8080`.
 
