@@ -1,0 +1,53 @@
+# Revisão automática de PRs pelo Claude Code (https://github.com/anthropics/claude-code-action).
+# Usa a assinatura do Claude (Pro/Max): segredo CLAUDE_CODE_OAUTH_TOKEN, gerado com `claude setup-token`.
+# Precisa do app do Claude instalado no repositório: https://github.com/apps/claude
+name: Claude - revisão do PR
+
+on:
+  pull_request:
+    # Para revisar também a cada novo push no PR, acrescente "synchronize" (gasta mais da cota).
+    types: [opened, reopened, ready_for_review]
+
+jobs:
+  revisao:
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1.0.272
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPOSITÓRIO: ${{ github.repository }}
+            PR: ${{ github.event.pull_request.number }}
+
+            Revise este pull request e responda em português claro, sem jargão desnecessário.
+            Antes, leia AGENTS.md, docs/REGRAS_CHECKLIST.md e REGRAS_PAUTAS.md: são as regras do projeto.
+
+            Confira principalmente:
+            - Correspondência só pelos IDs da Egali (aluno_id_egali, compra_id_egali, programa_id_egali,
+              item_checklist_egali), nunca por nome.
+            - A importação não sobrescreve campos da equipe (status, responsavel_manual_id, data_planejada,
+              anotações); só atualiza os espelhos da Egali. Toda importação tem prévia e é idempotente.
+            - prazo_egali define o atraso; data_planejada não. obs_egali (NEG) separado das anotações.
+            - Migrações batch, server_default=sa.false() em booleanos, idempotentes, sem down_revision repetido.
+            - Módulo de Pautas TM, login por PBKDF2 e leitor Calamine não podem ser removidos.
+            - LGPD: nenhum nome real nem dado pessoal em código, testes ou commits; nada de .env, config.py,
+              secret_key ou .db versionado.
+            - POST com CSRF; rotas novas com login_obrigatorio ou admin_obrigatorio.
+            - Mudança funcional, de tela, banco ou segurança registrada no CHANGELOG.md.
+            - Bugs, falhas de segurança e testes faltando para o que mudou.
+
+            Use `gh pr diff` e `gh pr view` para ler o PR. Aponte problemas em trechos específicos com
+            `mcp__github_inline_comment__create_inline_comment` (com `confirmed: true`) e deixe um resumo
+            final com `gh pr comment`. Se não achar problemas, diga isso em uma linha. Não elogie à toa.
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
