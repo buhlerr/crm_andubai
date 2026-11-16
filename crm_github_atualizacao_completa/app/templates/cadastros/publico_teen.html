@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}Público teen{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div>
+    <div class="sobretitulo">Administração</div>
+    <h1>Público teen</h1>
+    <div class="suave">A equipe de Teens é separada do Suporte ao Aluno, mas usa as mesmas estruturas no TM. Os alunos teen
+      <b>não saem do sistema</b>: ficam marcados com o selo <span class="selo teen">Teen</span> e podem ser escondidos pelo filtro
+      <b>Público</b> das filas. É a mesma regra do painel VEG (Grupo 1 · Checklist do Suporte).</div>
+  </div>
+</div>
+
+<div class="numeros">
+  <div class="numero-cartao"><div class="valor">{{ total }}</div><div class="rotulo">Alunos teen hoje</div></div>
+</div>
+
+<section class="cartao">
+  <h2 style="margin-top:0">Regra</h2>
+  <p>É teen o <b>aluno inteiro</b> que tiver, em qualquer programa ou compra: um dos serviços marcados abaixo, a tag
+    <code>{{ tag }}</code>, ou um consultor da equipe teen. A marca é do aluno, e não só da tarefa, porque a maior parte das tarefas de
+    um aluno teen fica em serviços neutros (eTA, visto, transfer), que sozinhos não identificariam o perfil.</p>
+  {% if motivos %}
+  <p class="pequeno suave">Motivos mais comuns hoje:
+    {% for motivo, n in motivos %}<span class="selo">{{ motivo }} · {{ n }}</span> {% endfor %}</p>
+  {% endif %}
+</section>
+
+<div class="grade">
+  <form class="cartao" method="post">
+    {{ m.csrf() }}<input type="hidden" name="acao" value="servicos">
+    <h2 style="margin-top:0">Serviços do público teen</h2>
+    {% for s in servicos %}
+      <label class="caixa"><input type="checkbox" name="servico" value="{{ s.id }}" {{ 'checked' if s.teen }}> {{ s.nome }}</label>
+    {% endfor %}
+    <p><button class="botao">Salvar e refazer a marcação</button></p>
+  </form>
+
+  <section class="cartao">
+    <h2 style="margin-top:0">Consultores da equipe teen</h2>
+    {% if consultores %}
+      <table>
+        <tbody>
+        {% for c in consultores %}
+          <tr><td>{{ c.nome }}</td>
+            <td style="text-align:right">
+              <form method="post" onsubmit="return confirm('Remover {{ c.nome }} da equipe teen?')">
+                {{ m.csrf() }}<input type="hidden" name="acao" value="remover_consultor"><input type="hidden" name="id" value="{{ c.id }}">
+                <button class="botao perigo pequeno">Remover</button>
+              </form></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="mensagem alerta">Nenhum consultor cadastrado ainda. Inclua aqui quem é da equipe de Teens, com o nome como aparece no checklist.</div>
+    {% endif %}
+    <form method="post" style="margin-top:12px">
+      {{ m.csrf() }}<input type="hidden" name="acao" value="adicionar_consultor">
+      <label for="nome">Incluir consultor(a)</label>
+      <div class="acoes">
+        <input id="nome" type="text" name="nome" list="nomes-planilha" required style="flex:1" placeholder="Nome como aparece no checklist">
+        <datalist id="nomes-planilha">{% for n in nomes_programas %}<option value="{{ n }}">{% endfor %}</datalist>
+        <button class="botao">Incluir</button>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}
