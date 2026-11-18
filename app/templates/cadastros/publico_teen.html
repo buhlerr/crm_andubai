@@ -45,7 +45,7 @@
         {% for c in consultores %}
           <tr><td>{{ c.nome }}</td>
             <td style="text-align:right">
-              <form method="post" onsubmit="return confirm('Remover {{ c.nome }} da equipe teen?')">
+              <form method="post" onsubmit="return confirm({{ ('Remover ' ~ c.nome ~ ' da equipe teen?') | tojson }})">
                 {{ m.csrf() }}<input type="hidden" name="acao" value="remover_consultor"><input type="hidden" name="id" value="{{ c.id }}">
                 <button class="botao perigo pequeno">Remover</button>
               </form></td></tr>

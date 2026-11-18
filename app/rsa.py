@@ -18,6 +18,7 @@ acrescenta no fim um trecho que:
 
 import json
 import os
+import re
 
 from app.importacao.rsa_checklist import EXECUTOR_EM_ABERTO
 from app.models.base import agora, hora_local
@@ -39,6 +40,33 @@ PAGINAS_SISTEMA = {
     "testes": "Testes",
 }
 PAGINAS = {**PAGINAS_DADOS, **PAGINAS_SISTEMA}
+
+
+# O app roda isolado do CRM: scripts, formulários, alertas, abas e downloads, mas NUNCA allow-same-origin
+# (com ele, o HTML enviado voltaria a ter acesso à origem do CRM).
+SANDBOX = "allow-scripts allow-forms allow-modals allow-popups allow-downloads"
+
+# Na origem isolada, localStorage/sessionStorage dão erro. O app usa o localStorage (saveDB): troca por uma
+# versão em memória, que vale enquanto a página estiver aberta. Vai no começo do HTML, antes dos scripts do app.
+ARMAZENAMENTO_EM_MEMORIA = """<script>
+(function () {
+  function memoria() {
+    var d = {};
+    return {
+      getItem: function (k) { return Object.prototype.hasOwnProperty.call(d, k) ? d[k] : null; },
+      setItem: function (k, v) { d[k] = String(v); },
+      removeItem: function (k) { delete d[k]; },
+      clear: function () { d = {}; },
+      key: function (i) { return Object.keys(d)[i] || null; },
+      get length() { return Object.keys(d).length; }
+    };
+  }
+  ["localStorage", "sessionStorage"].forEach(function (nome) {
+    try { window[nome].getItem("x"); }
+    catch (e) { try { Object.defineProperty(window, nome, {value: memoria(), configurable: true}); } catch (e2) {} }
+  });
+})();
+</script>"""
 
 
 class ErroRSA(Exception):
@@ -194,4 +222,8 @@ def encaixar(html: str, pagina: str, nome_usuario: str, admin: bool, base: dict 
 <!-- <<< CRM · RSA embutido <<< -->
 """
     posicao = html.rfind("</body>")
-    return html[:posicao] + trecho + html[posicao:]
+    html = html[:posicao] + trecho + html[posicao:]
+    # Logo depois de <head> (ou de <body>, se não houver head): antes de qualquer script do app.
+    abertura = re.search(r"<head(?:\s[^>]*)?>", html, re.IGNORECASE) or re.search(r"<body(?:\s[^>]*)?>", html, re.IGNORECASE)
+    inicio = abertura.end() if abertura else 0
+    return html[:inicio] + ARMAZENAMENTO_EM_MEMORIA + html[inicio:]

@@ -183,6 +183,39 @@ def _visto(db, linhas):
     return [l for l in andamento.andamentos_de_visto([programa]) if l.trilha.codigo == "VISTOS"][0]
 
 
+def _cancelar(db, numero, procedimento):
+    """Reimporta o item com status Cancelado (a compra do visto foi cancelada na Egali)."""
+    linha = item(2, numero, "201", "20", procedimento)
+    linha["valores"]["status"] = "Cancelado"
+    checklist.confirmar(checklist.criar_previa([linha]))
+    programa = db.session.execute(db.select(Programa).filter_by(programa_id_egali="2")).scalar_one()
+    db.session.refresh(programa)
+    return programa
+
+
+def test_visto_cancelado_sai_do_andamento(db, programas):
+    # Caso real: compra do visto Canadá cancelada. O programa do aluno continua ativo (tem curso),
+    # mas todas as tarefas de visto foram canceladas: o processo não está mais em andamento.
+    _visto(db, [("910", ENTREGA, "")])
+    _cancelar(db, "910", ENTREGA)
+    programa = _cancelar(db, "904", "SA - VISTOS - Ter uma cópia do visto/negativa")
+    assert programa.ativo
+    # O 904 tinha sido dado como finalizado (sumiu do arquivo parcial anterior); o cancelamento vale.
+    assert all(andamento.cancelada(t) for t in programa.tarefas if t.etapa.trilha.codigo == "VISTOS")
+    assert all(l.trilha.codigo != "VISTOS" for l in andamento.andamentos_de_visto([programa]))
+
+
+def test_procedimento_cancelado_nao_conta_como_finalizado(db, programas):
+    _visto(db, [("910", ENTREGA, ""), ("911", DOC_OK, "")])
+    programa = _cancelar(db, "911", DOC_OK)
+    # 910 voltou a ficar em aberto; a "cópia do visto" (depois do Documentação OK) também foi cancelada.
+    _visto(db, [("910", ENTREGA, "")])
+    programa = _cancelar(db, "904", "SA - VISTOS - Ter uma cópia do visto/negativa")
+    a = [l for l in andamento.andamentos_de_visto([programa]) if l.trilha.codigo == "VISTOS"][0]
+    assert not a.concluido and a.porcentagem < 100  # o Documentação OK cancelado não fecha o processo
+    assert a.passos[-1].situacao == Situacao.PENDENTE and a.passos[-1].tarefa is None
+
+
 def test_visto_termina_no_documentacao_ok(db, programas):
     a = _visto(db, [("910", ENTREGA, "17/09 - aguardando passaporte")])
     assert "Documentação OK" in a.passos[-1].etapa.nome  # biometria, status e cópia do visto ficam fora

@@ -168,7 +168,7 @@ def servicos():
         mudou = 0
         for servico in lista:
             valor = request.form.get(f"categoria_{servico.id}")
-            if valor in {c.value for c in CategoriaServico} and servico.categoria != valor:
+            if valor in {c.value for c in CategoriaServico} and servico.categoria != CategoriaServico(valor):
                 servico.categoria = CategoriaServico(valor)
                 mudou += 1
         db.session.commit()

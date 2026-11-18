@@ -12,7 +12,7 @@ bp = Blueprint("rsa", __name__, url_prefix="/rsa")
 
 @bp.app_context_processor
 def paginas_do_menu():
-    return {"RSA_PAGINAS_DADOS": rsa.PAGINAS_DADOS, "RSA_PAGINAS_SISTEMA": rsa.PAGINAS_SISTEMA}
+    return {"RSA_PAGINAS_DADOS": rsa.PAGINAS_DADOS, "RSA_PAGINAS_SISTEMA": rsa.PAGINAS_SISTEMA, "RSA_SANDBOX": rsa.SANDBOX}
 
 
 def _pagina_permitida(pagina: str) -> str:
@@ -53,7 +53,9 @@ def app_html(pagina):
     resposta = make_response(html)
     resposta.headers["Content-Type"] = "text/html; charset=utf-8"
     resposta.headers["X-Frame-Options"] = "SAMEORIGIN"
-    resposta.headers["Content-Security-Policy"] = "frame-ancestors 'self'"
+    # O HTML vem de um arquivo enviado: roda isolado (sandbox sem allow-same-origin = origem opaca), sem
+    # acesso aos cookies, ao DOM nem às rotas autenticadas do CRM, mesmo que o arquivo traga script malicioso.
+    resposta.headers["Content-Security-Policy"] = f"sandbox {rsa.SANDBOX}; frame-ancestors 'self'"
     resposta.headers["Cache-Control"] = "no-store"
     return resposta
 

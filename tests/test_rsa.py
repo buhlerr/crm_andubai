@@ -47,7 +47,11 @@ def enviar(cliente, conteudo, nome="APP_Checklist_Suporte_ao_Aluno.html"):
 
 def test_encaixe_abre_a_pagina_sem_login():
     saida = rsa.encaixar(RSA_SINTETICO, "atrasos", "Nome </script> Teste", admin=False)
-    assert saida.startswith(RSA_SINTETICO[:RSA_SINTETICO.rfind("</body>")])
+    assert saida.replace(rsa.ARMAZENAMENTO_EM_MEMORIA, "", 1).startswith(RSA_SINTETICO[:RSA_SINTETICO.rfind("</body>")])
+    # O localStorage em memória vem antes de qualquer script do app (na origem isolada, o original dá erro).
+    assert saida.index(rsa.ARMAZENAMENTO_EM_MEMORIA) < saida.index("const APP_NOME_PADRAO")
+    com_head = rsa.encaixar(RSA_SINTETICO.replace("<html>", "<html><head><title>x</title></head>"), "visao", "Pessoa", admin=True)
+    assert "<head>" + rsa.ARMAZENAMENTO_EM_MEMORIA in com_head
     assert 'activePage = "atrasos"' in saida and "revealApp(SESSION)" in saida
     assert '"Leitura"' in saida and "</script> Teste" not in saida  # nome não fecha a tag
 
@@ -76,6 +80,10 @@ def test_envio_e_paginas(cliente):
     resposta = cliente.get("/rsa/procedimentos/app")
     assert resposta.status_code == 200
     assert resposta.headers["X-Frame-Options"] == "SAMEORIGIN"
+    # HTML enviado roda isolado: sandbox sem allow-same-origin, também no iframe.
+    politica = resposta.headers["Content-Security-Policy"]
+    assert "sandbox allow-scripts" in politica and "allow-same-origin" not in politica
+    assert 'sandbox="allow-scripts' in pagina and "allow-same-origin" not in pagina
     assert 'activePage = "procedimentos"' in resposta.get_data(as_text=True)
     assert cliente.get("/rsa/credenciais/app").status_code == 200
     assert cliente.get("/rsa/nao-existe").status_code == 404

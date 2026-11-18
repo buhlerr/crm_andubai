@@ -567,6 +567,13 @@ class _Sincronizacao:
                         "item": item, "aluno": tarefa.programa.aluno.nome, "etapa": tarefa.etapa.texto_egali,
                         "motivo": MotivoEncerramento.CANCELADO.value,
                     })
+                elif tarefa.motivo_encerramento != MotivoEncerramento.CANCELADO:
+                    # Já encerrada (ex.: sumiu de um arquivo parcial e foi dada como finalizada) e agora
+                    # o arquivo diz que foi cancelada na Egali: vale o cancelamento.
+                    self._historico(tarefa, "motivo_encerramento", tarefa.motivo_encerramento,
+                                    MotivoEncerramento.CANCELADO.value)
+                    tarefa.motivo_encerramento = MotivoEncerramento.CANCELADO
+                    self.cont["tarefas_canceladas"] += 1
                 continue
             if item in no_arquivo:
                 # Estava no arquivo, mesmo que a linha não tenha sido importada (ex.: divergência):

@@ -585,6 +585,10 @@ def test_classificar_servico(db, cliente, dados):
     servico = db.session.execute(db.select(ServicoEgali).filter_by(nome="Seguro Viagem")).scalar_one()
     cliente.post("/cadastros/servicos", data={"csrf": TOKEN, f"categoria_{servico.id}": "ignorado"})
     assert servico.categoria == CategoriaServico.IGNORADO
+    # Mesma categoria de novo: nada mudou, nada é contado como atualizado.
+    pagina = cliente.post("/cadastros/servicos", data={"csrf": TOKEN, f"categoria_{servico.id}": "ignorado"},
+                          follow_redirects=True).get_data(as_text=True)
+    assert "0 serviço(s) atualizado(s)" in pagina
 
 
 def test_editar_etapa_e_trilha(db, cliente, dados):
