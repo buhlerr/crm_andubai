@@ -98,6 +98,17 @@ def test_base_com_finalizados_em_aberto_e_teen_fora(db, teen):
     assert aberto_no_prazo["visto"] == "EUA (Turista)" and "SA - MAL - Realizar agendamento VFS" not in procs
 
 
+def test_aluno_ja_marcado_teen_no_crm_continua_fora(db, teen):
+    # Arquivo sem a linha que marcou o aluno (serviço, tag ou consultor teen): o que está no CRM vale.
+    from app.models import Aluno
+
+    db.session.add(Aluno(aluno_id_egali="10", nome="Aluno Um", teen=True))
+    db.session.commit()
+    base, resumo = rsa_checklist.montar_base(ler_texto_csv(csv_do_tm(LINHAS[:4])), Coletor(), HOJE)
+    assert {l["proc"] for l in decodificar(base)} == {"SA - EUA - Agendamento do aluno"}
+    assert resumo["alunos_teen_excluidos"] == 1
+
+
 @pytest.mark.parametrize("procedimento,visto", [
     ("SA - EUA - Agendamento do aluno", True), ("SA-ON - Send welcome e-mail and message in AA", False),
     ("SA ? AUS - Garantizar presentación de exámenes", True), ("SA - MH - AUS - Agendar biométricos", True),

@@ -36,6 +36,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - **Importação de Pautas TM:** Pautas sem vínculo com AN e Dubai em responsável, criador ou última atualização deixam de ser importadas para o painel.
 
 ### Corrigido
+- **Visto cancelado no andamento dos vistos:** com um programa por aluno, cancelar a compra do visto não cancela o programa (o aluno pode ter curso). Agora o aluno cujas tarefas de visto foram todas canceladas na Egali sai da tela de andamento, e procedimento cancelado deixa de contar como finalizado (também no andamento da página do aluno).
+- **Cancelamento depois de encerrado:** item que sumiu de um arquivo parcial (e foi dado como finalizado) e depois aparece como Cancelado no checklist passa a ficar com o motivo "cancelado", com registro no histórico.
+- **Andamento dos vistos:** aluno com visto já concluído aparecia com 0% quando o sistema só conhecia procedimentos posteriores ao Documentação OK (ex.: "Verificar status da aplicação do visto"). A estimativa agora olha a trilha inteira antes de cortar no Documentação OK.
+- **Segurança do RSA:** o HTML enviado pelo administrador passa a rodar isolado do CRM (`Content-Security-Policy: sandbox` e `sandbox` no iframe, sem `allow-same-origin`): mesmo um arquivo com script malicioso não lê cookies, o token CSRF nem faz pedidos como o usuário. Na origem isolada, o `localStorage` do app passa a ser em memória (vale enquanto a página está aberta).
+- **Público teen (tela):** nome de consultor com aspas não quebra mais o "confirmar remoção" nem pode virar script (`tojson`).
+- **Painel RSA e público teen:** aluno já marcado como teen no CRM continua fora do painel mesmo num arquivo que não traga a linha que o marcou (serviço, tag ou consultor teen).
 - **VIP pelo checklist:** um arquivo por período que não traz a linha VIP (nem a tag VIP) do aluno deixa de tirar o VIP dele; o VIP é somado ao que já estava, como os serviços.
 - **Painel RSA:** a base do painel só é gravada depois que a importação do checklist é confirmada no banco. Se a confirmação falhar (por exemplo, "os dados do sistema mudaram"), o painel continua com a base anterior.
 - **Mensagens da importação:** os avisos de compra sem programa não mandam mais "atualizar a planilha e importar de novo", já que a planilha semanal não é mais importada.

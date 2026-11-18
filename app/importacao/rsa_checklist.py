@@ -10,7 +10,8 @@ colaboradores. O HTML guardado não é alterado: a base é trocada na hora de mo
 
 Regras (as mesmas do painel VEG, Grupo 1 · Checklist do Suporte):
 - Público teen fora: sai o aluno inteiro que tiver um serviço teen (Cadastros → Público teen),
-  a tag "summer" ou um consultor da equipe teen como consultor ou como quem finalizou.
+  a tag "summer" ou um consultor da equipe teen como consultor ou como quem finalizou, e o aluno
+  que já está marcado como teen no CRM.
 - Finalizado: Status "Finalizado" ou Data da Finalização preenchida. Cancelado: fica fora.
   O resto é "Em aberto".
 - Atraso por dia, ignorando a hora: finalizado = finalização - prazo (coluna Data);
@@ -28,7 +29,8 @@ from datetime import date
 from app.extensions import db
 from app.importacao import ErroImportacao
 from app.importacao.comum import Coletor
-from app.models import ConsultorTeen, ServicoEgali, TipoOcorrencia
+from app.importacao.valores import IdInvalido, normalizar_id_egali
+from app.models import Aluno, ConsultorTeen, ServicoEgali, TipoOcorrencia
 from app.models.base import agora, hora_local
 from app.publico_teen import TAG_TEEN
 from app.texto import normalizar_texto
@@ -124,6 +126,13 @@ class _Dicionario:
         return self._indice[rotulo]
 
 
+def _id_ou_nada(valor):
+    try:
+        return normalizar_id_egali(valor)
+    except IdInvalido:
+        return None
+
+
 def montar_base(linhas_brutas: list[dict], coletor: Coletor, hoje: date | None = None) -> tuple[dict, dict]:
     """Devolve (base no formato DADOS_CHECKLIST, resumo com as contagens)."""
     hoje = hoje or date.today()
@@ -139,6 +148,8 @@ def montar_base(linhas_brutas: list[dict], coletor: Coletor, hoje: date | None =
 
     servicos_teen = set(db.session.execute(db.select(ServicoEgali.nome_normalizado).filter_by(teen=True)).scalars())
     consultores_teen = set(db.session.execute(db.select(ConsultorTeen.nome_normalizado)).scalars())
+    # Aluno já marcado teen no CRM continua fora, mesmo num arquivo sem a linha que o marcou (serviço, tag ou consultor).
+    alunos_teen = set(db.session.execute(db.select(Aluno.aluno_id_egali).filter_by(teen=True)).scalars())
 
     # 1ª passada: lê, separa cancelados e marca o público teen (do aluno inteiro).
     linhas, vistos_itens, teen, cancelados = [], set(), set(), 0
@@ -165,7 +176,8 @@ def montar_base(linhas_brutas: list[dict], coletor: Coletor, hoje: date | None =
             coletor.aviso(TipoOcorrencia.LINHA_INVALIDA, f"Sem prazo válido na coluna Data ({v.get(COL_DATA)!r}): o atraso fica zerado.", n, item)
         aluno = v[COL_ALUNO]
         executor = v.get(COL_EXECUTOR) if finalizado else ""
-        if (normalizar_texto(v.get(COL_SERVICO)) in servicos_teen
+        if (_id_ou_nada(aluno) in alunos_teen
+                or normalizar_texto(v.get(COL_SERVICO)) in servicos_teen
                 or TAG_TEEN in [normalizar_texto(t) for t in (v.get(COL_TAGS) or "").split(",")]
                 or normalizar_texto(v.get(COL_CONSULTOR)) in consultores_teen
                 or (executor and normalizar_texto(executor) in consultores_teen)):

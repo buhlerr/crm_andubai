@@ -101,6 +101,11 @@ def test_tela_publico_teen(db, cenario, app):
     with cliente.session_transaction() as sessao:
         sessao["usuario_id"], sessao["csrf"] = admin.id, "t"
     assert "Alunos teen hoje" in cliente.get("/cadastros/publico-teen").get_data(as_text=True)
+    # Nome com aspas não quebra o confirm() da remoção (nem vira script).
+    db.session.add(ConsultorTeen(nome="Pessoa D'Teste", nome_normalizado=normalizar_texto("Pessoa D'Teste")))
+    db.session.commit()
+    pagina = cliente.get("/cadastros/publico-teen").get_data(as_text=True)
+    assert "confirm('Remover" not in pagina and 'confirm("Remover Pessoa D\\u0027Teste da equipe teen?")' in pagina
     cliente.post("/cadastros/publico-teen", data={"csrf": "t", "acao": "adicionar_consultor", "nome": "Pessoa Da Equipe Teen"})
     assert aluno(db, "40").teen
     summer = db.session.execute(db.select(ServicoEgali).filter_by(nome="Summer Schools")).scalar_one()

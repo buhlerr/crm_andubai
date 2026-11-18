@@ -9,6 +9,7 @@ estimativa que usa o catálogo como roteiro:
 - A Geral termina no "contato de relacionamento pré-embarque", o último procedimento
   antes do embarque. O que vem depois (pós-embarque) fica fora.
 - Procedimento com tarefa aberta: em aberto. Com tarefa concluída ou "não se aplica": finalizado.
+  Tarefa cancelada na Egali (compra ou item cancelado) é ignorada: não conta como feita.
 - Procedimento sem tarefa: se vem antes do primeiro procedimento em aberto da trilha, já
   passou (finalizado na Egali antes de chegar aqui; marcado como estimado). Se vem
   depois, ainda não foi criado pela Egali: fica pendente como informação (fora do percentual).
@@ -25,7 +26,7 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from app.extensions import db
-from app.models import EtapaModelo, Programa, StatusTarefa, Tarefa, TipoPrograma, Trilha
+from app.models import EtapaModelo, MotivoEncerramento, Programa, StatusTarefa, Tarefa, TipoPrograma, Trilha
 from app.texto import normalizar_texto
 
 
@@ -109,6 +110,12 @@ class Andamento:
         return any(p.situacao == Situacao.FINALIZADO_ESTIMADO for p in self.passos)
 
 
+def cancelada(tarefa: Tarefa) -> bool:
+    """Encerrada porque o item foi cancelado na Egali (ex.: a compra do visto foi cancelada).
+    Ela fica com status "concluída" no CRM, mas não é um procedimento feito."""
+    return tarefa.motivo_encerramento == MotivoEncerramento.CANCELADO
+
+
 def _situacao_da_tarefa(tarefas: list[Tarefa]) -> tuple[Situacao, Tarefa]:
     abertas = [t for t in tarefas if t.aberta]
     if abertas:
@@ -128,10 +135,11 @@ def _tem_etapa_especifica(trilha: Trilha, programa: Programa) -> bool:
 def calcular(programa: Programa, hoje: date | None = None) -> Andamento:
     hoje = hoje or date.today()
     ja_embarcou = programa.data_embarque is not None and programa.data_embarque < hoje
+    tarefas = [t for t in programa.tarefas if not cancelada(t)]  # cancelado na Egali não é procedimento feito
     tarefas_por_etapa: dict[int, list[Tarefa]] = {}
-    for t in programa.tarefas:
+    for t in tarefas:
         tarefas_por_etapa.setdefault(t.etapa_id, []).append(t)
-    trilhas_com_tarefa = {t.etapa.trilha_id for t in programa.tarefas}
+    trilhas_com_tarefa = {t.etapa.trilha_id for t in tarefas}
 
     trilhas = db.session.execute(db.select(Trilha).order_by(Trilha.ordem)).scalars().all()
     andamento = Andamento()
@@ -254,7 +262,8 @@ def calcular_visto(programa: Programa, trilha: Trilha, hoje: date | None = None)
     ja_embarcou = programa.data_embarque is not None and programa.data_embarque < hoje
     tarefas_por_etapa: dict[int, list[Tarefa]] = {}
     for t in programa.tarefas:
-        tarefas_por_etapa.setdefault(t.etapa_id, []).append(t)
+        if not cancelada(t):  # cancelado na Egali não é procedimento feito
+            tarefas_por_etapa.setdefault(t.etapa_id, []).append(t)
 
     etapas = [e for e in trilha.etapas if e.id in tarefas_por_etapa or (e.ativa and _vale_para(e, programa))]
 
@@ -297,12 +306,21 @@ def etapas_do_processo_de_visto() -> list[EtapaModelo]:
     return etapas[:fim + 1] if fim is not None else etapas
 
 
+def visto_cancelado(programa: Programa, trilha: Trilha) -> bool:
+    """O programa tem tarefas nesta trilha de visto e todas foram canceladas na Egali.
+    Com um programa por aluno, cancelar a compra do visto não cancela o programa (o aluno pode ter
+    curso e outros serviços): é pelas tarefas que se sabe que o processo de visto acabou."""
+    da_trilha = [t for t in programa.tarefas if t.etapa.trilha_id == trilha.id]
+    return bool(da_trilha) and all(cancelada(t) for t in da_trilha)
+
+
 def andamentos_de_visto(programas: list[Programa], hoje: date | None = None) -> list[AndamentoVisto]:
-    """Uma linha por programa com processo de visto considerado."""
+    """Uma linha por programa com processo de visto considerado (e não cancelado)."""
     trilhas = {t.codigo: t for t in db.session.execute(
         db.select(Trilha).where(Trilha.codigo.in_(TRILHAS_DE_VISTO))).scalars()}
     linhas = []
     for programa in programas:
         for trilha in _trilhas_de_visto_do_programa(programa, trilhas):
-            linhas.append(calcular_visto(programa, trilha, hoje))
+            if not visto_cancelado(programa, trilha):
+                linhas.append(calcular_visto(programa, trilha, hoje))
     return linhas

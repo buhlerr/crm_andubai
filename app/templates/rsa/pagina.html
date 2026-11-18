@@ -25,7 +25,8 @@
 {% endif %}
 
 {% if info is not none %}
-<iframe class="rsa-quadro" src="{{ url_for('rsa.app_html', pagina=pagina) }}" title="{{ rotulo }}"></iframe>
+<iframe class="rsa-quadro" src="{{ url_for('rsa.app_html', pagina=pagina) }}" title="{{ rotulo }}"
+        sandbox="{{ RSA_SANDBOX }}"></iframe>
 {% else %}
 <div class="mensagem alerta">Ainda não há o HTML do RSA guardado.
   {% if g.usuario.papel == Papel.ADMIN %}Envie abaixo o arquivo do app.{% else %}Peça para um administrador enviar o arquivo do app.{% endif %}</div>
