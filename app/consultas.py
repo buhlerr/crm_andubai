@@ -10,7 +10,7 @@ Regras:
 
 import enum
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import and_, case, func, literal, or_, select
 from sqlalchemy.orm import aliased, contains_eager, joinedload, selectinload
@@ -107,6 +107,12 @@ class Filtros:
     prazo_ate: date | None = None
     publico: FiltroPublico = FiltroPublico.TODOS
     hoje: date = field(default_factory=date.today)
+
+
+def proxima_quinta(hoje: date | None = None) -> date:
+    """Retorna a quinta-feira mais próxima a partir de hoje (inclusive)."""
+    hoje = hoje or date.today()
+    return hoje + timedelta(days=(3 - hoje.weekday()) % 7)
 
 
 def _base():

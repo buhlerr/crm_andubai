@@ -186,6 +186,8 @@ def inicio():
 @login_obrigatorio
 def minha_fila():
     filtros = _filtros_da_url()
+    if "prazo_de" not in request.args and "prazo_ate" not in request.args:
+        filtros.prazo_ate = consultas.proxima_quinta(filtros.hoje)
     filtros.responsavel = g.usuario.id
     filtros.consultor = None
     return _render_fila("Minha fila", filtros, False, "Tarefas em que você é o responsável.")
