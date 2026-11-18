@@ -257,10 +257,10 @@ def calcular_visto(programa: Programa, trilha: Trilha, hoje: date | None = None)
         tarefas_por_etapa.setdefault(t.etapa_id, []).append(t)
 
     etapas = [e for e in trilha.etapas if e.id in tarefas_por_etapa or (e.ativa and _vale_para(e, programa))]
-    fim = next((i for i, e in enumerate(etapas) if DOCUMENTACAO_OK in _simples(e.nome)), None)
-    if fim is not None:
-        etapas = etapas[:fim + 1]
 
+    # A estimativa olha a trilha inteira: um passo depois do "Documentação OK" já feito ou em aberto
+    # (ex.: "Verificar status da aplicação do visto") mostra que tudo até o Documentação OK já passou.
+    # Só depois a lista é cortada no Documentação OK.
     conhecidas = {e.id: _situacao_da_tarefa(tarefas_por_etapa[e.id]) for e in etapas if e.id in tarefas_por_etapa}
     abertas = [i for i, e in enumerate(etapas) if e.id in conhecidas and conhecidas[e.id][0] == Situacao.EM_ABERTO]
     feitas = [i for i, e in enumerate(etapas) if e.id in conhecidas and conhecidas[e.id][0] in FEITOS]
@@ -270,6 +270,10 @@ def calcular_visto(programa: Programa, trilha: Trilha, hoje: date | None = None)
         limite = len(etapas)
     else:
         limite = feitas[-1] + 1 if feitas else 0
+
+    fim = next((i for i, e in enumerate(etapas) if DOCUMENTACAO_OK in _simples(e.nome)), None)
+    if fim is not None:
+        etapas = etapas[:fim + 1]
 
     andamento = AndamentoVisto(programa, trilha)
     for i, etapa in enumerate(etapas):
@@ -281,6 +285,16 @@ def calcular_visto(programa: Programa, trilha: Trilha, hoje: date | None = None)
         else:
             andamento.passos.append(Passo(etapa, Situacao.PENDENTE))
     return andamento
+
+
+def etapas_do_processo_de_visto() -> list[EtapaModelo]:
+    """Etapas do processo de visto, na ordem, até o "Documentação OK" (para o filtro da tela)."""
+    trilha = db.session.execute(db.select(Trilha).where(Trilha.codigo.in_(TRILHAS_DE_VISTO))).scalars().first()
+    if trilha is None:
+        return []
+    etapas = [e for e in trilha.etapas if e.ativa]
+    fim = next((i for i, e in enumerate(etapas) if DOCUMENTACAO_OK in _simples(e.nome)), None)
+    return etapas[:fim + 1] if fim is not None else etapas
 
 
 def andamentos_de_visto(programas: list[Programa], hoje: date | None = None) -> list[AndamentoVisto]:
