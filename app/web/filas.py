@@ -248,8 +248,14 @@ def andamento_vistos():
     consultor = _id_ou_ninguem(request.args.get("consultor"))
     situacao = request.args.get("situacao", "")
     busca = normalizar_texto(request.args.get("busca", ""))
-    # O checklist do ano traz também quem já embarcou: por padrão, só quem embarca de hoje em diante (ou sem data).
-    embarque = request.args.get("embarque", "futuro")
+    # Data de embarque (de / até). O checklist do ano traz também quem já embarcou: na primeira abertura,
+    # o "de" vem com a data de hoje. Campo apagado = sem limite.
+    hoje = date.today()
+    embarque_de = _data_ou_nada(request.args.get("embarque_de")) if "embarque_de" in request.args else hoje
+    embarque_ate = _data_ou_nada(request.args.get("embarque_ate"))
+    sem_data = request.args.get("sem_data", "1" if "embarque_de" not in request.args else "") == "1"
+    etapa = request.args.get("etapa", "")
+    etapas_do_processo = andamento.etapas_do_processo_de_visto()
 
     consulta = (
         db.select(Programa).join(Programa.aluno)
@@ -264,8 +270,14 @@ def andamento_vistos():
         consulta = consulta.where(Programa.consultor_id.is_(None))
     elif consultor:
         consulta = consulta.where(Programa.consultor_id == consultor)
-    if embarque != "todos":
-        consulta = consulta.where(db.or_(Programa.data_embarque.is_(None), Programa.data_embarque >= date.today()))
+    if embarque_de or embarque_ate:
+        no_periodo = db.and_(
+            Programa.data_embarque >= embarque_de if embarque_de else db.true(),
+            Programa.data_embarque <= embarque_ate if embarque_ate else db.true(),
+        )
+        consulta = consulta.where(db.or_(no_periodo, Programa.data_embarque.is_(None)) if sem_data else no_periodo)
+    elif not sem_data:
+        consulta = consulta.where(Programa.data_embarque.is_not(None))
     programas = db.session.execute(consulta).unique().scalars().all()
     if busca:
         programas = [p for p in programas if busca in normalizar_texto(p.aluno.nome)
@@ -276,9 +288,14 @@ def andamento_vistos():
         linhas = [l for l in linhas if l.concluido]
     elif situacao == "andamento":
         linhas = [l for l in linhas if not l.concluido]
+    if etapa == "concluido":
+        linhas = [l for l in linhas if l.concluido]
+    elif etapa.isdigit():
+        linhas = [l for l in linhas if not l.concluido and l.atual and l.atual.etapa.id == int(etapa)]
     linhas.sort(key=lambda l: (l.porcentagem, normalizar_texto(l.programa.aluno.nome)))
     return render_template(
-        "andamento_vistos.html", linhas=linhas, consultor=consultor, situacao=situacao, embarque=embarque,
+        "andamento_vistos.html", linhas=linhas, consultor=consultor, situacao=situacao,
+        embarque_de=embarque_de, embarque_ate=embarque_ate, sem_data=sem_data, etapa=etapa, etapas_do_processo=etapas_do_processo,
         busca=request.args.get("busca", ""), NINGUEM=NINGUEM, Situacao=andamento.Situacao,
         usuarios=db.session.execute(db.select(Usuario).filter_by(ativo=True).order_by(Usuario.nome)).scalars().all(),
     )

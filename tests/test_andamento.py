@@ -235,3 +235,62 @@ def test_tela_andamento_dos_vistos(app, db, programas):
     assert resposta.status_code == 200
     assert "Aluno Quebec" in html and "Aluno Toronto" in html and "Consultora Ana" in html
     assert "NEG do procedimento" in html and "Andamento dos vistos" in html and "Embarque" in html
+
+
+def test_visto_com_passos_depois_do_documentacao_ok_ja_esta_em_100(db, programas):
+    # Caso real: o sistema só conhece "Verificar status" e "Confirmar envio do passaporte" (depois do Documentação OK).
+    # Antes, o corte no Documentação OK vinha antes da estimativa, e o aluno aparecia com 0%.
+    a = _visto(db, [("920", "SA - CAN - Verificar status da aplicação do visto", ""),
+                    ("921", "SA - CAN - Confirmar envio do passaporte após aprovação", "")])
+    for passo in a.programa.tarefas:
+        passo.status = StatusTarefa.CONCLUIDA
+    db.session.commit()
+    a = andamento.calcular_visto(a.programa, a.trilha)
+    assert a.concluido and a.porcentagem == 100
+    assert "Documentação OK" in a.passos[-1].etapa.nome and a.passos[-1].situacao == Situacao.FINALIZADO_ESTIMADO
+
+
+def test_filtros_de_embarque_e_etapa_na_tela(app, db, programas):
+    from app.models import EtapaModelo
+
+    programas["1"].data_embarque = HOJE + timedelta(days=40)
+    programas["2"].data_embarque = HOJE - timedelta(days=10)  # já embarcou
+    db.session.commit()
+    cliente = app.test_client()
+    with cliente.session_transaction() as sessao:
+        sessao["usuario_id"] = db.session.execute(db.select(Usuario)).scalars().first().id
+
+    def alunos(**args):
+        html = cliente.get("/andamento-vistos", query_string=args).get_data(as_text=True)
+        return {n for n in ("Aluno Quebec", "Aluno Toronto") if n in html}
+
+    assert alunos() == {"Aluno Quebec"}  # primeira abertura: embarque de hoje em diante
+    assert alunos(embarque_de="", sem_data="1") == {"Aluno Quebec", "Aluno Toronto"}
+    assert alunos(embarque_de="", embarque_ate=(HOJE - timedelta(days=1)).isoformat()) == {"Aluno Toronto"}
+
+    # Os dois do cenário têm "cópia do visto" em aberto (depois do Documentação OK): processo concluído.
+    assert alunos(embarque_de="", etapa="concluido") == {"Aluno Quebec", "Aluno Toronto"}
+
+    # Alunos no começo do processo: o Quebec novo começa pelo CAQ; o Canadá estudante, pela carta de intenções.
+    base_alunos.confirmar(base_alunos.criar_previa([
+        {"linha": i + 2, "valores": {"programa_id": p, "aluno_id": a, "aluno_name": n, "compra_id": c,
+                                     "consultor": "Consultora Ana", "visto normalizado": v}}
+        for i, (p, a, n, c, v) in enumerate([
+            ("1", "10", "Aluno Quebec", "100, 101", "Canadá/Quebec - Canadá"),
+            ("2", "20", "Aluno Toronto", "200, 201", "Estudante - Canadá"),
+            ("7", "70", "Aluna Quebec Nova", "700", "Canadá/Quebec - Canadá"),
+            ("8", "80", "Aluna Vancouver Nova", "800", "Estudante - Canadá"),
+        ])]))
+
+    def novos(**args):
+        html = cliente.get("/andamento-vistos", query_string={"embarque_de": "", "sem_data": "1", **args}).get_data(as_text=True)
+        return {n for n in ("Aluna Quebec Nova", "Aluna Vancouver Nova", "Aluno Quebec", "Aluno Toronto") if n in html}
+
+    carta = db.session.execute(db.select(EtapaModelo).filter_by(texto_egali=CARTA)).scalar_one()
+    caq = db.session.execute(db.select(EtapaModelo).where(EtapaModelo.nome.contains("CAQ"))).scalar_one()
+    html = cliente.get("/andamento-vistos", query_string={"embarque_de": ""}).get_data(as_text=True)
+    assert "Etapa do processo de visto" in html and "Concluído (Documentação OK finalizada)" in html
+    assert novos(etapa=str(caq.id)) == {"Aluna Quebec Nova"}
+    assert novos(etapa=str(carta.id)) == {"Aluna Vancouver Nova"}
+    # Sem marcar "Incluir sem data de embarque", quem não tem data fica de fora.
+    assert "Aluna Quebec Nova" not in cliente.get("/andamento-vistos", query_string={"embarque_de": ""}).get_data(as_text=True)

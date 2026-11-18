@@ -26,11 +26,18 @@
         <option value="andamento" {{ 'selected' if situacao == 'andamento' }}>Em andamento</option>
         <option value="concluido" {{ 'selected' if situacao == 'concluido' }}>Concluído (100%)</option>
       </select></div>
-    <div class="campo" style="flex-basis:190px"><label for="embarque">Embarque</label>
-      <select id="embarque" name="embarque">
-        <option value="futuro" {{ 'selected' if embarque != 'todos' }}>De hoje em diante</option>
-        <option value="todos" {{ 'selected' if embarque == 'todos' }}>Todos (inclui quem já embarcou)</option>
+    <div class="campo" style="flex-basis:260px"><label for="etapa">Etapa do processo de visto</label>
+      <select id="etapa" name="etapa">
+        <option value="">Todas</option>
+        {% for e in etapas_do_processo %}<option value="{{ e.id }}" {{ 'selected' if etapa == e.id | string }}>{{ loop.index }}. {{ e.nome }}</option>{% endfor %}
+        <option value="concluido" {{ 'selected' if etapa == 'concluido' }}>Concluído (Documentação OK finalizada)</option>
       </select></div>
+    <div class="campo" style="flex-basis:150px"><label for="embarque_de">Embarque de</label>
+      <input id="embarque_de" type="date" name="embarque_de" value="{{ embarque_de.isoformat() if embarque_de else '' }}"></div>
+    <div class="campo" style="flex-basis:150px"><label for="embarque_ate">até</label>
+      <input id="embarque_ate" type="date" name="embarque_ate" value="{{ embarque_ate.isoformat() if embarque_ate else '' }}"></div>
+    <div class="campo" style="flex:0 0 auto; align-self:flex-end">
+      <label class="caixa"><input type="checkbox" name="sem_data" value="1" {{ 'checked' if sem_data }}> Incluir sem data de embarque</label></div>
     <div class="campo"><label for="busca">Aluno ou ID</label>
       <input id="busca" type="text" name="busca" value="{{ busca }}" placeholder="Nome, aluno_id ou programa_id"></div>
     <div class="acoes" style="flex: 0 0 auto">
@@ -41,7 +48,9 @@
 </form>
 
 <p class="suave pequeno">{{ linhas | length }} processo(s) de visto em programas ativos.
-  Procedimentos anteriores ao primeiro em aberto contam como já finalizados (a Egali cria os procedimentos aos poucos).</p>
+  Procedimentos anteriores ao primeiro em aberto (ou a um já finalizado) contam como já finalizados: a Egali cria os procedimentos aos poucos.
+  {% if embarque_de or embarque_ate %}Embarque {{ ('de ' ~ (embarque_de | data)) if embarque_de }} {{ ('até ' ~ (embarque_ate | data)) if embarque_ate }}.{% endif %}
+  Para ver quem já embarcou, apague a data em "Embarque de".</p>
 
 <div class="tabela-rolagem">
   <table>
