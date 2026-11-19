@@ -79,10 +79,13 @@ def registrar_web(app: Flask) -> None:
                 .order_by(Importacao.concluida_em.desc())
             ).scalars().first()
 
+        hoje = getattr(g, "hoje", None) or date.today()
         return {
             "topo_planilha": ultima(TipoImportacao.BASE_ALUNOS),
             "topo_checklist": ultima(TipoImportacao.CHECKLIST),
-            "topo_minha_fila": consultas.contar(consultas.Filtros(responsavel=g.usuario.id)),
+            "topo_minha_fila": consultas.contar(
+                consultas.Filtros(responsavel=g.usuario.id, prazo_ate=consultas.proxima_quinta(hoje), hoje=hoje)
+            ),
             "topo_para_lancar": consultas.contar_para_lancar(g.usuario.id),
             "topo_previas": db.session.execute(
                 db.select(db.func.count()).select_from(Importacao).filter_by(situacao=SituacaoImportacao.PREVIA)

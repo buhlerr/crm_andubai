@@ -65,6 +65,8 @@ def _publico_da_url() -> FiltroPublico:
 def _filtros_da_url() -> Filtros:
     status = request.args.get("status")
     atraso = request.args.get("atraso", "")
+    hoje = getattr(g, "hoje", None) or date.today()
+    g.hoje = hoje
     return Filtros(
         publico=_publico_da_url(),
         status=StatusTarefa(status) if status in {s.value for s in STATUS_ABERTOS} else None,
@@ -77,7 +79,7 @@ def _filtros_da_url() -> Filtros:
         busca=request.args.get("busca", ""),
         prazo_de=_data_ou_nada(request.args.get("prazo_de")),
         prazo_ate=_data_ou_nada(request.args.get("prazo_ate")),
-        hoje=date.today(),
+        hoje=hoje,
     )
 
 
@@ -186,6 +188,8 @@ def inicio():
 @login_obrigatorio
 def minha_fila():
     filtros = _filtros_da_url()
+    if "prazo_de" not in request.args and "prazo_ate" not in request.args:
+        filtros.prazo_ate = consultas.proxima_quinta(filtros.hoje)
     filtros.responsavel = g.usuario.id
     filtros.consultor = None
     return _render_fila("Minha fila", filtros, False, "Tarefas em que você é o responsável.")

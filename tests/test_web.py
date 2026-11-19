@@ -1,15 +1,18 @@
 import io
 import os
+import re
 from datetime import date, timedelta
 
 import pytest
 
 from app.catalogo_inicial import carregar_catalogo
+from app.consultas import proxima_quinta
 from app.importacao import base_alunos, checklist
 from app.importacao.leitor_csv import ler_texto_csv
 from app.models import (
     ApelidoConsultor,
     CategoriaServico,
+    EtapaModelo,
     HistoricoTarefa,
     Importacao,
     Papel,
@@ -169,6 +172,47 @@ def test_minha_fila_mostra_so_as_minhas(db, cliente, dados):
     assert "Ter uma cópia do visto/negativa" in pagina and "Cadastrar flight details" not in pagina
 
 
+@pytest.mark.parametrize(("hoje", "esperado"), [
+    (date(2026, 11, 16), date(2026, 11, 19)),  # segunda -> +3
+    (date(2026, 11, 17), date(2026, 11, 19)),  # terça -> +2
+    (date(2026, 11, 18), date(2026, 11, 19)),  # quarta -> +1
+    (date(2026, 11, 19), date(2026, 11, 19)),  # quinta -> +0
+    (date(2026, 11, 20), date(2026, 11, 26)),  # sexta -> +6
+    (date(2026, 11, 21), date(2026, 11, 26)),  # sábado -> +5
+    (date(2026, 11, 22), date(2026, 11, 26)),  # domingo -> +4
+])
+def test_proxima_quinta_todos_os_dias_da_semana(hoje, esperado):
+    assert proxima_quinta(hoje) == esperado
+
+
+def test_minha_fila_e_contador_filtram_ate_proxima_quinta(db, cliente, dados):
+    quinta = proxima_quinta(HOJE)
+    programa = tarefa(db, "901").programa
+    etapa_passaporte = db.session.execute(
+        db.select(EtapaModelo).filter_by(texto_egali="SA - GERAL - Ter a cópia do passaporte do aluno")
+    ).scalar_one()
+    etapa_embarque = tarefa(db, "903").etapa
+    db.session.add_all([
+        Tarefa(item_checklist_egali="910", programa=programa, etapa=etapa_embarque, prazo_egali=quinta),
+        Tarefa(item_checklist_egali="911", programa=programa, etapa=etapa_passaporte, prazo_egali=quinta + timedelta(days=1)),
+    ])
+    db.session.commit()
+
+    entrar(cliente, dados["ana"])
+    resposta = cliente.get("/minha-fila")
+    html = resposta.get_data(as_text=True)
+    badge = re.search(r'Minha fila\s*<span class="tag[^"]*">(\d+)</span>', html)
+    assert badge and int(badge.group(1)) == 3
+    assert f'name="prazo_ate" value="{quinta.isoformat()}"' in html
+
+    pagina = texto(resposta)
+    assert "Agendamento do aluno" in pagina
+    assert "Ter a cópia do passaporte do aluno" not in pagina
+
+    sem_limite = texto(cliente.get("/minha-fila?prazo_ate="))
+    assert "Ter a cópia do passaporte do aluno" in sem_limite
+
+
 def test_fila_mostra_neg_e_destaca_atraso(cliente, dados):
     entrar(cliente, dados["ana"])
     pagina = texto(cliente.get("/minha-fila"))
@@ -232,7 +276,7 @@ def test_paginacao_da_fila(db, cliente, dados):
     programa = tarefa(db, "901").programa
     etapa = tarefa(db, "901").etapa
     db.session.add_all([
-        Tarefa(item_checklist_egali=str(5000 + i), programa=programa, etapa=etapa, prazo_egali=HOJE + timedelta(days=i))
+        Tarefa(item_checklist_egali=str(5000 + i), programa=programa, etapa=etapa, prazo_egali=HOJE)
         for i in range(150)
     ])
     db.session.commit()
@@ -242,6 +286,9 @@ def test_paginacao_da_fila(db, cliente, dados):
     assert "página 1 de 2" in texto(primeira) and "Próxima" in texto(primeira)
     segunda = cliente.get("/minha-fila?pagina=2")
     assert segunda.status_code == 200 and "Anterior" in texto(segunda)
+    ids_1 = re.findall(r"/tarefas/(\d+)", texto(primeira))
+    ids_2 = re.findall(r"/tarefas/(\d+)", texto(segunda))
+    assert ids_1 and ids_2 and set(ids_1).isdisjoint(ids_2)
 
 
 def test_por_consultor(cliente, dados):
@@ -340,6 +387,30 @@ def test_calendario(cliente, dados):
     futuro = texto(cliente.get(f"/fila?visao=calendario&mes={(HOJE.replace(day=1) + timedelta(days=100)):%Y-%m}"))
     assert "2 tarefa(s) abertas com data antes deste período" in futuro
     assert cliente.get("/fila?visao=calendario&mes=bobagem").status_code == 200
+
+
+def test_calendario_respeita_prazo_ate_e_conta_sem_data(db, cliente, dados):
+    base = tarefa(db, "901")
+    depois = proxima_quinta(HOJE) + timedelta(days=1)
+    t_depois = Tarefa(
+        item_checklist_egali="9901",
+        programa=base.programa,
+        etapa=base.etapa,
+        prazo_egali=depois,
+    )
+    t_sem_data = Tarefa(
+        item_checklist_egali="9902",
+        programa=base.programa,
+        etapa=base.etapa,
+        prazo_egali=None,
+        data_planejada=None,
+    )
+    db.session.add_all([t_depois, t_sem_data])
+    db.session.commit()
+    entrar(cliente, dados["ana"])
+    pagina = texto(cliente.get(f"/minha-fila?visao=calendario&mes={depois:%Y-%m}"))
+    assert f"/tarefas/{t_depois.id}" not in pagina
+    assert "1 sem data (veja na lista)" in pagina
 
 
 def test_filtro_por_intervalo_de_prazo(cliente, dados):

@@ -21,6 +21,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - **Pautas TM:** filtro "Quebrou na nossa UN" (`pendencia=quebra_un`), com as pautas em que a quebra de 72h é da AN e Dubai.
 
 ### Modificado
+- **Minha fila:** ao abrir `/minha-fila` sem informar datas, o filtro "até" passa a vir preenchido com a quinta-feira mais próxima (inclusive hoje), e o contador da barra lateral passa a contar apenas as tarefas dentro desse limite; limpar o campo mostra todas.
 - **Barra lateral:** pode ser recolhida, deixando só os ícones (a escolha fica no navegador). Recolhida, o grupo abre ao lado do ícone. Ordem: Buscar aluno, Filas de trabalho, Pautas TM (Total de pautas, Ação pendente da UN, Quebrou na nossa UN), RSA - Checklist do Suporte, Sistema do RSA (admin) e Administração (admin; junta os antigos grupos Dados e Administração).
 - **Menu do nome:** "Trocar senha", "Para lançar na Egali" (com o contador) e "Quando usar NEG" saíram da lateral e ficam no menu que abre ao clicar no nome.
 - **Andamento do aluno:** procedimentos "Ainda não criado pela Egali" continuam visíveis na lista, mas deixaram de entrar no total do percentual e não acionam sozinhos o aviso de estimativa.
