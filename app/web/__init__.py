@@ -79,7 +79,7 @@ def registrar_web(app: Flask) -> None:
                 .order_by(Importacao.concluida_em.desc())
             ).scalars().first()
 
-        hoje = date.today()
+        hoje = getattr(g, "hoje", None) or date.today()
         return {
             "topo_planilha": ultima(TipoImportacao.BASE_ALUNOS),
             "topo_checklist": ultima(TipoImportacao.CHECKLIST),

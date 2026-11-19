@@ -286,6 +286,9 @@ def test_paginacao_da_fila(db, cliente, dados):
     assert "página 1 de 2" in texto(primeira) and "Próxima" in texto(primeira)
     segunda = cliente.get("/minha-fila?pagina=2")
     assert segunda.status_code == 200 and "Anterior" in texto(segunda)
+    ids_1 = re.findall(r"/tarefas/(\d+)", texto(primeira))
+    ids_2 = re.findall(r"/tarefas/(\d+)", texto(segunda))
+    assert ids_1 and ids_2 and set(ids_1).isdisjoint(ids_2)
 
 
 def test_por_consultor(cliente, dados):
@@ -384,6 +387,30 @@ def test_calendario(cliente, dados):
     futuro = texto(cliente.get(f"/fila?visao=calendario&mes={(HOJE.replace(day=1) + timedelta(days=100)):%Y-%m}"))
     assert "2 tarefa(s) abertas com data antes deste período" in futuro
     assert cliente.get("/fila?visao=calendario&mes=bobagem").status_code == 200
+
+
+def test_calendario_respeita_prazo_ate_e_conta_sem_data(db, cliente, dados):
+    base = tarefa(db, "901")
+    depois = proxima_quinta(HOJE) + timedelta(days=1)
+    t_depois = Tarefa(
+        item_checklist_egali="9901",
+        programa=base.programa,
+        etapa=base.etapa,
+        prazo_egali=depois,
+    )
+    t_sem_data = Tarefa(
+        item_checklist_egali="9902",
+        programa=base.programa,
+        etapa=base.etapa,
+        prazo_egali=None,
+        data_planejada=None,
+    )
+    db.session.add_all([t_depois, t_sem_data])
+    db.session.commit()
+    entrar(cliente, dados["ana"])
+    pagina = texto(cliente.get(f"/minha-fila?visao=calendario&mes={depois:%Y-%m}"))
+    assert f"/tarefas/{t_depois.id}" not in pagina
+    assert "1 sem data (veja na lista)" in pagina
 
 
 def test_filtro_por_intervalo_de_prazo(cliente, dados):

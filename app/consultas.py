@@ -539,7 +539,9 @@ def calendario(f: Filtros, ano: int, mes: int) -> MesCalendario:
 
     semanas = cal.Calendar(firstweekday=0).monthdatescalendar(ano, mes)
     inicio, fim = semanas[0][0], semanas[-1][-1]
-    periodo = Filtros(**{**f.__dict__, "prazo_de": inicio, "prazo_ate": fim})
+    prazo_de = max(inicio, f.prazo_de) if f.prazo_de else inicio
+    prazo_ate = min(fim, f.prazo_ate) if f.prazo_ate else fim
+    periodo = Filtros(**{**f.__dict__, "prazo_de": prazo_de, "prazo_ate": prazo_ate})
     por_dia: dict[date, list[Tarefa]] = {}
     for tarefa in db.session.execute(_ordenadas(_filtrar(_base(), periodo))).scalars().unique():
         por_dia.setdefault(tarefa.data_prevista, []).append(tarefa)
@@ -548,7 +550,8 @@ def calendario(f: Filtros, ano: int, mes: int) -> MesCalendario:
         return db.session.execute(select(func.count()).select_from(consulta.subquery())).scalar_one()
 
     atrasadas_antes = contar(_filtrar(_base(), f).where(DATA_PREVISTA < min(inicio, f.hoje)))
-    sem_prazo = contar(_filtrar(_base(), f).where(DATA_PREVISTA.is_(None)))
+    sem_datas = Filtros(**{**f.__dict__, "prazo_de": None, "prazo_ate": None})
+    sem_prazo = contar(_filtrar(_base(), sem_datas).where(DATA_PREVISTA.is_(None)))
     return MesCalendario(inicio, semanas, por_dia, atrasadas_antes, sem_prazo)
 
 

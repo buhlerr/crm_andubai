@@ -65,6 +65,8 @@ def _publico_da_url() -> FiltroPublico:
 def _filtros_da_url() -> Filtros:
     status = request.args.get("status")
     atraso = request.args.get("atraso", "")
+    hoje = getattr(g, "hoje", None) or date.today()
+    g.hoje = hoje
     return Filtros(
         publico=_publico_da_url(),
         status=StatusTarefa(status) if status in {s.value for s in STATUS_ABERTOS} else None,
@@ -77,7 +79,7 @@ def _filtros_da_url() -> Filtros:
         busca=request.args.get("busca", ""),
         prazo_de=_data_ou_nada(request.args.get("prazo_de")),
         prazo_ate=_data_ou_nada(request.args.get("prazo_ate")),
-        hoje=date.today(),
+        hoje=hoje,
     )
 
 
